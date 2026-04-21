@@ -1,0 +1,10 @@
+{
+  "id": "jw-timer-sidebar",
+  "name": "JW Timer Sidebar",
+  "version": "1.0.0",
+  "minAppVersion": "1.5.0",
+  "description": "Creates per-heading timers for the active note in a responsive sidebar view.",
+  "author": "marcos",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}

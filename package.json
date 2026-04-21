@@ -1,0 +1,17 @@
+{
+  "name": "jw-timer-sidebar",
+  "version": "1.0.0",
+  "description": "Obsidian sidebar plugin with per-heading timers.",
+  "main": "main.js",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "dev": "node esbuild.config.mjs --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.24.2",
+    "obsidian": "latest",
+    "typescript": "^5.6.3"
+  }
+}
