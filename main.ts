@@ -1,9 +1,8 @@
 import {
   App,
   ItemView,
-  MarkdownView,
+  MarkdownRenderer,
   Plugin,
-  TFile,
   WorkspaceLeaf,
   HeadingCache
 } from "obsidian";
@@ -78,7 +77,7 @@ class TimerSidebarView extends ItemView {
 
     const footerEl = wrapper.createDiv({ cls: "jw-timer-footer" });
     const deleteAllBtn = footerEl.createEl("button", {
-      text: "Delete all timers",
+      text: "Reset timers",
       cls: "jw-timer-btn jw-timer-btn-danger"
     });
 
@@ -86,12 +85,12 @@ class TimerSidebarView extends ItemView {
       this.deleteAllTimers();
     });
 
-    this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.refreshFromActiveFile()));
+    this.registerEvent(this.app.workspace.on("active-leaf-change", () => void this.refreshFromActiveFile()));
 
     this.registerEvent(
       this.app.metadataCache.on("changed", (file) => {
         if (file.path === this.currentFilePath) {
-          this.refreshFromActiveFile();
+          void this.refreshFromActiveFile();
         }
       })
     );
@@ -100,7 +99,7 @@ class TimerSidebarView extends ItemView {
       this.updateTimerDisplays();
     }, 250);
 
-    this.refreshFromActiveFile();
+    void this.refreshFromActiveFile();
   }
 
   async onClose(): Promise<void> {
@@ -111,31 +110,32 @@ class TimerSidebarView extends ItemView {
     this.timerUiRefs.clear();
   }
 
-  private refreshFromActiveFile(): void {
-    const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-    const activeFile = markdownView?.file;
+  private async refreshFromActiveFile(): Promise<void> {
+    const activeFile = this.app.workspace.getActiveFile();
 
     if (!activeFile) {
       this.currentFilePath = null;
       this.currentHeadingIds = [];
-      this.renderList();
+      await this.renderList();
       return;
     }
 
     this.currentFilePath = activeFile.path;
+    const fileContent = await this.app.vault.cachedRead(activeFile);
     const fileCache = this.app.metadataCache.getFileCache(activeFile);
     const headings = (fileCache?.headings ?? []).slice().sort((a, b) => {
       const lineA = a.position?.start.line ?? 0;
       const lineB = b.position?.start.line ?? 0;
       return lineA - lineB;
     });
+    const rawHeadingTitles = this.extractRawHeadingTitles(fileContent, headings);
 
     const nextHeadingIds: string[] = [];
 
     for (const heading of headings) {
       const id = buildTimerId(activeFile.path, heading);
-      const headingPrefix = "#".repeat(Math.max(1, heading.level));
-      const headingTitle = `${headingPrefix} ${heading.heading}`;
+      const headingLine = heading.position?.start.line ?? 0;
+      const headingTitle = rawHeadingTitles.get(headingLine) ?? heading.heading;
       const existing = this.timers.get(id);
 
       if (!existing) {
@@ -161,10 +161,29 @@ class TimerSidebarView extends ItemView {
     }
 
     this.currentHeadingIds = nextHeadingIds;
-    this.renderList();
+    await this.renderList();
   }
 
-  private renderList(): void {
+  private extractRawHeadingTitles(content: string, headings: HeadingCache[]): Map<number, string> {
+    const lines = content.split(/\r?\n/);
+    const titlesByLine = new Map<number, string>();
+
+    for (const heading of headings) {
+      const lineIndex = heading.position?.start.line ?? -1;
+      if (lineIndex < 0 || lineIndex >= lines.length) continue;
+
+      const line = lines[lineIndex];
+      const match = line.match(/^\s{0,3}#{1,6}\s+(.*)$/);
+      if (!match) continue;
+
+      const raw = match[1].replace(/\s+#+\s*$/, "").trim();
+      titlesByLine.set(lineIndex, raw.length > 0 ? raw : heading.heading);
+    }
+
+    return titlesByLine;
+  }
+
+  private async renderList(): Promise<void> {
     this.listEl.empty();
     this.timerUiRefs.clear();
 
@@ -181,7 +200,8 @@ class TimerSidebarView extends ItemView {
       if (!entry) continue;
 
       const card = this.listEl.createDiv({ cls: "jw-timer-card" });
-      card.createDiv({ cls: "jw-timer-card-title", text: entry.title });
+      const titleEl = card.createDiv({ cls: "jw-timer-card-title" });
+      await MarkdownRenderer.render(this.app, entry.title, titleEl, this.currentFilePath ?? "", this);
 
       const timerEl = card.createDiv({ cls: "jw-timer-clock", text: formatDuration(this.getElapsed(entry)) });
 
@@ -266,12 +286,12 @@ class TimerSidebarView extends ItemView {
   private deleteTimer(id: string): void {
     this.timers.delete(id);
     this.currentHeadingIds = this.currentHeadingIds.filter((headingId) => headingId !== id);
-    this.renderList();
+    void this.renderList();
   }
 
   private deleteAllTimers(): void {
     this.timers.clear();
-    this.refreshFromActiveFile();
+    void this.refreshFromActiveFile();
   }
 
   private updateTimerDisplays(): void {

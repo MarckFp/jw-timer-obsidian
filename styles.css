@@ -8,10 +8,8 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.8rem;
-  background:
-    radial-gradient(circle at top right, rgba(255, 173, 94, 0.2), transparent 48%),
-    radial-gradient(circle at bottom left, rgba(77, 166, 255, 0.15), transparent 42%),
-    var(--background-secondary);
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  background: var(--background-primary);
 }
 
 .jw-timer-title {
@@ -28,6 +26,7 @@
   grid-template-columns: 1fr;
   gap: 0.6rem;
   align-content: start;
+  padding-bottom: 0.75rem;
 }
 
 .jw-timer-empty {
@@ -49,6 +48,14 @@
   line-height: 1.35;
   word-break: break-word;
   margin-bottom: 0.45rem;
+}
+
+.jw-timer-card-title > *:first-child {
+  margin-top: 0;
+}
+
+.jw-timer-card-title > *:last-child {
+  margin-bottom: 0;
 }
 
 .jw-timer-clock {
@@ -89,8 +96,9 @@
 .jw-timer-footer {
   position: sticky;
   bottom: 0;
-  background: linear-gradient(to top, var(--background-secondary), transparent);
+  background: linear-gradient(to top, var(--background-primary), transparent);
   padding-top: 0.35rem;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 .jw-timer-footer .jw-timer-btn {
