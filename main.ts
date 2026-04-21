@@ -66,10 +66,10 @@ class TimerSidebarView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
-    this.containerEl.empty();
-    this.containerEl.addClass("jw-timer-sidebar-root");
+    this.contentEl.empty();
+    this.contentEl.addClass("jw-timer-sidebar-root");
 
-    const wrapper = this.containerEl.createDiv({ cls: "jw-timer-wrapper" });
+    const wrapper = this.contentEl.createDiv({ cls: "jw-timer-wrapper" });
 
     const titleEl = wrapper.createEl("h2", { text: "Timers by heading", cls: "jw-timer-title" });
     titleEl.setAttr("aria-live", "polite");
@@ -109,6 +109,7 @@ class TimerSidebarView extends ItemView {
       window.clearInterval(this.tickHandle);
       this.tickHandle = null;
     }
+    this.contentEl.removeClass("jw-timer-sidebar-root");
     this.timerUiRefs.clear();
   }
 
@@ -336,6 +337,10 @@ export default class TimerSidebarPlugin extends Plugin {
   async onload(): Promise<void> {
     this.registerView(VIEW_TYPE_TIMER_SIDEBAR, (leaf) => new TimerSidebarView(leaf, this));
 
+    this.addRibbonIcon("timer", "Open JW Timer sidebar", () => {
+      void this.activateView();
+    });
+
     this.addCommand({
       id: "open-jw-timer-sidebar",
       name: "Open JW Timer sidebar",
@@ -344,7 +349,9 @@ export default class TimerSidebarPlugin extends Plugin {
       }
     });
 
-    await this.activateView();
+    this.app.workspace.onLayoutReady(() => {
+      void this.activateView();
+    });
   }
 
   onunload(): void {
