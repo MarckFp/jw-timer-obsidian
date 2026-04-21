@@ -18,9 +18,10 @@ interface TimerEntry {
 }
 
 interface TimerUiRef {
+  cardEl: HTMLElement;
   timerEl: HTMLElement;
   playStopBtn: HTMLButtonElement;
-  pauseBtn: HTMLButtonElement;
+  resetBtn: HTMLButtonElement;
 }
 
 function buildTimerId(filePath: string, heading: HeadingCache): string {
@@ -46,6 +47,7 @@ class TimerSidebarView extends ItemView {
   private listEl!: HTMLElement;
   private emptyStateEl!: HTMLElement;
   private tickHandle: number | null = null;
+  private static readonly TITLE_MAX_LENGTH = 60;
 
   constructor(leaf: WorkspaceLeaf, private readonly plugin: TimerSidebarPlugin) {
     super(leaf);
@@ -201,7 +203,12 @@ class TimerSidebarView extends ItemView {
 
       const card = this.listEl.createDiv({ cls: "jw-timer-card" });
       const titleEl = card.createDiv({ cls: "jw-timer-card-title" });
-      await MarkdownRenderer.render(this.app, entry.title, titleEl, this.currentFilePath ?? "", this);
+      const titleData = await this.getRenderedTitle(entry.title);
+      if (titleData.trimmed) {
+        titleEl.setText(titleData.content);
+      } else {
+        await MarkdownRenderer.render(this.app, titleData.content, titleEl, this.currentFilePath ?? "", this);
+      }
 
       const timerEl = card.createDiv({ cls: "jw-timer-clock", text: formatDuration(this.getElapsed(entry)) });
 
@@ -212,9 +219,9 @@ class TimerSidebarView extends ItemView {
         text: entry.running ? "Stop" : "Play"
       });
 
-      const pauseBtn = controls.createEl("button", {
+      const resetBtn = controls.createEl("button", {
         cls: "jw-timer-btn",
-        text: "Pause"
+        text: "Reset"
       });
 
       const deleteBtn = controls.createEl("button", {
@@ -222,25 +229,23 @@ class TimerSidebarView extends ItemView {
         text: "Delete"
       });
 
-      pauseBtn.disabled = !entry.running;
-
       playStopBtn.addEventListener("click", () => {
         if (entry.running) {
-          this.stopTimer(entry.id);
+          this.pauseTimer(entry.id);
         } else {
           this.startTimer(entry.id);
         }
       });
 
-      pauseBtn.addEventListener("click", () => {
-        this.pauseTimer(entry.id);
+      resetBtn.addEventListener("click", () => {
+        this.resetTimer(entry.id);
       });
 
       deleteBtn.addEventListener("click", () => {
         this.deleteTimer(entry.id);
       });
 
-      this.timerUiRefs.set(entry.id, { timerEl, playStopBtn, pauseBtn });
+      this.timerUiRefs.set(entry.id, { cardEl: card, timerEl, playStopBtn, resetBtn });
     }
 
     this.updateTimerDisplays();
@@ -273,7 +278,7 @@ class TimerSidebarView extends ItemView {
     this.updateTimerDisplays();
   }
 
-  private stopTimer(id: string): void {
+  private resetTimer(id: string): void {
     const entry = this.timers.get(id);
     if (!entry) return;
 
@@ -302,8 +307,28 @@ class TimerSidebarView extends ItemView {
 
       ui.timerEl.setText(formatDuration(this.getElapsed(entry)));
       ui.playStopBtn.setText(entry.running ? "Stop" : "Play");
-      ui.pauseBtn.disabled = !entry.running;
+
+      const elapsed = this.getElapsed(entry);
+      ui.cardEl.removeClass("jw-timer-card--running", "jw-timer-card--stopped");
+      if (entry.running) {
+        ui.cardEl.addClass("jw-timer-card--running");
+      } else if (elapsed > 0) {
+        ui.cardEl.addClass("jw-timer-card--stopped");
+      }
     }
+  }
+
+  private async getRenderedTitle(rawTitle: string): Promise<{ content: string; trimmed: boolean }> {
+    const tempEl = document.createElement("div");
+    await MarkdownRenderer.render(this.app, rawTitle, tempEl, this.currentFilePath ?? "", this);
+
+    const plain = (tempEl.textContent ?? "").replace(/\s+/g, " ").trim();
+    if (plain.length <= TimerSidebarView.TITLE_MAX_LENGTH) {
+      return { content: rawTitle, trimmed: false };
+    }
+
+    const shortened = `${plain.slice(0, TimerSidebarView.TITLE_MAX_LENGTH - 3).trimEnd()}...`;
+    return { content: shortened, trimmed: true };
   }
 }
 

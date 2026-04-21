@@ -8,7 +8,7 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.8rem;
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(2.2rem + env(safe-area-inset-bottom, 0px));
   background: var(--background-primary);
 }
 
@@ -26,7 +26,7 @@
   grid-template-columns: 1fr;
   gap: 0.6rem;
   align-content: start;
-  padding-bottom: 0.75rem;
+  padding-bottom: 1.1rem;
 }
 
 .jw-timer-empty {
@@ -40,6 +40,17 @@
   padding: 0.7rem;
   background: color-mix(in srgb, var(--background-primary) 84%, var(--background-secondary));
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.jw-timer-card.jw-timer-card--running {
+  background: color-mix(in srgb, var(--background-primary) 75%, var(--color-green));
+  border-color: color-mix(in srgb, var(--color-green) 65%, var(--background-modifier-border));
+}
+
+.jw-timer-card.jw-timer-card--stopped {
+  background: color-mix(in srgb, var(--background-primary) 78%, var(--color-orange));
+  border-color: color-mix(in srgb, var(--color-orange) 65%, var(--background-modifier-border));
 }
 
 .jw-timer-card-title {
@@ -98,7 +109,7 @@
   bottom: 0;
   background: linear-gradient(to top, var(--background-primary), transparent);
   padding-top: 0.35rem;
-  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 
 .jw-timer-footer .jw-timer-btn {
