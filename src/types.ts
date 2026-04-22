@@ -11,6 +11,8 @@ export interface MeetingPart {
   order: number;
   /** If true, this part has no stopwatch — its duration is only used for schedule timing (e.g. song) */
   isSeparator?: boolean;
+  /** If true, a secondary 1-minute instructor-advice stopwatch is shown below this part's card */
+  hasAdvice?: boolean;
 }
 
 export type MeetingSection =

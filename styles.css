@@ -188,6 +188,72 @@
   border-color: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
 }
 
+/* ─── Advice sub-card ────────────────────────────────────────────────────── */
+
+.jw-timer-card--advice {
+  margin-left: 1.1rem;
+  margin-top: -0.15rem;
+  border-left: 3px solid color-mix(in srgb, var(--color-yellow) 55%, transparent);
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  background: color-mix(in srgb, var(--color-yellow) 7%, var(--background-secondary));
+  border-radius: 0 7px 7px 0;
+}
+
+/* Advice running states */
+.jw-timer-card--advice[data-state="ok"][data-running="true"] {
+  background: color-mix(in srgb, var(--color-yellow) 16%, var(--background-secondary));
+  border-left-color: color-mix(in srgb, var(--color-yellow) 70%, transparent);
+}
+.jw-timer-card--advice[data-state="warn"][data-running="true"] {
+  background: color-mix(in srgb, var(--color-orange) 16%, var(--background-secondary));
+  border-left-color: color-mix(in srgb, var(--color-orange) 70%, transparent);
+}
+.jw-timer-card--advice[data-state="over"][data-running="true"] {
+  background: color-mix(in srgb, var(--color-red) 16%, var(--background-secondary));
+  border-left-color: color-mix(in srgb, var(--color-red) 70%, transparent);
+}
+.jw-timer-card--advice[data-running="false"][data-state="ok"],
+.jw-timer-card--advice[data-running="false"][data-state="warn"],
+.jw-timer-card--advice[data-running="false"][data-state="over"] {
+  background: color-mix(in srgb, var(--color-yellow) 12%, var(--background-secondary));
+  border-left-color: color-mix(in srgb, var(--color-yellow) 55%, transparent);
+}
+
+/* Override the broad paused selector so advice card keeps its yellow tint, not blue */
+.jw-timer-card--advice[data-running="false"][data-state="ok"],
+.jw-timer-card--advice[data-running="false"][data-state="warn"],
+.jw-timer-card--advice[data-running="false"][data-state="over"] {
+  border-color: unset;
+  border-left: 3px solid color-mix(in srgb, var(--color-yellow) 55%, transparent);
+}
+
+.jw-timer-advice-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.25rem;
+}
+
+.jw-timer-advice-icon {
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--color-yellow) 75%, var(--text-faint));
+  line-height: 1;
+}
+
+.jw-timer-advice-label {
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--color-yellow) 65%, var(--text-muted));
+}
+
+.jw-timer-elapsed--advice {
+  font-size: 1.1rem;
+}
+
 /* ─── Card header (title + allotted) ─────────────────────────────────────── */
 
 .jw-timer-card-header {

@@ -192,7 +192,11 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
 
     // Normal numbered part — strip duration annotation from label
     const cleanLabel = title.replace(DURATION_RE, "").replace(/\s+/g, " ").trim();
-    parts.push({ label: cleanLabel, section: sectionForPos(pos), durationSec, order: order++ });
+    const section = sectionForPos(pos);
+    // Ministry parts and Bible reading (dc-icon--bible) get a 1-min instructor advice sub-timer
+    const hasAdvice = section === "ministry" ||
+      (section === "treasures" && h3Attrs.includes("dc-icon--bible"));
+    parts.push({ label: cleanLabel, section, durationSec, order: order++, ...(hasAdvice ? { hasAdvice } : {}) });
   }
 
   if (parts.length < 5) return null;

@@ -34,6 +34,32 @@ const LOCALE_OPENING_CLOSING: Record<string, [string, string]> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// ─── UI labels per locale ──────────────────────────────────────────────────
+
+interface UiLabels {
+  play: string;
+  pause: string;
+  reset: string;
+  resetAll: string;
+  today: string;
+  advice: string;
+}
+
+const LOCALE_UI: Record<string, UiLabels> = {
+  "lp-e":   { play: "Play",      pause: "Pause",      reset: "Reset",         resetAll: "Reset All",           today: "Today",      advice: "Advice"    },
+  "lp-s":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar todo",      today: "Hoy",        advice: "Consejo"   },
+  "lp-f":   { play: "D\u00e9marrer",  pause: "Pause",      reset: "R\u00e9init.",       resetAll: "Tout r\u00e9init.",        today: "Auj.",       advice: "Conseil"   },
+  "lp-t":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar tudo",      today: "Hoje",       advice: "Conselho"  },
+  "lp-g":   { play: "Start",     pause: "Pause",      reset: "Zur\u00fccksetzen",  resetAll: "Alles zur\u00fccksetzen",  today: "Heute",      advice: "Rat"       },
+  "lp-i":   { play: "Avvia",     pause: "Pausa",      reset: "Azzera",        resetAll: "Azzera tutto",        today: "Oggi",       advice: "Consiglio" },
+  "lp-u":   { play: "\u0421\u0442\u0430\u0440\u0442",     pause: "\u041f\u0430\u0443\u0437\u0430",      reset: "\u0421\u043a\u0438\u043d\u0443\u0442\u0438",       resetAll: "\u0421\u043a\u0438\u043d\u0443\u0442\u0438 \u0432\u0441\u0435",         today: "\u0421\u044c\u043e\u0433\u043e\u0434\u043d\u0456",   advice: "\u041f\u043e\u0440\u0430\u0434\u0430"    },
+  "lp-d":   { play: "Start",     pause: "Pauze",      reset: "Reset",         resetAll: "Alles resetten",      today: "Vandaag",    advice: "Advies"    },
+  "lp-p":   { play: "Start",     pause: "Pauza",      reset: "Resetuj",       resetAll: "Resetuj wszystko",    today: "Dzi\u015b",       advice: "Rada"      },
+  "lp-j":   { play: "\u30b9\u30bf\u30fc\u30c8",  pause: "\u4e00\u6642\u505c\u6b62",   reset: "\u30ea\u30bb\u30c3\u30c8",       resetAll: "\u5168\u30ea\u30bb\u30c3\u30c8",            today: "\u4eca\u65e5",       advice: "\u52a9\u8a00"      },
+  "lp-ko":  { play: "\uc2dc\uc791",      pause: "\uc77c\uc2dc\uc815\uc9c0",   reset: "\ucd08\uae30\ud654",        resetAll: "\uc804\uccb4 \ucd08\uae30\ud654",          today: "\uc624\ub298",       advice: "\uc870\uc5b8"      },
+  "lp-chs": { play: "\u5f00\u59cb",      pause: "\u6682\u505c",       reset: "\u91cd\u7f6e",          resetAll: "\u5168\u90e8\u91cd\u7f6e",               today: "\u4eca\u5929",       advice: "\u6307\u5bfc"      },
+};
+
 function formatMmSs(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(totalSec / 60);
@@ -93,10 +119,12 @@ export class JwTimerView extends ItemView {
   private schedule: WeeklySchedule | null = null;
   private weekKey = "";
   private cards = new Map<number, CardRefs>();
+  private adviceCards = new Map<number, CardRefs>();
   private tickHandle: number | null = null;
   private statusEl!: HTMLElement;
   private navLabelEl!: HTMLElement;
   private todayBtn!: HTMLButtonElement;
+  private resetAllBtn!: HTMLButtonElement;
   private listEl!: HTMLElement;
 
   // Pagination state — initialised to current week in onOpen
@@ -123,7 +151,7 @@ export class JwTimerView extends ItemView {
     this.navLabelEl = navEl.createDiv({ cls: "jw-timer-nav-label" });
     const nextBtn = navEl.createEl("button", { cls: "jw-timer-nav-btn", text: "▶" });
     nextBtn.setAttr("aria-label", "Next week");
-    this.todayBtn = navEl.createEl("button", { cls: "jw-timer-nav-today", text: "Today" });
+    this.todayBtn = navEl.createEl("button", { cls: "jw-timer-nav-today", text: this.getLabels().today });
     this.todayBtn.setAttr("aria-label", "Jump to current week");
     this.todayBtn.style.display = "none";
     prevBtn.addEventListener("click", () => void this.navigateWeek(-1));
@@ -132,11 +160,11 @@ export class JwTimerView extends ItemView {
 
     // ── Reset-all toolbar ────────────────────────────────────────────────────
     const toolbar = root.createDiv({ cls: "jw-timer-toolbar" });
-    const resetAllBtn = toolbar.createEl("button", {
+    this.resetAllBtn = toolbar.createEl("button", {
       cls: "jw-timer-btn jw-timer-btn-reset-all",
-      text: "Reset All",
+      text: this.getLabels().resetAll,
     });
-    resetAllBtn.addEventListener("click", () => this.handleResetAll());
+    this.resetAllBtn.addEventListener("click", () => this.handleResetAll());
 
     // ── Status + list ────────────────────────────────────────────────────────
     this.statusEl = root.createDiv({ cls: "jw-timer-status" });
@@ -162,7 +190,11 @@ export class JwTimerView extends ItemView {
   async reload(): Promise<void> {
     this.schedule = null;
     this.cards.clear();
+    this.adviceCards.clear();
     this.listEl.empty();
+    const labels = this.getLabels();
+    this.resetAllBtn.setText(labels.resetAll);
+    this.todayBtn.setText(labels.today);
     await this.loadScheduleForWeek(this.viewYear, this.viewWeek);
   }
 
@@ -182,11 +214,29 @@ export class JwTimerView extends ItemView {
     this.viewWeek = w;
     this.schedule = null;
     this.cards.clear();
+    this.adviceCards.clear();
     this.listEl.empty();
     await this.loadScheduleForWeek(y, w);
   }
 
   // ─── Today helpers ──────────────────────────────────────────────────────────
+
+  // ─── Locale helpers ──────────────────────────────────────────────────────────
+
+  private getLang(): string {
+    return this.plugin.settings.wolLocale.split("/")[1] ?? "lp-e";
+  }
+
+  private getLabels(): UiLabels {
+    return LOCALE_UI[this.getLang()] ?? LOCALE_UI["lp-e"];
+  }
+
+  /** Virtual partOrder for advice timer — avoids clash with real part orders (≤ ~20). */
+  private adviceOrder(partOrder: number): number {
+    return 1000 + partOrder;
+  }
+
+  // ─── Today helpers ────────────────────────────────────────────────────────
 
   private isCurrentWeek(): boolean {
     const year = new Date().getFullYear();
@@ -203,6 +253,7 @@ export class JwTimerView extends ItemView {
     this.viewWeek = currentWeekNumber();
     this.schedule = null;
     this.cards.clear();
+    this.adviceCards.clear();
     this.listEl.empty();
     await this.loadScheduleForWeek(this.viewYear, this.viewWeek);
   }
@@ -247,6 +298,7 @@ export class JwTimerView extends ItemView {
   private renderSchedule(schedule: WeeklySchedule): void {
     this.listEl.empty();
     this.cards.clear();
+    this.adviceCards.clear();
 
     const startMinutes = timeToMinutes(this.plugin.settings.meetingStartTime);
     let cursor = startMinutes + this.plugin.settings.openingSongMinutes;
@@ -322,9 +374,10 @@ export class JwTimerView extends ItemView {
 
     // Controls
     const controls = card.createDiv({ cls: "jw-timer-controls" });
-    const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: "Play" });
+    const { play: playLabel, reset: resetLabel } = this.getLabels();
+    const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: playLabel });
     playBtn.setAttr("aria-label", "Start timer");
-    const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: "Reset" });
+    const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: resetLabel });
     resetBtn.setAttr("aria-label", "Reset timer");
 
     playBtn.addEventListener("click", () => this.handlePlayPause(part));
@@ -335,6 +388,9 @@ export class JwTimerView extends ItemView {
 
     this.cards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, playBtn, resetBtn, barFillEl });
     this.updateCard(part, scheduledStartMins);
+
+    // Advice sub-card for parts with instructor feedback (Bible reading + ministry parts)
+    if (part.hasAdvice) this.renderAdviceCard(parentEl, part);
   }
 
   // ─── Timer controls ─────────────────────────────────────────────────────────
@@ -343,6 +399,7 @@ export class JwTimerView extends ItemView {
     const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
     if (snap.status === "running") {
       this.plugin.timerEngine.pause(this.weekKey, part.order);
+      void this.plugin.persistTimers(); // persist elapsed time on pause
     } else {
       this.plugin.timerEngine.start(this.weekKey, part.order);
     }
@@ -351,7 +408,12 @@ export class JwTimerView extends ItemView {
 
   private handleReset(part: MeetingPart): void {
     this.plugin.timerEngine.reset(this.weekKey, part.order);
+    if (part.hasAdvice) {
+      this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
+      this.updateAdviceCard(part);
+    }
     this.updateCardByOrder(part);
+    void this.plugin.persistTimers();
   }
 
   // ─── Tick & display update ───────────────────────────────────────────────────
@@ -360,8 +422,10 @@ export class JwTimerView extends ItemView {
     if (!this.schedule) return;
     for (const part of this.schedule.parts) {
       const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
-      if (snap.status === "running") {
-        this.updateCardByOrder(part);
+      if (snap.status === "running") this.updateCardByOrder(part);
+      if (part.hasAdvice) {
+        const aSnap = this.plugin.timerEngine.get(this.weekKey, this.adviceOrder(part.order));
+        if (aSnap.status === "running") this.updateAdviceCard(part);
       }
     }
   }
@@ -412,11 +476,12 @@ export class JwTimerView extends ItemView {
     refs.cardEl.setAttribute("data-running", status === "running" ? "true" : "false");
 
     // Play/pause button label
+    const labels = this.getLabels();
     if (status === "running") {
-      refs.playBtn.setText("Pause");
+      refs.playBtn.setText(labels.pause);
       refs.playBtn.setAttr("aria-label", "Pause timer");
     } else {
-      refs.playBtn.setText("Play");
+      refs.playBtn.setText(labels.play);
       refs.playBtn.setAttr("aria-label", status === "paused" ? "Resume timer" : "Start timer");
     }
   }
@@ -427,7 +492,92 @@ export class JwTimerView extends ItemView {
     if (!this.schedule) return;
     for (const part of this.schedule.parts) {
       this.plugin.timerEngine.reset(this.weekKey, part.order);
+      if (part.hasAdvice) this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
     }
     this.renderSchedule(this.schedule);
+    void this.plugin.persistTimers();
+  }
+
+  // ─── Advice card ────────────────────────────────────────────────────────────
+
+  private renderAdviceCard(parentEl: HTMLElement, part: MeetingPart): void {
+    const labels = this.getLabels();
+    const card = parentEl.createDiv({ cls: "jw-timer-card jw-timer-card--advice" });
+    card.setAttribute("data-state", "idle");
+    card.setAttribute("data-running", "false");
+
+    // Badge: arrow icon + label
+    const badge = card.createDiv({ cls: "jw-timer-advice-badge" });
+    badge.createSpan({ cls: "jw-timer-advice-icon", text: "↳" });
+    badge.createSpan({ cls: "jw-timer-advice-label", text: `${labels.advice} · 1 min` });
+
+    // Progress bar
+    const barEl = card.createDiv({ cls: "jw-timer-bar" });
+    const barFillEl = barEl.createDiv({ cls: "jw-timer-bar-fill" });
+
+    // Stopped-at row
+    const timeRow = card.createDiv({ cls: "jw-timer-time-row" });
+    const endTimeEl = timeRow.createSpan();
+    const stoppedAtEl = timeRow.createSpan({ cls: "jw-timer-stopped-at" });
+    void endTimeEl;
+
+    // Elapsed clock
+    const clockRow = card.createDiv({ cls: "jw-timer-clock-row" });
+    const elapsedEl = clockRow.createDiv({ cls: "jw-timer-elapsed jw-timer-elapsed--advice", text: "00:00" });
+
+    // Controls
+    const controls = card.createDiv({ cls: "jw-timer-controls" });
+    const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: labels.play });
+    playBtn.setAttr("aria-label", "Start advice timer");
+    const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: labels.reset });
+    resetBtn.setAttr("aria-label", "Reset advice timer");
+
+    playBtn.addEventListener("click", () => this.handleAdvicePlayPause(part));
+    resetBtn.addEventListener("click", () => this.handleAdviceReset(part));
+
+    this.adviceCards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, playBtn, resetBtn, barFillEl });
+    this.updateAdviceCard(part);
+  }
+
+  private handleAdvicePlayPause(part: MeetingPart): void {
+    const aOrder = this.adviceOrder(part.order);
+    const snap = this.plugin.timerEngine.get(this.weekKey, aOrder);
+    if (snap.status === "running") {
+      this.plugin.timerEngine.pause(this.weekKey, aOrder);
+      void this.plugin.persistTimers();
+    } else {
+      this.plugin.timerEngine.start(this.weekKey, aOrder);
+    }
+    this.updateAdviceCard(part);
+  }
+
+  private handleAdviceReset(part: MeetingPart): void {
+    this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
+    this.updateAdviceCard(part);
+    void this.plugin.persistTimers();
+  }
+
+  private updateAdviceCard(part: MeetingPart): void {
+    const refs = this.adviceCards.get(part.order);
+    if (!refs) return;
+    const labels = this.getLabels();
+    const ADVICE_SEC = 60;
+    const snap = this.plugin.timerEngine.get(this.weekKey, this.adviceOrder(part.order));
+    const { elapsedMs, status, stoppedAt } = snap;
+
+    refs.elapsedEl.setText(formatMmSs(elapsedMs));
+    refs.barFillEl.style.width = `${(Math.min(1, elapsedMs / (ADVICE_SEC * 1000)) * 100).toFixed(1)}%`;
+
+    if (status === "paused" && stoppedAt != null) {
+      refs.stoppedAtEl.setText(`· ${timestampToHHMM(stoppedAt)}`);
+    } else {
+      refs.stoppedAtEl.setText("");
+    }
+
+    const state = colorState(elapsedMs, ADVICE_SEC, status);
+    refs.cardEl.setAttribute("data-state", state);
+    refs.cardEl.setAttribute("data-running", status === "running" ? "true" : "false");
+
+    refs.playBtn.setText(status === "running" ? labels.pause : labels.play);
   }
 }
