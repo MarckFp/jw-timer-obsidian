@@ -44,7 +44,8 @@ jobs:
             const versionsPath = "versions.json";
             const versions = JSON.parse(fs.readFileSync(versionsPath, "utf8"));
             const minAppVersion = manifest.minAppVersion;
-            fs.writeFileSync(versionsPath, `${JSON.stringify({ [version]: minAppVersion }, null, 2)}\n`);
+            versions[version] = minAppVersion;
+            fs.writeFileSync(versionsPath, `${JSON.stringify(versions, null, 2)}\n`);
           ' "$VERSION"
 
       - name: Build plugin

@@ -1,7 +1,7 @@
 {
   "name": "jw-timer-sidebar",
-  "version": "1.0.0",
-  "description": "Obsidian sidebar plugin with per-heading timers.",
+  "version": "2.0.0",
+  "description": "Fetches the weekly Life and Ministry meeting programme from wol.jw.org and provides per-assignment countdown timers in an Obsidian sidebar.",
   "main": "main.js",
   "scripts": {
     "build": "node esbuild.config.mjs",

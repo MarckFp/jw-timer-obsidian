@@ -10,8 +10,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node", "obsidian"],
-    "baseUrl": "."
+    "types": ["node", "obsidian"]
   },
-  "include": ["main.ts"]
+  "include": ["src/**/*.ts"]
 }

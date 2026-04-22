@@ -6,7 +6,7 @@ const prod = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
 
 const context = await esbuild.context({
-  entryPoints: ["main.ts"],
+  entryPoints: ["src/main.ts"],
   bundle: true,
   external: ["obsidian", "electron", "@codemirror/state", "@codemirror/view", ...builtinModules],
   format: "cjs",

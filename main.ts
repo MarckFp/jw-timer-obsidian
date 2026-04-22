@@ -1,11 +1,7 @@
-import {
-  App,
-  ItemView,
-  MarkdownRenderer,
-  Plugin,
-  WorkspaceLeaf,
-  HeadingCache
-} from "obsidian";
+// Build entry point: src/main.ts
+// This root file is intentionally empty — esbuild bundles from src/main.ts.
+export {};
+
 
 const VIEW_TYPE_TIMER_SIDEBAR = "jw-timer-sidebar-view";
 const STORAGE_VERSION = 1;
