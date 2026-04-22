@@ -108,7 +108,7 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
   // h2 with class du-color--teal-700   → TREASURES FROM GOD'S WORD
   // h2 with class du-color--gold-700   → APPLY YOURSELF TO THE FIELD MINISTRY
   // h2 with class du-color--maroon-600 → LIVING AS CHRISTIANS
-  type SectionBoundary = { pos: number; section: MeetingSection };
+  type SectionBoundary = { pos: number; section: MeetingSection; label: string };
   const boundaries: SectionBoundary[] = [];
 
   const h2Re = /<h2([^>]*)>([\s\S]*?)<\/h2>/gi;
@@ -125,7 +125,7 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
     else if (text.includes("TREASURES")) sec = "treasures";
     else if (text.includes("APPLY YOURSELF") || text.includes("FIELD MINISTRY")) sec = "ministry";
     else if (text.includes("LIVING AS CHRISTIANS")) sec = "living";
-    if (sec) boundaries.push({ pos: h2m.index, section: sec });
+    if (sec) boundaries.push({ pos: h2m.index, section: sec, label: cleanText(h2m[2]) });
   }
 
   function sectionForPos(pos: number): MeetingSection {
@@ -196,7 +196,13 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
   }
 
   if (parts.length < 5) return null;
-  return { weekLabel, year, weekNumber: week, parts, fetchedAt: Date.now() };
+
+  const sectionLabels: Partial<Record<MeetingSection, string>> = {};
+  for (const b of boundaries) {
+    sectionLabels[b.section] = b.label;
+  }
+
+  return { weekLabel, year, weekNumber: week, parts, fetchedAt: Date.now(), sectionLabels };
 }
 
 /**

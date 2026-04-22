@@ -30,6 +30,8 @@ export interface WeeklySchedule {
   parts: MeetingPart[];
   /** When this data was fetched (ms since epoch) */
   fetchedAt: number;
+  /** Scraped h2 section headings in the page language (optional — absent in old cache entries) */
+  sectionLabels?: Partial<Record<MeetingSection, string>>;
 }
 
 // ─── Timer state ──────────────────────────────────────────────────────────────
@@ -41,6 +43,8 @@ export interface TimerState {
   running: boolean;
   /** Date.now() when the last start happened */
   startedAt: number | null;
+  /** Date.now() when the timer was last paused (null if never paused or currently running) */
+  stoppedAt?: number | null;
 }
 
 // ─── Persisted plugin data ────────────────────────────────────────────────────

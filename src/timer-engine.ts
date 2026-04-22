@@ -5,6 +5,8 @@ export type TimerStatus = "idle" | "running" | "paused";
 export interface TimerSnapshot {
   elapsedMs: number;
   status: TimerStatus;
+  /** Wall-clock ms (Date.now()) when the timer was last paused. null when idle or running. */
+  stoppedAt: number | null;
 }
 
 export class TimerEngine {
@@ -16,12 +18,12 @@ export class TimerEngine {
 
   get(weekKey: string, partOrder: number): TimerSnapshot {
     const state = this.states.get(this.key(weekKey, partOrder));
-    if (!state) return { elapsedMs: 0, status: "idle" };
+    if (!state) return { elapsedMs: 0, status: "idle", stoppedAt: null };
     const elapsed = state.running && state.startedAt !== null
       ? state.elapsedMs + (Date.now() - state.startedAt)
       : state.elapsedMs;
     const status: TimerStatus = state.running ? "running" : state.elapsedMs > 0 ? "paused" : "idle";
-    return { elapsedMs: elapsed, status };
+    return { elapsedMs: elapsed, status, stoppedAt: state.stoppedAt ?? null };
   }
 
   start(weekKey: string, partOrder: number): void {
@@ -40,11 +42,13 @@ export class TimerEngine {
     const k = this.key(weekKey, partOrder);
     const state = this.states.get(k);
     if (!state?.running) return;
+    const now = Date.now();
     this.states.set(k, {
       ...state,
-      elapsedMs: state.elapsedMs + (Date.now() - (state.startedAt ?? Date.now())),
+      elapsedMs: state.elapsedMs + (now - (state.startedAt ?? now)),
       running: false,
       startedAt: null,
+      stoppedAt: now,
     });
   }
 

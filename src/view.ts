@@ -6,11 +6,19 @@ import { cacheKey, currentWeekNumber, fetchWeekSchedule } from "./scraper";
 
 export const VIEW_TYPE_JW_TIMER = "jw-timer-sidebar";
 
-// ─── Colour thresholds ────────────────────────────────────────────────────────
-// green  = elapsed < 90% of allowed
-// orange = elapsed >= 90% and <= 100%
-// red    = elapsed > 100%
+// ─── Constants ────────────────────────────────────────────────────────────────
 const WARN_THRESHOLD = 0.9;
+
+// Fallback section labels — used when scraper sectionLabels is absent (old cache)
+const SECTION_FALLBACK: Record<string, string> = {
+  opening:   "Opening",
+  treasures: "Treasures from God's Word",
+  ministry:  "Apply Yourself to the Ministry",
+  living:    "Living as Christians",
+  closing:   "Closing",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatMmSs(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -19,17 +27,28 @@ function formatMmSs(ms: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-/** Parse "HH:MM" into minutes from midnight */
 function timeToMinutes(time: string): number {
   const [hh, mm] = time.split(":").map(Number);
   return (hh ?? 0) * 60 + (mm ?? 0);
 }
 
-/** Format minutes-from-midnight as "HH:MM" */
 function minutesToTime(mins: number): string {
   const h = Math.floor(mins / 60) % 24;
   const m = mins % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function timestampToHHMM(ms: number): string {
+  const d = new Date(ms);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** Number of ISO weeks in a year (52 or 53). Dec 28 is always in the last ISO week. */
+function isoWeeksInYear(year: number): number {
+  const d = new Date(Date.UTC(year, 11, 28));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
 }
 
 type TimerColorState = "idle" | "ok" | "warn" | "over";
@@ -42,23 +61,19 @@ function colorState(elapsedMs: number, durationSec: number, status: TimerSnapsho
   return "ok";
 }
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface CardRefs {
   cardEl: HTMLElement;
   elapsedEl: HTMLElement;
-  deltaEl: HTMLElement;
+  endTimeEl: HTMLElement;
+  stoppedAtEl: HTMLElement;
   playBtn: HTMLButtonElement;
   resetBtn: HTMLButtonElement;
   barFillEl: HTMLElement;
 }
 
-// ─── Section labels ───────────────────────────────────────────────────────────
-const SECTION_LABELS: Record<string, string> = {
-  opening:   "Opening",
-  treasures: "Treasures from God's Word",
-  ministry:  "Apply Yourself to the Ministry",
-  living:    "Living as Christians",
-  closing:   "Closing",
-};
+// ─── View ─────────────────────────────────────────────────────────────────────
 
 export class JwTimerView extends ItemView {
   private schedule: WeeklySchedule | null = null;
@@ -66,7 +81,12 @@ export class JwTimerView extends ItemView {
   private cards = new Map<number, CardRefs>();
   private tickHandle: number | null = null;
   private statusEl!: HTMLElement;
+  private navLabelEl!: HTMLElement;
   private listEl!: HTMLElement;
+
+  // Pagination state — initialised to current week in onOpen
+  private viewYear: number = new Date().getFullYear();
+  private viewWeek: number = currentWeekNumber();
 
   constructor(leaf: WorkspaceLeaf, private readonly plugin: JwTimerPlugin) {
     super(leaf);
@@ -81,12 +101,23 @@ export class JwTimerView extends ItemView {
     root.empty();
     root.addClass("jw-timer-root");
 
+    // ── Week navigation ──────────────────────────────────────────────────────
+    const navEl = root.createDiv({ cls: "jw-timer-nav" });
+    const prevBtn = navEl.createEl("button", { cls: "jw-timer-nav-btn", text: "◀" });
+    this.navLabelEl = navEl.createDiv({ cls: "jw-timer-nav-label" });
+    const nextBtn = navEl.createEl("button", { cls: "jw-timer-nav-btn", text: "▶" });
+    prevBtn.addEventListener("click", () => void this.navigateWeek(-1));
+    nextBtn.addEventListener("click", () => void this.navigateWeek(+1));
+
+    // ── Status + list ────────────────────────────────────────────────────────
     this.statusEl = root.createDiv({ cls: "jw-timer-status" });
     this.listEl = root.createDiv({ cls: "jw-timer-list" });
 
     this.tickHandle = window.setInterval(() => this.tick(), 250);
 
-    await this.loadSchedule();
+    this.viewYear = new Date().getFullYear();
+    this.viewWeek = currentWeekNumber();
+    await this.loadScheduleForWeek(this.viewYear, this.viewWeek);
   }
 
   async onClose(): Promise<void> {
@@ -97,27 +128,45 @@ export class JwTimerView extends ItemView {
     await this.plugin.persistTimers();
   }
 
-  // ─── Public: called by plugin when settings change ──────────────────────────
+  // ─── Public: called when settings change ────────────────────────────────────
 
   async reload(): Promise<void> {
     this.schedule = null;
     this.cards.clear();
     this.listEl.empty();
-    await this.loadSchedule();
+    await this.loadScheduleForWeek(this.viewYear, this.viewWeek);
   }
 
-  // ─── Schedule loading ────────────────────────────────────────────────────────
+  // ─── Week navigation ─────────────────────────────────────────────────────────
 
-  private async loadSchedule(): Promise<void> {
-    const year = new Date().getFullYear();
-    const week = currentWeekNumber();
+  private async navigateWeek(delta: number): Promise<void> {
+    let w = this.viewWeek + delta;
+    let y = this.viewYear;
+    if (w < 1) {
+      y--;
+      w = isoWeeksInYear(y);
+    } else if (w > isoWeeksInYear(y)) {
+      y++;
+      w = 1;
+    }
+    this.viewYear = y;
+    this.viewWeek = w;
+    this.schedule = null;
+    this.cards.clear();
+    this.listEl.empty();
+    await this.loadScheduleForWeek(y, w);
+  }
+
+  // ─── Schedule loading ─────────────────────────────────────────────────────────
+
+  private async loadScheduleForWeek(year: number, week: number): Promise<void> {
     this.weekKey = cacheKey(year, week);
+    this.navLabelEl.setText(`${year} · W${String(week).padStart(2, "0")}`);
 
-    // Try cache first
     let schedule = this.plugin.getCachedSchedule(this.weekKey);
 
     if (!schedule) {
-      this.setStatus("loading", "Fetching meeting schedule from wol.jw.org…");
+      this.setStatus("loading", "Fetching schedule from wol.jw.org…");
       schedule = await fetchWeekSchedule(this.plugin.settings.wolLocale, year, week);
       if (schedule) {
         this.plugin.cacheSchedule(this.weekKey, schedule);
@@ -131,7 +180,8 @@ export class JwTimerView extends ItemView {
     }
 
     this.schedule = schedule;
-    this.setStatus("ok", `${schedule.weekLabel}`);
+    this.navLabelEl.setText(schedule.weekLabel);
+    this.setStatus("ok", "");
     this.renderSchedule(schedule);
   }
 
@@ -141,23 +191,26 @@ export class JwTimerView extends ItemView {
     this.statusEl.setText(text);
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────────
+  // ─── Render ──────────────────────────────────────────────────────────────────
 
   private renderSchedule(schedule: WeeklySchedule): void {
     this.listEl.empty();
     this.cards.clear();
 
-    // Compute scheduled start-of-part times
     const startMinutes = timeToMinutes(this.plugin.settings.meetingStartTime);
-    // Add opening song offset (song+prayer before first programme item)
     let cursor = startMinutes + this.plugin.settings.openingSongMinutes;
 
-    // Build offset map: partOrder → scheduled start (minutes from midnight)
     const scheduledStart = new Map<number, number>();
     for (const part of schedule.parts) {
       scheduledStart.set(part.order, cursor);
       cursor += Math.ceil(part.durationSec / 60);
     }
+
+    // Merge scraped section labels (in page language) with English fallback
+    const sectionLabels: Record<string, string> = {
+      ...SECTION_FALLBACK,
+      ...(schedule.sectionLabels ?? {}),
+    };
 
     // Group parts by section
     const sections = new Map<string, MeetingPart[]>();
@@ -167,7 +220,7 @@ export class JwTimerView extends ItemView {
       sections.set(part.section, list);
     }
 
-    const sectionOrder: string[] = ["opening", "treasures", "ministry", "living", "closing"];
+    const sectionOrder = ["opening", "treasures", "ministry", "living", "closing"];
     for (const sectionKey of sectionOrder) {
       const parts = sections.get(sectionKey);
       if (!parts?.length) continue;
@@ -175,64 +228,61 @@ export class JwTimerView extends ItemView {
       const sectionEl = this.listEl.createDiv({ cls: "jw-timer-section" });
       sectionEl.createEl("h3", {
         cls: "jw-timer-section-title",
-        text: SECTION_LABELS[sectionKey] ?? sectionKey,
+        text: sectionLabels[sectionKey] ?? sectionKey,
       });
 
       for (const part of parts) {
-        if (part.isSeparator) continue; // counts for scheduling but no stopwatch card
+        if (part.isSeparator) continue;
         this.renderCard(sectionEl, part, scheduledStart.get(part.order) ?? startMinutes);
       }
     }
   }
 
-  private renderCard(
-    parentEl: HTMLElement,
-    part: MeetingPart,
-    scheduledStartMins: number
-  ): void {
+  private renderCard(parentEl: HTMLElement, part: MeetingPart, scheduledStartMins: number): void {
     const card = parentEl.createDiv({ cls: "jw-timer-card" });
+    card.setAttribute("data-state", "idle");
+    card.setAttribute("data-running", "false");
 
-    // Title row
-    const titleRow = card.createDiv({ cls: "jw-timer-card-header" });
-    titleRow.createDiv({ cls: "jw-timer-card-title", text: part.label });
-    titleRow.createDiv({
-      cls: "jw-timer-card-allotted",
-      text: `${Math.round(part.durationSec / 60)} min`,
-    });
+    // Title + allotted minutes
+    const header = card.createDiv({ cls: "jw-timer-card-header" });
+    header.createDiv({ cls: "jw-timer-card-title", text: part.label });
+    header.createDiv({ cls: "jw-timer-card-allotted", text: `${Math.round(part.durationSec / 60)} min` });
 
-    // Scheduled start time
-    card.createDiv({
-      cls: "jw-timer-card-start-time",
-      text: `Starts ≈ ${minutesToTime(scheduledStartMins)}`,
+    // Scheduled end time + actual stopped-at time
+    const endTimeMins = scheduledStartMins + Math.ceil(part.durationSec / 60);
+    const timeRow = card.createDiv({ cls: "jw-timer-time-row" });
+    const endTimeEl = timeRow.createSpan({
+      cls: "jw-timer-end-time",
+      text: `End ${minutesToTime(endTimeMins)}`,
     });
+    const stoppedAtEl = timeRow.createSpan({ cls: "jw-timer-stopped-at" });
 
     // Progress bar
     const barEl = card.createDiv({ cls: "jw-timer-bar" });
     const barFillEl = barEl.createDiv({ cls: "jw-timer-bar-fill" });
 
-    // Clock row
+    // Large elapsed clock
     const clockRow = card.createDiv({ cls: "jw-timer-clock-row" });
     const elapsedEl = clockRow.createDiv({ cls: "jw-timer-elapsed", text: "00:00" });
-    const deltaEl = clockRow.createDiv({ cls: "jw-timer-delta" });
 
     // Controls
     const controls = card.createDiv({ cls: "jw-timer-controls" });
-
     const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: "▶" });
     playBtn.setAttr("aria-label", "Start timer");
-
     const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: "↺" });
     resetBtn.setAttr("aria-label", "Reset timer");
 
-    // Wire events
     playBtn.addEventListener("click", () => this.handlePlayPause(part));
     resetBtn.addEventListener("click", () => this.handleReset(part));
 
-    this.cards.set(part.order, { cardEl: card, elapsedEl, deltaEl, playBtn, resetBtn, barFillEl });
+    // Suppress unused-var warning — endTimeEl content is set once and never changes
+    void endTimeEl;
+
+    this.cards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, playBtn, resetBtn, barFillEl });
     this.updateCard(part, scheduledStartMins);
   }
 
-  // ─── Timer controls ────────────────────────────────────────────────────────
+  // ─── Timer controls ─────────────────────────────────────────────────────────
 
   private handlePlayPause(part: MeetingPart): void {
     const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
@@ -249,7 +299,7 @@ export class JwTimerView extends ItemView {
     this.updateCardByOrder(part);
   }
 
-  // ─── Tick & display update ─────────────────────────────────────────────────
+  // ─── Tick & display update ───────────────────────────────────────────────────
 
   private tick(): void {
     if (!this.schedule) return;
@@ -277,34 +327,36 @@ export class JwTimerView extends ItemView {
     if (!refs) return;
 
     const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
-    const { elapsedMs, status } = snap;
+    const { elapsedMs, status, stoppedAt } = snap;
     const durationMs = part.durationSec * 1000;
 
-    // Elapsed display
+    // Elapsed clock
     refs.elapsedEl.setText(formatMmSs(elapsedMs));
 
     // Progress bar
-    const pct = Math.min(1, elapsedMs / durationMs);
-    refs.barFillEl.style.width = `${(pct * 100).toFixed(1)}%`;
+    refs.barFillEl.style.width = `${(Math.min(1, elapsedMs / durationMs) * 100).toFixed(1)}%`;
 
-    // Delta vs allowed
-    const remainingMs = durationMs - elapsedMs;
-    if (status === "idle") {
-      refs.deltaEl.setText(`${Math.round(part.durationSec / 60)} min allotted`);
-      refs.deltaEl.className = "jw-timer-delta jw-timer-delta--neutral";
-    } else if (remainingMs >= 0) {
-      refs.deltaEl.setText(`−${formatMmSs(remainingMs)} left`);
-      refs.deltaEl.className = "jw-timer-delta jw-timer-delta--ok";
+    // Stopped-at indicator (shown only when paused)
+    const endTimeMins = scheduledStartMins + Math.ceil(part.durationSec / 60);
+    if (status === "paused" && stoppedAt != null) {
+      const d = new Date(stoppedAt);
+      const stoppedMins = d.getHours() * 60 + d.getMinutes();
+      const late = stoppedMins > endTimeMins;
+      refs.stoppedAtEl.setText(`· Stopped ${timestampToHHMM(stoppedAt)}`);
+      refs.stoppedAtEl.className = late
+        ? "jw-timer-stopped-at jw-timer-stopped-at--late"
+        : "jw-timer-stopped-at";
     } else {
-      refs.deltaEl.setText(`+${formatMmSs(-remainingMs)} over`);
-      refs.deltaEl.className = "jw-timer-delta jw-timer-delta--over";
+      refs.stoppedAtEl.setText("");
+      refs.stoppedAtEl.className = "jw-timer-stopped-at";
     }
 
-    // Card colour state
+    // Card colour state + running indicator for CSS
     const state = colorState(elapsedMs, part.durationSec, status);
     refs.cardEl.setAttribute("data-state", state);
+    refs.cardEl.setAttribute("data-running", status === "running" ? "true" : "false");
 
-    // Play button label
+    // Play/pause button icon
     if (status === "running") {
       refs.playBtn.setText("⏸");
       refs.playBtn.setAttr("aria-label", "Pause timer");
