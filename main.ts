@@ -8,11 +8,15 @@ import {
 } from "obsidian";
 
 const VIEW_TYPE_TIMER_SIDEBAR = "jw-timer-sidebar-view";
+const STORAGE_VERSION = 1;
+const TIMER_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
 const UI_TEXT = {
   title: "⏱️",
   empty: "∅",
   open: "▶️",
   pause: "⏸️",
+  target: "🎯",
   reset: "🔄",
   delete: "🗑️",
   resetAll: "♻️"
@@ -22,6 +26,7 @@ interface TimerEntry {
   id: string;
   title: string;
   elapsedMs: number;
+  targetMs: number | null;
   running: boolean;
   startedAt: number | null;
 }
@@ -30,7 +35,21 @@ interface TimerUiRef {
   cardEl: HTMLElement;
   timerEl: HTMLElement;
   playStopBtn: HTMLButtonElement;
+  targetBtn: HTMLButtonElement;
   resetBtn: HTMLButtonElement;
+}
+
+interface StoredTimerState {
+  title: string;
+  elapsedMs: number;
+  targetMs: number | null;
+  deleted: boolean;
+  updatedAt: number;
+}
+
+interface TimerStorageData {
+  version: number;
+  timers: Record<string, StoredTimerState>;
 }
 
 function buildTimerId(filePath: string, heading: HeadingCache): string {
@@ -57,6 +76,7 @@ class TimerSidebarView extends ItemView {
   private listEl!: HTMLElement;
   private emptyStateEl!: HTMLElement;
   private tickHandle: number | null = null;
+  private persistHandle: number | null = null;
   private static readonly TITLE_MAX_LENGTH = 60;
 
   constructor(leaf: WorkspaceLeaf, private readonly plugin: TimerSidebarPlugin) {
@@ -116,6 +136,10 @@ class TimerSidebarView extends ItemView {
       this.updateTimerDisplays();
     }, 250);
 
+    this.persistHandle = window.setInterval(() => {
+      this.persistRunningSnapshots();
+    }, 5000);
+
     void this.refreshFromActiveFile();
   }
 
@@ -124,6 +148,13 @@ class TimerSidebarView extends ItemView {
       window.clearInterval(this.tickHandle);
       this.tickHandle = null;
     }
+    if (this.persistHandle !== null) {
+      window.clearInterval(this.persistHandle);
+      this.persistHandle = null;
+    }
+
+    await this.persistAllTimers(true);
+
     this.contentEl.removeClass("jw-timer-sidebar-root");
     this.timerUiRefs.clear();
   }
@@ -147,6 +178,7 @@ class TimerSidebarView extends ItemView {
       return lineA - lineB;
     });
     const rawHeadingTitles = this.extractRawHeadingTitles(fileContent, headings);
+    this.deletedTimerIds = this.plugin.getDeletedTimerIdsForFile(activeFile.path);
 
     const nextHeadingIds: string[] = [];
     const allHeadingIds = new Set<string>();
@@ -161,17 +193,22 @@ class TimerSidebarView extends ItemView {
       const headingLine = heading.position?.start.line ?? 0;
       const headingTitle = rawHeadingTitles.get(headingLine) ?? heading.heading;
       const existing = this.timers.get(id);
+      const stored = this.plugin.getStoredTimer(id);
 
       if (!existing) {
         this.timers.set(id, {
           id,
           title: headingTitle,
-          elapsedMs: 0,
+          elapsedMs: stored?.elapsedMs ?? 0,
+          targetMs: stored?.targetMs ?? null,
           running: false,
           startedAt: null
         });
       } else {
         existing.title = headingTitle;
+        if (existing.targetMs === null && stored?.targetMs !== undefined) {
+          existing.targetMs = stored.targetMs;
+        }
       }
 
       nextHeadingIds.push(id);
@@ -181,16 +218,26 @@ class TimerSidebarView extends ItemView {
     for (const existingId of [...this.timers.keys()]) {
       if (existingId.startsWith(`${activeFile.path}::`) && !nextIdsSet.has(existingId)) {
         this.timers.delete(existingId);
+        void this.plugin.removeStoredTimer(existingId);
       }
     }
 
     for (const deletedId of [...this.deletedTimerIds]) {
       if (deletedId.startsWith(`${activeFile.path}::`) && !allHeadingIds.has(deletedId)) {
         this.deletedTimerIds.delete(deletedId);
+        void this.plugin.removeStoredTimer(deletedId);
       }
     }
 
     this.currentHeadingIds = nextHeadingIds;
+
+    for (const id of nextHeadingIds) {
+      const entry = this.timers.get(id);
+      if (entry) {
+        this.persistTimer(entry);
+      }
+    }
+
     await this.renderList();
   }
 
@@ -245,6 +292,12 @@ class TimerSidebarView extends ItemView {
       playStopBtn.setAttr("aria-label", entry.running ? "Pause timer" : "Start timer");
       playStopBtn.setAttr("title", entry.running ? "Pause timer" : "Start timer");
 
+      const targetBtn = controls.createEl("button", {
+        cls: "jw-timer-btn",
+        text: UI_TEXT.target
+      });
+      targetBtn.setAttr("aria-label", "Configure target time");
+
       const resetBtn = controls.createEl("button", {
         cls: "jw-timer-btn",
         text: UI_TEXT.reset
@@ -267,6 +320,10 @@ class TimerSidebarView extends ItemView {
         }
       });
 
+      targetBtn.addEventListener("click", () => {
+        this.configureTargetTime(entry.id);
+      });
+
       resetBtn.addEventListener("click", () => {
         this.resetTimer(entry.id);
       });
@@ -277,7 +334,7 @@ class TimerSidebarView extends ItemView {
         }
       });
 
-      this.timerUiRefs.set(entry.id, { cardEl: card, timerEl, playStopBtn, resetBtn });
+      this.timerUiRefs.set(entry.id, { cardEl: card, timerEl, playStopBtn, targetBtn, resetBtn });
     }
 
     this.updateTimerDisplays();
@@ -297,6 +354,7 @@ class TimerSidebarView extends ItemView {
 
     entry.running = true;
     entry.startedAt = Date.now();
+    this.persistTimer(entry);
     this.updateTimerDisplays();
   }
 
@@ -307,6 +365,7 @@ class TimerSidebarView extends ItemView {
     entry.elapsedMs = this.getElapsed(entry);
     entry.running = false;
     entry.startedAt = null;
+    this.persistTimer(entry);
     this.updateTimerDisplays();
   }
 
@@ -317,19 +376,55 @@ class TimerSidebarView extends ItemView {
     entry.elapsedMs = 0;
     entry.running = false;
     entry.startedAt = null;
+    this.persistTimer(entry);
+    this.updateTimerDisplays();
+  }
+
+  private configureTargetTime(id: string): void {
+    const entry = this.timers.get(id);
+    if (!entry) return;
+
+    const currentMinutes = entry.targetMs === null ? "" : (entry.targetMs / 60000).toString();
+    const input = window.prompt("Target minutes (empty = clear)", currentMinutes);
+    if (input === null) {
+      return;
+    }
+
+    const normalized = input.trim().replace(",", ".");
+    if (!normalized) {
+      entry.targetMs = null;
+      this.persistTimer(entry);
+      this.updateTimerDisplays();
+      return;
+    }
+
+    const minutes = Number(normalized);
+    if (!Number.isFinite(minutes) || minutes <= 0) {
+      window.alert("Invalid target time");
+      return;
+    }
+
+    entry.targetMs = Math.round(minutes * 60 * 1000);
+    this.persistTimer(entry);
     this.updateTimerDisplays();
   }
 
   private deleteTimer(id: string): void {
+    const entry = this.timers.get(id);
     this.deletedTimerIds.add(id);
     this.timers.delete(id);
+    void this.plugin.markTimerDeleted(id, entry?.title ?? "", entry?.targetMs ?? null, entry?.elapsedMs ?? 0);
     this.currentHeadingIds = this.currentHeadingIds.filter((headingId) => headingId !== id);
     void this.renderList();
   }
 
   private deleteAllTimers(): void {
+    const filePath = this.currentFilePath;
     this.timers.clear();
     this.deletedTimerIds.clear();
+    if (filePath) {
+      void this.plugin.clearFileTimers(filePath);
+    }
     void this.refreshFromActiveFile();
   }
 
@@ -348,12 +443,78 @@ class TimerSidebarView extends ItemView {
       ui.playStopBtn.setAttr("aria-label", entry.running ? "Pause timer" : "Start timer");
       ui.playStopBtn.setAttr("title", entry.running ? "Pause timer" : "Start timer");
 
+      const targetMinutes = entry.targetMs === null ? "" : (entry.targetMs / 60000).toFixed(1).replace(/\.0$/, "");
+      ui.targetBtn.setAttr(
+        "title",
+        entry.targetMs === null ? "Configure target time" : `Target: ${targetMinutes} min`
+      );
+
       const elapsed = this.getElapsed(entry);
-      ui.cardEl.removeClass("jw-timer-card--running", "jw-timer-card--stopped");
-      if (entry.running) {
+      const hasTarget = entry.targetMs !== null;
+      const isOverTarget = hasTarget && elapsed > (entry.targetMs ?? 0);
+
+      ui.cardEl.removeClass("jw-timer-card--running", "jw-timer-card--stopped", "jw-timer-card--overdue-running");
+      ui.timerEl.removeClass("jw-timer-clock--target-over", "jw-timer-clock--target-ok");
+
+      if (entry.running && isOverTarget) {
+        ui.cardEl.addClass("jw-timer-card--overdue-running");
+        ui.timerEl.addClass("jw-timer-clock--target-over");
+      } else if (entry.running) {
         ui.cardEl.addClass("jw-timer-card--running");
       } else if (elapsed > 0) {
         ui.cardEl.addClass("jw-timer-card--stopped");
+      }
+
+      if (!entry.running && hasTarget) {
+        if (isOverTarget) {
+          ui.timerEl.addClass("jw-timer-clock--target-over");
+        } else {
+          ui.timerEl.addClass("jw-timer-clock--target-ok");
+        }
+      }
+    }
+  }
+
+  private persistTimer(entry: TimerEntry): void {
+    const elapsed = this.getElapsed(entry);
+    void this.plugin.upsertStoredTimer(entry.id, {
+      title: entry.title,
+      elapsedMs: elapsed,
+      targetMs: entry.targetMs,
+      deleted: false
+    });
+  }
+
+  private async persistAllTimers(freezeRunning: boolean): Promise<void> {
+    const updates: Promise<void>[] = [];
+
+    for (const entry of this.timers.values()) {
+      let elapsed = this.getElapsed(entry);
+      if (freezeRunning && entry.running) {
+        entry.elapsedMs = elapsed;
+        entry.running = false;
+        entry.startedAt = null;
+      } else if (!entry.running) {
+        elapsed = entry.elapsedMs;
+      }
+
+      updates.push(
+        this.plugin.upsertStoredTimer(entry.id, {
+          title: entry.title,
+          elapsedMs: elapsed,
+          targetMs: entry.targetMs,
+          deleted: false
+        })
+      );
+    }
+
+    await Promise.all(updates);
+  }
+
+  private persistRunningSnapshots(): void {
+    for (const entry of this.timers.values()) {
+      if (entry.running) {
+        this.persistTimer(entry);
       }
     }
   }
@@ -479,7 +640,15 @@ class TimerSidebarView extends ItemView {
 }
 
 export default class TimerSidebarPlugin extends Plugin {
+  private storage: TimerStorageData = { version: STORAGE_VERSION, timers: {} };
+  private saveHandle: number | null = null;
+
   async onload(): Promise<void> {
+    this.storage = this.normalizeStorageData(await this.loadData());
+    if (this.pruneOldTimers()) {
+      await this.saveData(this.storage);
+    }
+
     this.registerView(VIEW_TYPE_TIMER_SIDEBAR, (leaf) => new TimerSidebarView(leaf, this));
 
     this.addRibbonIcon("timer", "Open JW Timer sidebar", () => {
@@ -500,7 +669,151 @@ export default class TimerSidebarPlugin extends Plugin {
   }
 
   onunload(): void {
+    if (this.saveHandle !== null) {
+      window.clearTimeout(this.saveHandle);
+      this.saveHandle = null;
+      void this.saveData(this.storage);
+    }
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_TIMER_SIDEBAR);
+  }
+
+  getStoredTimer(id: string): StoredTimerState | undefined {
+    return this.storage.timers[id];
+  }
+
+  getDeletedTimerIdsForFile(filePath: string): Set<string> {
+    const deletedIds = new Set<string>();
+    const prefix = `${filePath}::`;
+
+    for (const [id, state] of Object.entries(this.storage.timers)) {
+      if (id.startsWith(prefix) && state.deleted) {
+        deletedIds.add(id);
+      }
+    }
+
+    return deletedIds;
+  }
+
+  async upsertStoredTimer(
+    id: string,
+    state: { title: string; elapsedMs: number; targetMs: number | null; deleted: boolean }
+  ): Promise<void> {
+    this.storage.timers[id] = {
+      title: state.title,
+      elapsedMs: Math.max(0, Math.floor(state.elapsedMs)),
+      targetMs: state.targetMs,
+      deleted: state.deleted,
+      updatedAt: Date.now()
+    };
+
+    this.scheduleSave();
+  }
+
+  async markTimerDeleted(id: string, title: string, targetMs: number | null, elapsedMs: number): Promise<void> {
+    this.storage.timers[id] = {
+      title,
+      elapsedMs: Math.max(0, Math.floor(elapsedMs)),
+      targetMs,
+      deleted: true,
+      updatedAt: Date.now()
+    };
+
+    this.scheduleSave();
+  }
+
+  async removeStoredTimer(id: string): Promise<void> {
+    if (!(id in this.storage.timers)) {
+      return;
+    }
+
+    delete this.storage.timers[id];
+    this.scheduleSave();
+  }
+
+  async clearFileTimers(filePath: string): Promise<void> {
+    const prefix = `${filePath}::`;
+    let changed = false;
+
+    for (const id of Object.keys(this.storage.timers)) {
+      if (id.startsWith(prefix)) {
+        delete this.storage.timers[id];
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.scheduleSave();
+    }
+  }
+
+  private normalizeStorageData(raw: unknown): TimerStorageData {
+    const fallback: TimerStorageData = { version: STORAGE_VERSION, timers: {} };
+    if (!raw || typeof raw !== "object") {
+      return fallback;
+    }
+
+    const maybeData = raw as Partial<TimerStorageData>;
+    if (!maybeData.timers || typeof maybeData.timers !== "object") {
+      return fallback;
+    }
+
+    const normalizedTimers: Record<string, StoredTimerState> = {};
+    for (const [id, value] of Object.entries(maybeData.timers)) {
+      if (!value || typeof value !== "object") {
+        continue;
+      }
+
+      const timer = value as Partial<StoredTimerState>;
+      normalizedTimers[id] = {
+        title: typeof timer.title === "string" ? timer.title : "",
+        elapsedMs: Number.isFinite(timer.elapsedMs) ? Math.max(0, Math.floor(timer.elapsedMs ?? 0)) : 0,
+        targetMs:
+          timer.targetMs === null || timer.targetMs === undefined
+            ? null
+            : Number.isFinite(timer.targetMs)
+              ? Math.max(0, Math.floor(timer.targetMs))
+              : null,
+        deleted: Boolean(timer.deleted),
+        updatedAt:
+          Number.isFinite(timer.updatedAt) && (timer.updatedAt ?? 0) > 0
+            ? Math.floor(timer.updatedAt as number)
+            : Date.now()
+      };
+    }
+
+    return {
+      version: STORAGE_VERSION,
+      timers: normalizedTimers
+    };
+  }
+
+  private pruneOldTimers(): boolean {
+    const now = Date.now();
+    let changed = false;
+
+    for (const [id, timer] of Object.entries(this.storage.timers)) {
+      if (now - timer.updatedAt > TIMER_RETENTION_MS) {
+        delete this.storage.timers[id];
+        changed = true;
+      }
+    }
+
+    return changed;
+  }
+
+  private scheduleSave(): void {
+    if (this.pruneOldTimers()) {
+      // Keep storage bounded before persisting to disk.
+    }
+
+    if (this.saveHandle !== null) {
+      window.clearTimeout(this.saveHandle);
+    }
+
+    this.saveHandle = window.setTimeout(() => {
+      this.saveHandle = null;
+      void this.saveData(this.storage);
+    }, 400);
   }
 
   private async activateView(): Promise<void> {
