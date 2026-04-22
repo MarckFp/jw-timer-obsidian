@@ -18,6 +18,20 @@ const SECTION_FALLBACK: Record<string, string> = {
   closing:   "Closing",
 };
 
+// Opening/Closing labels per locale language code (WOL only has h2 for the 3 middle sections)
+const LOCALE_OPENING_CLOSING: Record<string, [string, string]> = {
+  "lp-e":   ["Opening",    "Closing"],
+  "lp-s":   ["Apertura",   "Conclusión"],
+  "lp-f":   ["Ouverture",  "Conclusion"],
+  "lp-t":   ["Abertura",   "Conclusão"],
+  "lp-g":   ["Eröffnung",  "Abschluss"],
+  "lp-i":   ["Apertura",   "Conclusione"],
+  "lp-u":   ["Начало",     "Заключение"],
+  "lp-d":   ["Opening",    "Sluiting"],
+  "lp-p":   ["Otwarcie",   "Zakończenie"],
+  "lp-chs": ["开场",        "结束"],
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatMmSs(ms: number): string {
@@ -82,6 +96,7 @@ export class JwTimerView extends ItemView {
   private tickHandle: number | null = null;
   private statusEl!: HTMLElement;
   private navLabelEl!: HTMLElement;
+  private todayBtn!: HTMLButtonElement;
   private listEl!: HTMLElement;
 
   // Pagination state — initialised to current week in onOpen
@@ -104,10 +119,24 @@ export class JwTimerView extends ItemView {
     // ── Week navigation ──────────────────────────────────────────────────────
     const navEl = root.createDiv({ cls: "jw-timer-nav" });
     const prevBtn = navEl.createEl("button", { cls: "jw-timer-nav-btn", text: "◀" });
+    prevBtn.setAttr("aria-label", "Previous week");
     this.navLabelEl = navEl.createDiv({ cls: "jw-timer-nav-label" });
     const nextBtn = navEl.createEl("button", { cls: "jw-timer-nav-btn", text: "▶" });
+    nextBtn.setAttr("aria-label", "Next week");
+    this.todayBtn = navEl.createEl("button", { cls: "jw-timer-nav-today", text: "Today" });
+    this.todayBtn.setAttr("aria-label", "Jump to current week");
+    this.todayBtn.style.display = "none";
     prevBtn.addEventListener("click", () => void this.navigateWeek(-1));
     nextBtn.addEventListener("click", () => void this.navigateWeek(+1));
+    this.todayBtn.addEventListener("click", () => void this.navigateToToday());
+
+    // ── Reset-all toolbar ────────────────────────────────────────────────────
+    const toolbar = root.createDiv({ cls: "jw-timer-toolbar" });
+    const resetAllBtn = toolbar.createEl("button", {
+      cls: "jw-timer-btn jw-timer-btn-reset-all",
+      text: "Reset All",
+    });
+    resetAllBtn.addEventListener("click", () => this.handleResetAll());
 
     // ── Status + list ────────────────────────────────────────────────────────
     this.statusEl = root.createDiv({ cls: "jw-timer-status" });
@@ -157,6 +186,27 @@ export class JwTimerView extends ItemView {
     await this.loadScheduleForWeek(y, w);
   }
 
+  // ─── Today helpers ──────────────────────────────────────────────────────────
+
+  private isCurrentWeek(): boolean {
+    const year = new Date().getFullYear();
+    const week = currentWeekNumber();
+    return this.viewYear === year && this.viewWeek === week;
+  }
+
+  private updateTodayVisibility(): void {
+    this.todayBtn.style.display = this.isCurrentWeek() ? "none" : "";
+  }
+
+  private async navigateToToday(): Promise<void> {
+    this.viewYear = new Date().getFullYear();
+    this.viewWeek = currentWeekNumber();
+    this.schedule = null;
+    this.cards.clear();
+    this.listEl.empty();
+    await this.loadScheduleForWeek(this.viewYear, this.viewWeek);
+  }
+
   // ─── Schedule loading ─────────────────────────────────────────────────────────
 
   private async loadScheduleForWeek(year: number, week: number): Promise<void> {
@@ -183,6 +233,7 @@ export class JwTimerView extends ItemView {
     this.navLabelEl.setText(schedule.weekLabel);
     this.setStatus("ok", "");
     this.renderSchedule(schedule);
+    this.updateTodayVisibility();
   }
 
   private setStatus(type: "ok" | "loading" | "error", text: string): void {
@@ -206,10 +257,14 @@ export class JwTimerView extends ItemView {
       cursor += Math.ceil(part.durationSec / 60);
     }
 
-    // Merge scraped section labels (in page language) with English fallback
+    // Opening/Closing labels from locale map; middle sections from scraper (page language)
+    const langKey = this.plugin.settings.wolLocale.split("/")[1] ?? "lp-e";
+    const [openingLabel, closingLabel] = LOCALE_OPENING_CLOSING[langKey] ?? ["Opening", "Closing"];
     const sectionLabels: Record<string, string> = {
       ...SECTION_FALLBACK,
       ...(schedule.sectionLabels ?? {}),
+      opening: openingLabel,
+      closing: closingLabel,
     };
 
     // Group parts by section
@@ -267,9 +322,9 @@ export class JwTimerView extends ItemView {
 
     // Controls
     const controls = card.createDiv({ cls: "jw-timer-controls" });
-    const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: "▶" });
+    const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: "Play" });
     playBtn.setAttr("aria-label", "Start timer");
-    const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: "↺" });
+    const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: "Reset" });
     resetBtn.setAttr("aria-label", "Reset timer");
 
     playBtn.addEventListener("click", () => this.handlePlayPause(part));
@@ -356,13 +411,23 @@ export class JwTimerView extends ItemView {
     refs.cardEl.setAttribute("data-state", state);
     refs.cardEl.setAttribute("data-running", status === "running" ? "true" : "false");
 
-    // Play/pause button icon
+    // Play/pause button label
     if (status === "running") {
-      refs.playBtn.setText("⏸");
+      refs.playBtn.setText("Pause");
       refs.playBtn.setAttr("aria-label", "Pause timer");
     } else {
-      refs.playBtn.setText("▶");
+      refs.playBtn.setText("Play");
       refs.playBtn.setAttr("aria-label", status === "paused" ? "Resume timer" : "Start timer");
     }
+  }
+
+  // ─── Reset All ────────────────────────────────────────────────────────────
+
+  private handleResetAll(): void {
+    if (!this.schedule) return;
+    for (const part of this.schedule.parts) {
+      this.plugin.timerEngine.reset(this.weekKey, part.order);
+    }
+    this.renderSchedule(this.schedule);
   }
 }

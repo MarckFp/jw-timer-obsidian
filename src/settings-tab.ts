@@ -35,23 +35,34 @@ export class JwTimerSettingsTab extends PluginSettingTab {
         for (const [label, value] of Object.entries(WOL_LOCALES)) {
           drop.addOption(value, label);
         }
-        drop.setValue(this.plugin.settings.wolLocale);
+        // If the current locale is a known dropdown value, select it; otherwise leave at default
+        const knownValues = Object.values(WOL_LOCALES);
+        if (knownValues.includes(this.plugin.settings.wolLocale)) {
+          drop.setValue(this.plugin.settings.wolLocale);
+        }
         drop.onChange(async (value) => {
           this.plugin.settings.wolLocale = value;
           await this.plugin.saveSettings();
+          // Clear the custom-locale text field so it doesn’t mislead
+          if (customLocaleText) customLocaleText.setValue("");
         });
       });
 
     // Custom locale override
+    let customLocaleText: import("obsidian").TextComponent;
+    const knownValues = Object.values(WOL_LOCALES);
+    const currentIsCustom = !knownValues.includes(this.plugin.settings.wolLocale);
     new Setting(containerEl)
       .setName("Custom locale (advanced)")
       .setDesc(
         'Override with any WOL locale path, e.g. "r4/lp-s". Leave blank to use the dropdown selection.'
       )
       .addText((text) => {
+        customLocaleText = text;
         text
           .setPlaceholder("r1/lp-e")
-          .setValue("")
+          // Show the saved custom value only when it isn’t one of the dropdown options
+          .setValue(currentIsCustom ? this.plugin.settings.wolLocale : "")
           .onChange(async (value) => {
             const trimmed = value.trim();
             if (trimmed) {
