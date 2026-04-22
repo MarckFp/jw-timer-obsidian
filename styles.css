@@ -53,12 +53,6 @@
   border-color: color-mix(in srgb, var(--color-orange) 65%, var(--background-modifier-border));
 }
 
-.jw-timer-card.jw-timer-card--overdue-running {
-  background: color-mix(in srgb, var(--background-primary) 70%, var(--color-red));
-  border-color: color-mix(in srgb, var(--color-red) 72%, var(--background-modifier-border));
-  animation: jw-timer-overdue-blink 0.95s steps(2, end) infinite;
-}
-
 .jw-timer-card-title {
   font-weight: 600;
   font-size: 0.92rem;
@@ -79,14 +73,6 @@
   font-family: "IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace;
   font-size: 1.08rem;
   margin-bottom: 0.55rem;
-}
-
-.jw-timer-clock.jw-timer-clock--target-over {
-  color: var(--color-red);
-}
-
-.jw-timer-clock.jw-timer-clock--target-ok {
-  color: var(--color-green);
 }
 
 .jw-timer-controls {
@@ -116,20 +102,6 @@
 
 .jw-timer-btn-danger {
   border-color: color-mix(in srgb, var(--color-red) 55%, var(--background-modifier-border));
-}
-
-@keyframes jw-timer-overdue-blink {
-  0% {
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-  }
-
-  50% {
-    box-shadow: 0 0 0.5rem color-mix(in srgb, var(--color-red) 60%, transparent);
-  }
-
-  100% {
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-  }
 }
 
 .jw-timer-footer {
@@ -170,7 +142,7 @@
 
   .jw-timer-controls {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .jw-timer-btn {

@@ -2,9 +2,7 @@ import {
   App,
   ItemView,
   MarkdownRenderer,
-  Modal,
   Plugin,
-  Setting,
   WorkspaceLeaf,
   HeadingCache
 } from "obsidian";
@@ -18,7 +16,6 @@ const UI_TEXT = {
   empty: "∅",
   open: "▶️",
   pause: "⏸️",
-  target: "🎯",
   reset: "🔄",
   delete: "🗑️",
   resetAll: "♻️"
@@ -28,7 +25,6 @@ interface TimerEntry {
   id: string;
   title: string;
   elapsedMs: number;
-  targetMs: number | null;
   running: boolean;
   startedAt: number | null;
 }
@@ -37,7 +33,6 @@ interface TimerUiRef {
   cardEl: HTMLElement;
   timerEl: HTMLElement;
   playStopBtn: HTMLButtonElement;
-  targetBtn: HTMLButtonElement;
   resetBtn: HTMLButtonElement;
 }
 
@@ -202,15 +197,11 @@ class TimerSidebarView extends ItemView {
           id,
           title: headingTitle,
           elapsedMs: stored?.elapsedMs ?? 0,
-          targetMs: stored?.targetMs ?? null,
           running: false,
           startedAt: null
         });
       } else {
         existing.title = headingTitle;
-        if (existing.targetMs === null && stored?.targetMs !== undefined) {
-          existing.targetMs = stored.targetMs;
-        }
       }
 
       nextHeadingIds.push(id);
@@ -294,12 +285,6 @@ class TimerSidebarView extends ItemView {
       playStopBtn.setAttr("aria-label", entry.running ? "Pause timer" : "Start timer");
       playStopBtn.setAttr("title", entry.running ? "Pause timer" : "Start timer");
 
-      const targetBtn = controls.createEl("button", {
-        cls: "jw-timer-btn",
-        text: UI_TEXT.target
-      });
-      targetBtn.setAttr("aria-label", "Configure target time");
-
       const resetBtn = controls.createEl("button", {
         cls: "jw-timer-btn",
         text: UI_TEXT.reset
@@ -322,10 +307,6 @@ class TimerSidebarView extends ItemView {
         }
       });
 
-      targetBtn.addEventListener("click", () => {
-        this.configureTargetTime(entry.id);
-      });
-
       resetBtn.addEventListener("click", () => {
         this.resetTimer(entry.id);
       });
@@ -336,7 +317,7 @@ class TimerSidebarView extends ItemView {
         }
       });
 
-      this.timerUiRefs.set(entry.id, { cardEl: card, timerEl, playStopBtn, targetBtn, resetBtn });
+      this.timerUiRefs.set(entry.id, { cardEl: card, timerEl, playStopBtn, resetBtn });
     }
 
     this.updateTimerDisplays();
@@ -382,22 +363,11 @@ class TimerSidebarView extends ItemView {
     this.updateTimerDisplays();
   }
 
-  private configureTargetTime(id: string): void {
-    const entry = this.timers.get(id);
-    if (!entry) return;
-
-    new TargetTimeModal(this.app, entry.targetMs, (newTargetMs) => {
-      entry.targetMs = newTargetMs;
-      this.persistTimer(entry);
-      this.updateTimerDisplays();
-    }).open();
-  }
-
   private deleteTimer(id: string): void {
     const entry = this.timers.get(id);
     this.deletedTimerIds.add(id);
     this.timers.delete(id);
-    void this.plugin.markTimerDeleted(id, entry?.title ?? "", entry?.targetMs ?? null, entry?.elapsedMs ?? 0);
+    void this.plugin.markTimerDeleted(id, entry?.title ?? "", null, entry?.elapsedMs ?? 0);
     this.currentHeadingIds = this.currentHeadingIds.filter((headingId) => headingId !== id);
     void this.renderList();
   }
@@ -427,112 +397,15 @@ class TimerSidebarView extends ItemView {
       ui.playStopBtn.setAttr("aria-label", entry.running ? "Pause timer" : "Start timer");
       ui.playStopBtn.setAttr("title", entry.running ? "Pause timer" : "Start timer");
 
-      const targetMinutes = entry.targetMs === null ? "" : (entry.targetMs / 60000).toFixed(1).replace(/\.0$/, "");
-      ui.targetBtn.setAttr(
-        "title",
-        entry.targetMs === null ? "Configure target time" : `Target: ${targetMinutes} min`
-      );
-
       const elapsed = this.getElapsed(entry);
-      const hasTarget = entry.targetMs !== null;
-      const isOverTarget = hasTarget && elapsed > (entry.targetMs ?? 0);
+      ui.cardEl.removeClass("jw-timer-card--running", "jw-timer-card--stopped");
 
-      ui.cardEl.removeClass("jw-timer-card--running", "jw-timer-card--stopped", "jw-timer-card--overdue-running");
-      ui.timerEl.removeClass("jw-timer-clock--target-over", "jw-timer-clock--target-ok");
-
-      if (entry.running && isOverTarget) {
-        ui.cardEl.addClass("jw-timer-card--overdue-running");
-        ui.timerEl.addClass("jw-timer-clock--target-over");
-      } else if (entry.running) {
+      if (entry.running) {
         ui.cardEl.addClass("jw-timer-card--running");
       } else if (elapsed > 0) {
         ui.cardEl.addClass("jw-timer-card--stopped");
       }
-
-      if (!entry.running && hasTarget) {
-        if (isOverTarget) {
-          ui.timerEl.addClass("jw-timer-clock--target-over");
-        } else {
-          ui.timerEl.addClass("jw-timer-clock--target-ok");
-        }
-      }
     }
-  }
-
-}
-
-class TargetTimeModal extends Modal {
-  private inputValue: string;
-
-  constructor(
-    app: App,
-    private readonly currentTargetMs: number | null,
-    private readonly onSubmit: (targetMs: number | null) => void
-  ) {
-    super(app);
-    this.inputValue = currentTargetMs === null ? "" : (currentTargetMs / 60000).toString();
-  }
-
-  onOpen(): void {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl("h3", { text: "Set target time" });
-
-    new Setting(contentEl)
-      .setName("Target (minutes)")
-      .setDesc("Leave empty to remove the target. Decimals allowed (e.g. 1.5 = 1 min 30 s).")
-      .addText((text) => {
-        text.setValue(this.inputValue);
-        text.inputEl.setAttribute("type", "number");
-        text.inputEl.setAttribute("min", "0");
-        text.inputEl.setAttribute("step", "0.5");
-        text.inputEl.style.width = "6rem";
-        text.onChange((value) => {
-          this.inputValue = value;
-        });
-        text.inputEl.addEventListener("keydown", (evt) => {
-          if (evt.key === "Enter") {
-            this.submit();
-          }
-        });
-        window.setTimeout(() => text.inputEl.focus(), 50);
-      });
-
-    const btnRow = contentEl.createDiv({ cls: "modal-button-container" });
-    btnRow.createEl("button", { text: "Clear target", cls: "mod-warning" }).addEventListener("click", () => {
-      this.onSubmit(null);
-      this.close();
-    });
-    btnRow.createEl("button", { text: "Save", cls: "mod-cta" }).addEventListener("click", () => {
-      this.submit();
-    });
-  }
-
-  private submit(): void {
-    const normalized = this.inputValue.trim().replace(",", ".");
-    if (!normalized) {
-      this.onSubmit(null);
-      this.close();
-      return;
-    }
-
-    const minutes = Number(normalized);
-    if (!Number.isFinite(minutes) || minutes <= 0) {
-      const errorEl = (this.contentEl.querySelector(".jw-target-error") as HTMLElement | null) ?? (() => {
-        const el = this.contentEl.createEl("p", { cls: "jw-target-error" });
-        el.style.color = "var(--color-red)";
-        return el;
-      })();
-      errorEl.setText("Enter a positive number of minutes.");
-      return;
-    }
-
-    this.onSubmit(Math.round(minutes * 60 * 1000));
-    this.close();
-  }
-
-  onClose(): void {
-    this.contentEl.empty();
   }
 
   private persistTimer(entry: TimerEntry): void {
@@ -540,7 +413,7 @@ class TargetTimeModal extends Modal {
     void this.plugin.upsertStoredTimer(entry.id, {
       title: entry.title,
       elapsedMs: elapsed,
-      targetMs: entry.targetMs,
+      targetMs: null,
       deleted: false
     });
   }
@@ -562,7 +435,7 @@ class TargetTimeModal extends Modal {
         this.plugin.upsertStoredTimer(entry.id, {
           title: entry.title,
           elapsedMs: elapsed,
-          targetMs: entry.targetMs,
+          targetMs: null,
           deleted: false
         })
       );
