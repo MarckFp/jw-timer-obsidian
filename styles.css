@@ -9,7 +9,7 @@
   gap: 0.75rem;
   padding: 0.8rem;
   padding-bottom: calc(2.2rem + env(safe-area-inset-bottom, 0px));
-  background: var(--background-primary);
+  background: transparent;
 }
 
 .jw-timer-title {
@@ -107,7 +107,7 @@
 .jw-timer-footer {
   position: sticky;
   bottom: 0;
-  background: linear-gradient(to top, var(--background-primary), transparent);
+  background: transparent;
   padding-top: 0.35rem;
   padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }

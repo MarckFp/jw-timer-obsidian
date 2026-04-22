@@ -232,13 +232,7 @@ class TimerSidebarView extends ItemView {
 
       const card = this.listEl.createDiv({ cls: "jw-timer-card" });
       const titleEl = card.createDiv({ cls: "jw-timer-card-title" });
-      const titleData = await this.getRenderedTitle(entry.title);
-      if (titleData.trimmed) {
-        titleEl.setText(titleData.content);
-      } else {
-        await MarkdownRenderer.render(this.app, titleData.content, titleEl, this.currentFilePath ?? "", this);
-        this.restoreInlineHtmlAttributes(titleEl, entry.title);
-      }
+      await this.renderTitleContent(titleEl, entry.title);
 
       const timerEl = card.createDiv({ cls: "jw-timer-clock", text: formatDuration(this.getElapsed(entry)) });
 
@@ -364,17 +358,22 @@ class TimerSidebarView extends ItemView {
     }
   }
 
-  private async getRenderedTitle(rawTitle: string): Promise<{ content: string; trimmed: boolean }> {
-    const tempEl = document.createElement("div");
-    await MarkdownRenderer.render(this.app, rawTitle, tempEl, this.currentFilePath ?? "", this);
+  private async renderTitleContent(titleEl: HTMLElement, rawTitle: string): Promise<void> {
+    const renderedEl = document.createElement("div");
+    await MarkdownRenderer.render(this.app, rawTitle, renderedEl, this.currentFilePath ?? "", this);
+    this.restoreInlineHtmlAttributes(renderedEl, rawTitle);
 
-    const plain = (tempEl.textContent ?? "").replace(/\s+/g, " ").trim();
-    if (plain.length <= TimerSidebarView.TITLE_MAX_LENGTH) {
-      return { content: rawTitle, trimmed: false };
+    const plain = (renderedEl.textContent ?? "").replace(/\s+/g, " ").trim();
+    if (plain.length > TimerSidebarView.TITLE_MAX_LENGTH) {
+      this.truncateRenderedContent(renderedEl, TimerSidebarView.TITLE_MAX_LENGTH);
+      titleEl.setAttr("title", plain);
+      titleEl.setAttr("aria-label", plain);
     }
 
-    const shortened = `${plain.slice(0, TimerSidebarView.TITLE_MAX_LENGTH - 3).trimEnd()}...`;
-    return { content: shortened, trimmed: true };
+    titleEl.empty();
+    while (renderedEl.firstChild) {
+      titleEl.appendChild(renderedEl.firstChild);
+    }
   }
 
   private restoreInlineHtmlAttributes(containerEl: HTMLElement, rawTitle: string): void {
@@ -410,6 +409,70 @@ class TimerSidebarView extends ItemView {
       usedTargets.add(targetEl);
       for (const attr of sourceEl.getAttributeNames()) {
         targetEl.setAttribute(attr, sourceEl.getAttribute(attr) ?? "");
+      }
+    }
+  }
+
+  private truncateRenderedContent(containerEl: HTMLElement, maxLength: number): void {
+    const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT);
+    const textNodes: Text[] = [];
+
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode as Text);
+    }
+
+    let usedLength = 0;
+    let reachedLimit = false;
+
+    for (const textNode of textNodes) {
+      const normalized = textNode.textContent?.replace(/\s+/g, " ") ?? "";
+      if (!normalized.trim()) {
+        if (reachedLimit) {
+          textNode.textContent = "";
+        }
+        continue;
+      }
+
+      if (reachedLimit) {
+        textNode.textContent = "";
+        continue;
+      }
+
+      const remaining = maxLength - usedLength;
+      if (normalized.length <= remaining) {
+        usedLength += normalized.length;
+        textNode.textContent = normalized;
+        continue;
+      }
+
+      const sliceLength = Math.max(0, remaining - 3);
+      const truncatedText = `${normalized.slice(0, sliceLength).trimEnd()}...`;
+      textNode.textContent = truncatedText;
+      reachedLimit = true;
+      usedLength = maxLength;
+    }
+
+    this.removeEmptyNodes(containerEl);
+  }
+
+  private removeEmptyNodes(rootEl: HTMLElement): void {
+    const childNodes = Array.from(rootEl.childNodes);
+
+    for (const childNode of childNodes) {
+      if (childNode.nodeType === Node.TEXT_NODE) {
+        if (!(childNode.textContent ?? "").trim()) {
+          childNode.remove();
+        }
+        continue;
+      }
+
+      if (childNode instanceof HTMLElement) {
+        this.removeEmptyNodes(childNode);
+        const hasMeaningfulText = (childNode.textContent ?? "").trim().length > 0;
+        const hasElementChildren = childNode.children.length > 0;
+        if (!hasMeaningfulText && !hasElementChildren) {
+          childNode.remove();
+        }
       }
     }
   }
