@@ -1,3 +1,4 @@
+import { requestUrl } from "obsidian";
 import type { WeeklySchedule, MeetingPart, MeetingSection } from "./types";
 
 // ─── URL helpers ──────────────────────────────────────────────────────────────
@@ -10,20 +11,12 @@ function isoWeek(date: Date): number {
   return Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
 }
 
-function currentYear(): number {
-  return new Date().getFullYear();
-}
-
 export function currentWeekNumber(): number {
   return isoWeek(new Date());
 }
 
 export function buildWolUrl(locale: string, year: number, week: number): string {
   return `https://wol.jw.org/en/wol/meetings/${locale}/${year}/${week}`;
-}
-
-export function buildDocUrl(locale: string, docId: string): string {
-  return `https://wol.jw.org/en/wol/d/${locale}/${docId}`;
 }
 
 export function cacheKey(year: number, week: number): string {
@@ -47,65 +40,58 @@ const FIXED_DURATIONS: Record<string, number> = {
 /** Regex to extract duration in minutes from strings like "(10 min.)" or "(2 min.)" */
 const DURATION_RE = /\((\d+)\s*min\.\)/i;
 
-interface RawPart {
-  label: string;
-  section: MeetingSection;
-  durationSec: number;
-}
-
 function parseDuration(text: string): number | null {
   const m = DURATION_RE.exec(text);
   return m ? parseInt(m[1], 10) * 60 : null;
 }
 
-/**
- * Fetches and parses the WOL meetings page for a given locale/year/week.
- * Returns null if the page cannot be reached or parsed.
- */
 export async function fetchWeekSchedule(
   locale: string,
   year: number,
   week: number
 ): Promise<WeeklySchedule | null> {
-  // Step 1: get the meetings index page to find the doc link for this week
+  // Step 1: fetch the meetings index page to find the doc link for this week
   const meetingsUrl = buildWolUrl(locale, year, week);
 
   let meetingsHtml: string;
   try {
-    const resp = await fetch(meetingsUrl, {
+    const resp = await requestUrl({
+      url: meetingsUrl,
       headers: { "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)" },
     });
-    if (!resp.ok) return null;
-    meetingsHtml = await resp.text();
+    if (resp.status < 200 || resp.status >= 300) return null;
+    meetingsHtml = resp.text;
   } catch {
     return null;
   }
 
-  // Extract the workbook doc link  (/en/wol/d/<locale>/<docId>)
-  const docLinkRe = /href="(\/en\/wol\/d\/[^"]+)"/g;
+  // Extract the workbook doc path — WOL uses relative hrefs like /en/wol/d/<locale>/<docId>
+  const docLinkRe = /href="(\/[^"]+\/wol\/d\/[^"#?]+)"/g;
   const docLinks: string[] = [];
   let m: RegExpExecArray | null;
   while ((m = docLinkRe.exec(meetingsHtml)) !== null) {
     const href = m[1];
-    // We want the workbook link, not the Watchtower study link
+    // MWB docIds are 9+ digits; Watchtower study docIds are shorter
     if (/\/\d{9,}$/.test(href)) {
       docLinks.push(href);
     }
   }
 
-  // The first long-docId link on the meetings page is the MWB week
-  const mwbDocPath = docLinks.find((l) => !l.includes("2026283") /* exclude WT study */);
-  if (!mwbDocPath) return null;
+  if (docLinks.length === 0) return null;
 
-  // Step 2: fetch the actual workbook doc page
+  // First 9-digit link is the MWB week
+  const mwbDocPath = docLinks[0];
+
+  // Step 2: fetch the actual workbook article page
   const docUrl = `https://wol.jw.org${mwbDocPath}`;
   let docHtml: string;
   try {
-    const resp = await fetch(docUrl, {
+    const resp = await requestUrl({
+      url: docUrl,
       headers: { "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)" },
     });
-    if (!resp.ok) return null;
-    docHtml = await resp.text();
+    if (resp.status < 200 || resp.status >= 300) return null;
+    docHtml = resp.text;
   } catch {
     return null;
   }
