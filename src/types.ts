@@ -9,6 +9,8 @@ export interface MeetingPart {
   durationSec: number;
   /** Order within the full meeting programme */
   order: number;
+  /** If true, this part has no stopwatch — its duration is only used for schedule timing (e.g. song) */
+  isSeparator?: boolean;
 }
 
 export type MeetingSection =

@@ -179,6 +179,7 @@ export class JwTimerView extends ItemView {
       });
 
       for (const part of parts) {
+        if (part.isSeparator) continue; // counts for scheduling but no stopwatch card
         this.renderCard(sectionEl, part, scheduledStart.get(part.order) ?? startMinutes);
       }
     }
