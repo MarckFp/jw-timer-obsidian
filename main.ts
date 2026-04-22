@@ -97,7 +97,9 @@ class TimerSidebarView extends ItemView {
     deleteAllBtn.setAttr("title", "Reset all timers");
 
     deleteAllBtn.addEventListener("click", () => {
-      this.deleteAllTimers();
+      if (this.confirmAction("Reset all timers?")) {
+        this.deleteAllTimers();
+      }
     });
 
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => void this.refreshFromActiveFile()));
@@ -235,6 +237,7 @@ class TimerSidebarView extends ItemView {
         titleEl.setText(titleData.content);
       } else {
         await MarkdownRenderer.render(this.app, titleData.content, titleEl, this.currentFilePath ?? "", this);
+        this.restoreInlineHtmlAttributes(titleEl, entry.title);
       }
 
       const timerEl = card.createDiv({ cls: "jw-timer-clock", text: formatDuration(this.getElapsed(entry)) });
@@ -275,7 +278,9 @@ class TimerSidebarView extends ItemView {
       });
 
       deleteBtn.addEventListener("click", () => {
-        this.deleteTimer(entry.id);
+        if (this.confirmAction("Delete this timer?")) {
+          this.deleteTimer(entry.id);
+        }
       });
 
       this.timerUiRefs.set(entry.id, { cardEl: card, timerEl, playStopBtn, resetBtn });
@@ -334,6 +339,10 @@ class TimerSidebarView extends ItemView {
     void this.refreshFromActiveFile();
   }
 
+  private confirmAction(message: string): boolean {
+    return window.confirm(message);
+  }
+
   private updateTimerDisplays(): void {
     for (const id of this.currentHeadingIds) {
       const entry = this.timers.get(id);
@@ -366,6 +375,43 @@ class TimerSidebarView extends ItemView {
 
     const shortened = `${plain.slice(0, TimerSidebarView.TITLE_MAX_LENGTH - 3).trimEnd()}...`;
     return { content: shortened, trimmed: true };
+  }
+
+  private restoreInlineHtmlAttributes(containerEl: HTMLElement, rawTitle: string): void {
+    const parsedRoot = document.createElement("div");
+    parsedRoot.innerHTML = rawTitle;
+
+    const sourceElements = Array.from(parsedRoot.querySelectorAll("*")).filter((element) => {
+      const attributeNames = element.getAttributeNames();
+      return attributeNames.length > 0;
+    });
+    this.applyMatchingAttributes(sourceElements, containerEl);
+  }
+
+  private applyMatchingAttributes(sourceElements: Element[], containerEl: HTMLElement): void {
+    const usedTargets = new Set<Element>();
+
+    for (const sourceEl of sourceElements) {
+      const sourceText = sourceEl.textContent?.replace(/\s+/g, " ").trim();
+      if (!sourceText) continue;
+
+      const candidateTargets = Array.from(containerEl.querySelectorAll(sourceEl.tagName.toLowerCase()));
+      const targetEl = candidateTargets.find((candidate) => {
+        if (usedTargets.has(candidate)) {
+          return false;
+        }
+
+        const candidateText = candidate.textContent?.replace(/\s+/g, " ").trim();
+        return candidateText === sourceText;
+      });
+
+      if (!targetEl) continue;
+
+      usedTargets.add(targetEl);
+      for (const attr of sourceEl.getAttributeNames()) {
+        targetEl.setAttribute(attr, sourceEl.getAttribute(attr) ?? "");
+      }
+    }
   }
 }
 
