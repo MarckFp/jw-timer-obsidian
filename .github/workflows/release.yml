@@ -25,6 +25,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Update plugin version from tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+
+          node -e '
+            const fs = require("fs");
+            const version = process.argv[1];
+
+            const manifestPath = "manifest.json";
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+            manifest.version = version;
+            fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+            const versionsPath = "versions.json";
+            const versions = JSON.parse(fs.readFileSync(versionsPath, "utf8"));
+            const minAppVersion = manifest.minAppVersion;
+            fs.writeFileSync(versionsPath, `${JSON.stringify({ [version]: minAppVersion }, null, 2)}\n`);
+          ' "$VERSION"
+
       - name: Build plugin
         run: npm run build
 

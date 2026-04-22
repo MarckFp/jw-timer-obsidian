@@ -8,6 +8,15 @@ import {
 } from "obsidian";
 
 const VIEW_TYPE_TIMER_SIDEBAR = "jw-timer-sidebar-view";
+const UI_TEXT = {
+  title: "⏱️",
+  empty: "∅",
+  open: "▶️",
+  pause: "⏸️",
+  reset: "🔄",
+  delete: "🗑️",
+  resetAll: "♻️"
+} as const;
 
 interface TimerEntry {
   id: string;
@@ -40,6 +49,7 @@ function formatDuration(ms: number): string {
 
 class TimerSidebarView extends ItemView {
   private timers = new Map<string, TimerEntry>();
+  private deletedTimerIds = new Set<string>();
   private timerUiRefs = new Map<string, TimerUiRef>();
   private currentHeadingIds: string[] = [];
   private currentFilePath: string | null = null;
@@ -71,17 +81,20 @@ class TimerSidebarView extends ItemView {
 
     const wrapper = this.contentEl.createDiv({ cls: "jw-timer-wrapper" });
 
-    const titleEl = wrapper.createEl("h2", { text: "Timers by heading", cls: "jw-timer-title" });
+    const titleEl = wrapper.createEl("h2", { text: UI_TEXT.title, cls: "jw-timer-title" });
     titleEl.setAttr("aria-live", "polite");
+    titleEl.setAttr("aria-label", "Timers by heading");
 
     this.listEl = wrapper.createDiv({ cls: "jw-timer-list" });
     this.emptyStateEl = wrapper.createDiv({ cls: "jw-timer-empty" });
 
     const footerEl = wrapper.createDiv({ cls: "jw-timer-footer" });
     const deleteAllBtn = footerEl.createEl("button", {
-      text: "Reset timers",
+      text: UI_TEXT.resetAll,
       cls: "jw-timer-btn jw-timer-btn-danger"
     });
+    deleteAllBtn.setAttr("aria-label", "Reset all timers");
+    deleteAllBtn.setAttr("title", "Reset all timers");
 
     deleteAllBtn.addEventListener("click", () => {
       this.deleteAllTimers();
@@ -134,9 +147,15 @@ class TimerSidebarView extends ItemView {
     const rawHeadingTitles = this.extractRawHeadingTitles(fileContent, headings);
 
     const nextHeadingIds: string[] = [];
+    const allHeadingIds = new Set<string>();
 
     for (const heading of headings) {
       const id = buildTimerId(activeFile.path, heading);
+      allHeadingIds.add(id);
+      if (this.deletedTimerIds.has(id)) {
+        continue;
+      }
+
       const headingLine = heading.position?.start.line ?? 0;
       const headingTitle = rawHeadingTitles.get(headingLine) ?? heading.heading;
       const existing = this.timers.get(id);
@@ -157,9 +176,15 @@ class TimerSidebarView extends ItemView {
     }
 
     const nextIdsSet = new Set(nextHeadingIds);
-    for (const existingId of this.timers.keys()) {
+    for (const existingId of [...this.timers.keys()]) {
       if (existingId.startsWith(`${activeFile.path}::`) && !nextIdsSet.has(existingId)) {
         this.timers.delete(existingId);
+      }
+    }
+
+    for (const deletedId of [...this.deletedTimerIds]) {
+      if (deletedId.startsWith(`${activeFile.path}::`) && !allHeadingIds.has(deletedId)) {
+        this.deletedTimerIds.delete(deletedId);
       }
     }
 
@@ -191,7 +216,8 @@ class TimerSidebarView extends ItemView {
     this.timerUiRefs.clear();
 
     if (this.currentHeadingIds.length === 0) {
-      this.emptyStateEl.setText("No headers found in the current note.");
+      this.emptyStateEl.setText(UI_TEXT.empty);
+      this.emptyStateEl.setAttr("aria-label", "No headers found in the current note");
       this.emptyStateEl.show();
       return;
     }
@@ -217,18 +243,24 @@ class TimerSidebarView extends ItemView {
 
       const playStopBtn = controls.createEl("button", {
         cls: "jw-timer-btn",
-        text: entry.running ? "Stop" : "Play"
+        text: entry.running ? UI_TEXT.pause : UI_TEXT.open
       });
+      playStopBtn.setAttr("aria-label", entry.running ? "Pause timer" : "Start timer");
+      playStopBtn.setAttr("title", entry.running ? "Pause timer" : "Start timer");
 
       const resetBtn = controls.createEl("button", {
         cls: "jw-timer-btn",
-        text: "Reset"
+        text: UI_TEXT.reset
       });
+      resetBtn.setAttr("aria-label", "Reset timer");
+      resetBtn.setAttr("title", "Reset timer");
 
       const deleteBtn = controls.createEl("button", {
         cls: "jw-timer-btn jw-timer-btn-danger",
-        text: "Delete"
+        text: UI_TEXT.delete
       });
+      deleteBtn.setAttr("aria-label", "Delete timer");
+      deleteBtn.setAttr("title", "Delete timer");
 
       playStopBtn.addEventListener("click", () => {
         if (entry.running) {
@@ -290,6 +322,7 @@ class TimerSidebarView extends ItemView {
   }
 
   private deleteTimer(id: string): void {
+    this.deletedTimerIds.add(id);
     this.timers.delete(id);
     this.currentHeadingIds = this.currentHeadingIds.filter((headingId) => headingId !== id);
     void this.renderList();
@@ -297,6 +330,7 @@ class TimerSidebarView extends ItemView {
 
   private deleteAllTimers(): void {
     this.timers.clear();
+    this.deletedTimerIds.clear();
     void this.refreshFromActiveFile();
   }
 
@@ -307,7 +341,9 @@ class TimerSidebarView extends ItemView {
       if (!entry || !ui) continue;
 
       ui.timerEl.setText(formatDuration(this.getElapsed(entry)));
-      ui.playStopBtn.setText(entry.running ? "Stop" : "Play");
+      ui.playStopBtn.setText(entry.running ? UI_TEXT.pause : UI_TEXT.open);
+      ui.playStopBtn.setAttr("aria-label", entry.running ? "Pause timer" : "Start timer");
+      ui.playStopBtn.setAttr("title", entry.running ? "Pause timer" : "Start timer");
 
       const elapsed = this.getElapsed(entry);
       ui.cardEl.removeClass("jw-timer-card--running", "jw-timer-card--stopped");
