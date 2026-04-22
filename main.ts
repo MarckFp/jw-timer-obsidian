@@ -415,81 +415,6 @@ class TimerSidebarView extends ItemView {
   private confirmAction(message: string): boolean {
     return window.confirm(message);
   }
-}
-
-class TargetTimeModal extends Modal {
-  private inputValue: string;
-
-  constructor(
-    app: App,
-    private readonly currentTargetMs: number | null,
-    private readonly onSubmit: (targetMs: number | null) => void
-  ) {
-    super(app);
-    this.inputValue = currentTargetMs === null ? "" : (currentTargetMs / 60000).toString();
-  }
-
-  onOpen(): void {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl("h3", { text: "Set target time" });
-
-    new Setting(contentEl)
-      .setName("Target (minutes)")
-      .setDesc("Leave empty to remove the target. Decimals allowed (e.g. 1.5 = 1 min 30 s).")
-      .addText((text) => {
-        text.setValue(this.inputValue);
-        text.inputEl.setAttribute("type", "number");
-        text.inputEl.setAttribute("min", "0");
-        text.inputEl.setAttribute("step", "0.5");
-        text.inputEl.style.width = "6rem";
-        text.onChange((value) => {
-          this.inputValue = value;
-        });
-        // Submit on Enter
-        text.inputEl.addEventListener("keydown", (evt) => {
-          if (evt.key === "Enter") {
-            this.submit();
-          }
-        });
-        // Auto-focus
-        window.setTimeout(() => text.inputEl.focus(), 50);
-      });
-
-    const btnRow = contentEl.createDiv({ cls: "modal-button-container" });
-    btnRow.createEl("button", { text: "Clear target", cls: "mod-warning" }).addEventListener("click", () => {
-      this.onSubmit(null);
-      this.close();
-    });
-    btnRow.createEl("button", { text: "Save", cls: "mod-cta" }).addEventListener("click", () => {
-      this.submit();
-    });
-  }
-
-  private submit(): void {
-    const normalized = this.inputValue.trim().replace(",", ".");
-    if (!normalized) {
-      this.onSubmit(null);
-      this.close();
-      return;
-    }
-    const minutes = Number(normalized);
-    if (!Number.isFinite(minutes) || minutes <= 0) {
-      const errorEl = this.contentEl.querySelector(".jw-target-error") as HTMLElement | null ?? (() => {
-        const el = this.contentEl.createEl("p", { cls: "jw-target-error" });
-        el.style.color = "var(--color-red)";
-        return el;
-      })();
-      errorEl.setText("Enter a positive number of minutes.");
-      return;
-    }
-    this.onSubmit(Math.round(minutes * 60 * 1000));
-    this.close();
-  }
-
-  onClose(): void {
-    this.contentEl.empty();
-  }
 
   private updateTimerDisplays(): void {
     for (const id of this.currentHeadingIds) {
@@ -532,6 +457,82 @@ class TargetTimeModal extends Modal {
         }
       }
     }
+  }
+
+}
+
+class TargetTimeModal extends Modal {
+  private inputValue: string;
+
+  constructor(
+    app: App,
+    private readonly currentTargetMs: number | null,
+    private readonly onSubmit: (targetMs: number | null) => void
+  ) {
+    super(app);
+    this.inputValue = currentTargetMs === null ? "" : (currentTargetMs / 60000).toString();
+  }
+
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h3", { text: "Set target time" });
+
+    new Setting(contentEl)
+      .setName("Target (minutes)")
+      .setDesc("Leave empty to remove the target. Decimals allowed (e.g. 1.5 = 1 min 30 s).")
+      .addText((text) => {
+        text.setValue(this.inputValue);
+        text.inputEl.setAttribute("type", "number");
+        text.inputEl.setAttribute("min", "0");
+        text.inputEl.setAttribute("step", "0.5");
+        text.inputEl.style.width = "6rem";
+        text.onChange((value) => {
+          this.inputValue = value;
+        });
+        text.inputEl.addEventListener("keydown", (evt) => {
+          if (evt.key === "Enter") {
+            this.submit();
+          }
+        });
+        window.setTimeout(() => text.inputEl.focus(), 50);
+      });
+
+    const btnRow = contentEl.createDiv({ cls: "modal-button-container" });
+    btnRow.createEl("button", { text: "Clear target", cls: "mod-warning" }).addEventListener("click", () => {
+      this.onSubmit(null);
+      this.close();
+    });
+    btnRow.createEl("button", { text: "Save", cls: "mod-cta" }).addEventListener("click", () => {
+      this.submit();
+    });
+  }
+
+  private submit(): void {
+    const normalized = this.inputValue.trim().replace(",", ".");
+    if (!normalized) {
+      this.onSubmit(null);
+      this.close();
+      return;
+    }
+
+    const minutes = Number(normalized);
+    if (!Number.isFinite(minutes) || minutes <= 0) {
+      const errorEl = (this.contentEl.querySelector(".jw-target-error") as HTMLElement | null) ?? (() => {
+        const el = this.contentEl.createEl("p", { cls: "jw-target-error" });
+        el.style.color = "var(--color-red)";
+        return el;
+      })();
+      errorEl.setText("Enter a positive number of minutes.");
+      return;
+    }
+
+    this.onSubmit(Math.round(minutes * 60 * 1000));
+    this.close();
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
   }
 
   private persistTimer(entry: TimerEntry): void {
