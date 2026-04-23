@@ -124,12 +124,26 @@ export class JwTimerSettingsTab extends PluginSettingTab {
     // Sound alert
     new Setting(containerEl)
       .setName("Sound alert at overtime")
-      .setDesc("Play a short beep when a timer reaches its allotted duration.")
+      .setDesc("Play a repeating beep when a timer reaches its allotted duration.")
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.alertSound)
           .onChange(async (value) => {
             this.plugin.settings.alertSound = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("Sound alert duration (seconds)")
+      .setDesc("How long the beep plays. Default: 2 s.")
+      .addSlider((slider) => {
+        slider
+          .setLimits(1, 10, 1)
+          .setValue(this.plugin.settings.alertSoundSec)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.alertSoundSec = value;
             await this.plugin.saveSettings();
           });
       });
@@ -143,6 +157,20 @@ export class JwTimerSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.alertVibrate)
           .onChange(async (value) => {
             this.plugin.settings.alertVibrate = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("Vibration alert duration (seconds)")
+      .setDesc("How long the device vibrates. Has no effect on desktop. Default: 2 s.")
+      .addSlider((slider) => {
+        slider
+          .setLimits(1, 10, 1)
+          .setValue(this.plugin.settings.alertVibrateSec)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.alertVibrateSec = value;
             await this.plugin.saveSettings();
           });
       });

@@ -599,33 +599,49 @@ export class JwTimerView extends ItemView {
   private fireAlert(slotOrder: number): void {
     if (this.firedAlerts.has(slotOrder)) return;
     this.firedAlerts.add(slotOrder);
-    const { alertSound, alertVibrate } = this.plugin.settings;
-    if (alertSound) this.playBeep();
-    if (alertVibrate && "vibrate" in navigator) { try { navigator.vibrate([120, 60, 120]); } catch { /* unsupported */ } }
+    const { alertSound, alertSoundSec, alertVibrate, alertVibrateSec } = this.plugin.settings;
+    if (alertSound) this.playBeep(alertSoundSec);
+    if (alertVibrate && "vibrate" in navigator) {
+      try {
+        // Build a vibrate pattern: 200ms on / 100ms off repeated to fill the duration
+        const pattern: number[] = [];
+        const totalMs = alertVibrateSec * 1000;
+        let remaining = totalMs;
+        while (remaining > 0) {
+          const on = Math.min(200, remaining);
+          pattern.push(on);
+          remaining -= on;
+          if (remaining > 0) { pattern.push(100); remaining -= 100; }
+        }
+        navigator.vibrate(pattern);
+      } catch { /* unsupported */ }
+    }
   }
 
-  /** Synthesise a short double-beep using the Web Audio API. */
-  private playBeep(): void {
+  /** Synthesise a repeating beep using the Web Audio API for the given duration. */
+  private playBeep(durationSec: number): void {
     try {
       const ctx = new AudioContext();
-      const beep = (startSec: number) => {
+      // Each beep cycle: 0.18s tone + 0.07s silence = 0.25s per cycle
+      const cycleLen = 0.25;
+      const toneLen = 0.18;
+      const cycles = Math.max(1, Math.round(durationSec / cycleLen));
+      for (let i = 0; i < cycles; i++) {
+        const startSec = ctx.currentTime + i * cycleLen;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "sine";
         osc.frequency.value = 880;
         gain.gain.setValueAtTime(0.4, startSec);
-        gain.gain.exponentialRampToValueAtTime(0.001, startSec + 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.001, startSec + toneLen);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(startSec);
-        osc.stop(startSec + 0.18);
-      };
-      beep(ctx.currentTime);
-      beep(ctx.currentTime + 0.25);
-      // Close the context after the sounds finish to avoid resource leak
-      window.setTimeout(() => ctx.close(), 800);
+        osc.stop(startSec + toneLen);
+      }
+      window.setTimeout(() => ctx.close(), durationSec * 1000 + 300);
     } catch {
-      // AudioContext unavailable (e.g. desktop without audio) — silently ignore
+      // AudioContext unavailable — silently ignore
     }
   }
 

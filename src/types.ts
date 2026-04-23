@@ -68,8 +68,12 @@ export interface PluginSettings {
   openingSongMinutes: number;
   /** Play a beep sound when a timer reaches its allotted duration */
   alertSound: boolean;
+  /** Duration of the sound alert in seconds */
+  alertSoundSec: number;
   /** Trigger device vibration when a timer reaches its allotted duration (mobile only) */
   alertVibrate: boolean;
+  /** Duration of the vibration alert in seconds */
+  alertVibrateSec: number;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -77,5 +81,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   meetingStartTime: "20:00",
   openingSongMinutes: 5,
   alertSound: false,
+  alertSoundSec: 2,
   alertVibrate: false,
+  alertVibrateSec: 2,
 };
