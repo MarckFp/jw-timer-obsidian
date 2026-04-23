@@ -56,6 +56,14 @@ export class TimerEngine {
     this.states.delete(this.key(weekKey, partOrder));
   }
 
+  /** Returns true if at least one timer is currently running (used for tick optimisation). */
+  hasAnyRunning(): boolean {
+    for (const state of this.states.values()) {
+      if (state.running) return true;
+    }
+    return false;
+  }
+
   /** Snapshot all states for persistence, freezing running timers. */
   snapshotAll(): Map<string, TimerState> {
     const result = new Map<string, TimerState>();

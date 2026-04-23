@@ -5,7 +5,7 @@ import { LOCALE_SETTINGS } from "./ui/locale";
 // Available WOL locales shown in the dropdown: [display label, locale path]
 const WOL_LOCALES: [string, string][] = [
   ["English",               "r1/lp-e"],
-  ["\u00c9Español",               "r4/lp-s"],
+  ["Español",               "r4/lp-s"],
   ["Português",             "r5/lp-t"],
   ["Français",              "r30/lp-f"],
   ["Italiano",              "r6/lp-i"],
@@ -40,8 +40,19 @@ export function detectWolLocale(): string {
 }
 
 export class JwTimerSettingsTab extends PluginSettingTab {
+  private reloadDebounceHandle: number | null = null;
+
   constructor(app: App, private readonly plugin: JwTimerPlugin) {
     super(app, plugin);
+  }
+
+  /** Debounced reloadView — coalesces rapid input changes (e.g. typing start time) into one reload. */
+  private scheduleReload(): void {
+    if (this.reloadDebounceHandle !== null) window.clearTimeout(this.reloadDebounceHandle);
+    this.reloadDebounceHandle = window.setTimeout(async () => {
+      this.reloadDebounceHandle = null;
+      await this.plugin.reloadView();
+    }, 300);
   }
 
   private getLang(): string {
@@ -113,7 +124,7 @@ export class JwTimerSettingsTab extends PluginSettingTab {
             if (/^\d{1,2}:\d{2}$/.test(trimmed)) {
               this.plugin.settings.meetingStartTime = trimmed;
               await this.plugin.saveSettings();
-              await this.plugin.reloadView();
+              this.scheduleReload();
             }
           });
       });
@@ -134,7 +145,7 @@ export class JwTimerSettingsTab extends PluginSettingTab {
             if (!isNaN(n) && n >= 1 && n <= 15) {
               this.plugin.settings.openingSongMinutes = n;
               await this.plugin.saveSettings();
-              await this.plugin.reloadView();
+              this.scheduleReload();
             }
           });
       });
@@ -152,6 +163,18 @@ export class JwTimerSettingsTab extends PluginSettingTab {
             this.plugin.settings.showAdvice = value;
             await this.plugin.saveSettings();
             await this.plugin.reloadView();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName(L.autoNextPartName)
+      .setDesc(L.autoNextPartDesc)
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settings.autoNextPart)
+          .onChange(async (value) => {
+            this.plugin.settings.autoNextPart = value;
+            await this.plugin.saveSettings();
           });
       });
 

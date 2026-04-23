@@ -95,6 +95,8 @@ export interface PluginSettings {
   alertVibrateSec: number;
   /** Show the 1-minute instructor advice sub-cards */
   showAdvice: boolean;
+  /** Automatically start the next part in the same section when the current one is paused */
+  autoNextPart: boolean;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -106,4 +108,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   alertVibrate: false,
   alertVibrateSec: 2,
   showAdvice: true,
+  autoNextPart: false,
 };

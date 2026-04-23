@@ -13,17 +13,19 @@ import {
   timestampToHHMM,
   isoWeeksInYear,
 } from "./ui/helpers";
-import { EditPartModal, AddPartModal } from "./ui/modals";
+import { AddPartModal } from "./ui/modals";
+import { renderCard, renderAdviceCard } from "./ui/card-renderer";
+import type { CardController } from "./ui/card-renderer";
 
 export const VIEW_TYPE_JW_TIMER = "jw-timer-sidebar";
 
 // ─── View ─────────────────────────────────────────────────────────────────────────────
 
-export class JwTimerView extends ItemView {
-  private schedule: WeeklySchedule | null = null;
-  private weekKey = "";
-  private cards = new Map<number, CardRefs>();
-  private adviceCards = new Map<number, CardRefs>();
+export class JwTimerView extends ItemView implements CardController {
+  schedule: WeeklySchedule | null = null;
+  weekKey = "";
+  cards = new Map<number, CardRefs>();
+  adviceCards = new Map<number, CardRefs>();
   private tickHandle: number | null = null;
   private statusEl!: HTMLElement;
   private navLabelEl!: HTMLElement;
@@ -41,13 +43,13 @@ export class JwTimerView extends ItemView {
   /** Tracks partOrders that have already fired an overtime alert this session */
   private firedAlerts = new Set<number>();
   /** Currently visible card overlay, if any */
-  private activeOverlay: HTMLElement | null = null;
+  activeOverlay: HTMLElement | null = null;
 
   // Pagination state — initialised to current week in onOpen
   private viewYear: number = new Date().getFullYear();
   private viewWeek: number = currentWeekNumber();
 
-  constructor(leaf: WorkspaceLeaf, private readonly plugin: JwTimerPlugin) {
+  constructor(leaf: WorkspaceLeaf, readonly plugin: JwTimerPlugin) {
     super(leaf);
   }
 
@@ -190,7 +192,7 @@ export class JwTimerView extends ItemView {
     return this.plugin.settings.wolLocale.split("/")[1] ?? "lp-e";
   }
 
-  private getLabels(): UiLabels {
+  getLabels(): UiLabels {
     return LOCALE_UI[this.getLang()] ?? LOCALE_UI["lp-e"];
   }
 
@@ -245,7 +247,7 @@ export class JwTimerView extends ItemView {
    * Move a part one step up (delta = -1) or down (delta = 1) within its section.
    * Normalises ranks of all section parts, then swaps the two adjacent ranks.
    */
-  private movePartInSection(part: MeetingPart, delta: -1 | 1): void {
+  movePartInSection(part: MeetingPart, delta: -1 | 1): void {
     const sectionParts = this.buildMergedParts()
       .filter(p => p.section === part.section && !p.isSeparator && !this.isPartDeleted(p));
     const idx = sectionParts.findIndex(p => p.order === part.order);
@@ -340,7 +342,7 @@ export class JwTimerView extends ItemView {
 
   // ─── Render ──────────────────────────────────────────────────────────────────────────────────
 
-  private renderSchedule(schedule: WeeklySchedule): void {
+  renderSchedule(schedule: WeeklySchedule): void {
     this.listEl.empty();
     this.cards.clear();
     this.adviceCards.clear();
@@ -402,169 +404,9 @@ export class JwTimerView extends ItemView {
       });
 
       for (const part of parts) {
-        this.renderCard(sectionEl, this.getEffectivePart(part), scheduledStart.get(part.order) ?? startMinutes);
+        renderCard(this, sectionEl, this.getEffectivePart(part), scheduledStart.get(part.order) ?? startMinutes);
       }
     }
-  }
-
-  private renderCard(parentEl: HTMLElement, part: MeetingPart, scheduledStartMins: number): void {
-    const labels = this.getLabels();
-    const card = parentEl.createDiv({ cls: "jw-timer-card" });
-    card.setAttribute("data-state", "idle");
-    card.setAttribute("data-running", "false");
-
-    // Title + allotted minutes
-    const header = card.createDiv({ cls: "jw-timer-card-header" });
-    header.createDiv({ cls: "jw-timer-card-title", text: part.label });
-    header.createDiv({ cls: "jw-timer-card-allotted", text: `${Math.round(part.durationSec / 60)} min` });
-
-    // Scheduled end time + actual stopped-at time
-    const endTimeMins = scheduledStartMins + Math.ceil(part.durationSec / 60);
-    const timeRow = card.createDiv({ cls: "jw-timer-time-row" });
-    const endTimeEl = timeRow.createSpan({
-      cls: "jw-timer-end-time",
-      text: `${labels.end} ${minutesToTime(endTimeMins)}`,
-    });
-    const stoppedAtEl = timeRow.createSpan({ cls: "jw-timer-stopped-at" });
-    const deltaEl = timeRow.createSpan({ cls: "jw-timer-delta" });
-    deltaEl.style.display = "none";
-
-    // Progress bar
-    const barEl = card.createDiv({ cls: "jw-timer-bar" });
-    const barFillEl = barEl.createDiv({ cls: "jw-timer-bar-fill" });
-
-    // Large elapsed clock
-    const clockRow = card.createDiv({ cls: "jw-timer-clock-row" });
-    const elapsedEl = clockRow.createDiv({ cls: "jw-timer-elapsed", text: "00:00" });
-
-    // Controls
-    const controls = card.createDiv({ cls: "jw-timer-controls" });
-    const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: labels.play });
-    playBtn.setAttr("aria-label", "Start timer");
-    const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: labels.reset });
-    resetBtn.setAttr("aria-label", "Reset timer");
-
-    playBtn.addEventListener("click", () => this.handlePlayPause(part));
-    resetBtn.addEventListener("click", () => this.armReset(resetBtn, () => this.handleReset(part)));
-
-    // Suppress unused-var warning
-    void endTimeEl;
-
-    this.cards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, deltaEl, playBtn, resetBtn, barFillEl });
-    this.updateCard(part, scheduledStartMins);
-
-    // Advice sub-card for parts with instructor feedback (Bible reading + ministry parts)
-    if (part.hasAdvice && this.plugin.settings.showAdvice) this.renderAdviceCard(parentEl, part);
-
-    // ─── Long-press overlay ──────────────────────────────────────────────────────────────────────
-    const overlay = card.createDiv({ cls: "jw-timer-card-overlay" });
-    const editBtn = overlay.createEl("button", {
-      cls: "jw-timer-overlay-btn jw-timer-overlay-btn--edit",
-      text: labels.editOverlay,
-    });
-    const moveRow = overlay.createDiv({ cls: "jw-timer-overlay-move-row" });
-    const moveUpBtn = moveRow.createEl("button", {
-      cls: "jw-timer-overlay-btn jw-timer-overlay-btn--move",
-      text: "↑",
-    });
-    moveUpBtn.setAttr("aria-label", "Move part up");
-    const moveDownBtn = moveRow.createEl("button", {
-      cls: "jw-timer-overlay-btn jw-timer-overlay-btn--move",
-      text: "↓",
-    });
-    moveDownBtn.setAttr("aria-label", "Move part down");
-    const deleteBtn = overlay.createEl("button", {
-      cls: "jw-timer-overlay-btn jw-timer-overlay-btn--delete",
-      text: labels.deleteOverlay,
-    });
-
-    let longPressTimer: number | null = null;
-    let pressStartX = 0;
-    let pressStartY = 0;
-    const cancelPress = () => {
-      if (longPressTimer !== null) {
-        window.clearTimeout(longPressTimer);
-        longPressTimer = null;
-        card.style.touchAction = "";
-        card.removeClass("jw-timer-card--pressing");
-      }
-    };
-    card.addEventListener("pointerdown", (e) => {
-      if ((e.target as HTMLElement).closest("button, .jw-timer-card-overlay")) return;
-      pressStartX = e.clientX;
-      pressStartY = e.clientY;
-      card.style.touchAction = "none";
-      card.addClass("jw-timer-card--pressing");
-      longPressTimer = window.setTimeout(() => {
-        longPressTimer = null;
-        card.style.touchAction = "";
-        card.removeClass("jw-timer-card--pressing");
-        if (this.activeOverlay && this.activeOverlay !== overlay) {
-          this.activeOverlay.removeClass("jw-timer-card-overlay--visible");
-        }
-        this.activeOverlay = overlay;
-        overlay.addClass("jw-timer-card-overlay--visible");
-      }, 600);
-    });
-    card.addEventListener("pointerup", cancelPress);
-    card.addEventListener("pointermove", (e) => {
-      if (longPressTimer === null) return;
-      const dx = e.clientX - pressStartX;
-      const dy = e.clientY - pressStartY;
-      if (dx * dx + dy * dy > 100) cancelPress();
-    });
-    card.addEventListener("pointercancel", cancelPress);
-    card.addEventListener("contextmenu", (e) => e.preventDefault());
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) {
-        overlay.removeClass("jw-timer-card-overlay--visible");
-        if (this.activeOverlay === overlay) this.activeOverlay = null;
-      }
-    });
-    editBtn.addEventListener("click", () => {
-      overlay.removeClass("jw-timer-card-overlay--visible");
-      if (this.activeOverlay === overlay) this.activeOverlay = null;
-      new EditPartModal(this.app, part, labels, (newLabel, newDurationSec, newHasAdvice) => {
-        if (part.isCustom) {
-          this.plugin.updateCustomPart(this.weekKey, part.order, {
-            label: newLabel,
-            durationSec: newDurationSec,
-            hasAdvice: newHasAdvice || undefined,
-          });
-        } else {
-          this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, {
-            label: newLabel,
-            durationSec: newDurationSec,
-            hasAdvice: newHasAdvice,
-          });
-        }
-        void this.plugin.persistTimers();
-        this.renderSchedule(this.schedule!);
-        this.updateMeetingBar();
-      }).open();
-    });
-    moveUpBtn.addEventListener("click", () => {
-      overlay.removeClass("jw-timer-card-overlay--visible");
-      if (this.activeOverlay === overlay) this.activeOverlay = null;
-      this.movePartInSection(part, -1);
-    });
-    moveDownBtn.addEventListener("click", () => {
-      overlay.removeClass("jw-timer-card-overlay--visible");
-      if (this.activeOverlay === overlay) this.activeOverlay = null;
-      this.movePartInSection(part, 1);
-    });
-    deleteBtn.addEventListener("click", () => {
-      overlay.removeClass("jw-timer-card-overlay--visible");
-      if (this.activeOverlay === overlay) this.activeOverlay = null;
-      if (part.isCustom) {
-        this.plugin.removeCustomPart(this.weekKey, part.order);
-      } else {
-        this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, { deleted: true });
-      }
-      void this.plugin.persistTimers();
-      this.renderSchedule(this.schedule!);
-      this.updateMeetingBar();
-    });
   }
 
   // ─── Re-fetch schedule ────────────────────────────────────────────────────────────────────────
@@ -583,7 +425,7 @@ export class JwTimerView extends ItemView {
 
   // ─── Two-click reset guard ──────────────────────────────────────────────────────────────────────
 
-  private armReset(btn: HTMLButtonElement, onConfirm: () => void): void {
+  armReset(btn: HTMLButtonElement, onConfirm: () => void): void {
     if (this.pendingResets.has(btn)) {
       const tid = this.pendingResets.get(btn)!;
       window.clearTimeout(tid);
@@ -610,11 +452,12 @@ export class JwTimerView extends ItemView {
 
   // ─── Timer controls ────────────────────────────────────────────────────────────────────────────
 
-  private handlePlayPause(part: MeetingPart): void {
+  handlePlayPause(part: MeetingPart): void {
     const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
     if (snap.status === "running") {
       this.plugin.timerEngine.pause(this.weekKey, part.order);
       void this.plugin.persistTimers();
+      if (this.plugin.settings.autoNextPart) this.autoStartNextInSection(part);
     } else {
       this.plugin.timerEngine.start(this.weekKey, part.order);
     }
@@ -622,7 +465,21 @@ export class JwTimerView extends ItemView {
     this.updateMeetingBar();
   }
 
-  private handleReset(part: MeetingPart): void {
+  /** Auto-start the next idle part in the same section (used when autoNextPart is enabled). */
+  private autoStartNextInSection(stoppedPart: MeetingPart): void {
+    const sectionParts = this.buildMergedParts().filter(
+      p => !p.isSeparator && p.section === stoppedPart.section && !this.isPartDeleted(p),
+    );
+    const idx = sectionParts.findIndex(p => p.order === stoppedPart.order);
+    if (idx < 0 || idx >= sectionParts.length - 1) return;
+    const next = sectionParts[idx + 1];
+    if (this.plugin.timerEngine.get(this.weekKey, next.order).status !== "idle") return;
+    this.plugin.timerEngine.start(this.weekKey, next.order);
+    this.updateCardByOrder(next);
+    this.updateMeetingBar();
+  }
+
+  handleReset(part: MeetingPart): void {
     this.plugin.timerEngine.reset(this.weekKey, part.order);
     this.firedAlerts.delete(part.order);
     if (part.hasAdvice) {
@@ -639,6 +496,8 @@ export class JwTimerView extends ItemView {
 
   private tick(): void {
     if (!this.schedule) return;
+    // Fast path: skip all DOM work when no timer is running.
+    if (!this.plugin.timerEngine.hasAnyRunning()) return;
     let anyRunning = false;
     for (const part of this.buildMergedParts()) {
       if (part.isSeparator) continue;
@@ -715,7 +574,7 @@ export class JwTimerView extends ItemView {
     }
   }
 
-  private updateMeetingBar(): void {
+  updateMeetingBar(): void {
     if (!this.schedule || this.totalTimedMs === 0) return;
     let elapsedMs = 0;
     for (const part of this.buildMergedParts()) {
@@ -746,7 +605,7 @@ export class JwTimerView extends ItemView {
     this.updateCard(this.getEffectivePart(part), scheduledStart);
   }
 
-  private updateCard(part: MeetingPart, scheduledStartMins: number): void {
+  updateCard(part: MeetingPart, scheduledStartMins: number): void {
     const refs = this.cards.get(part.order);
     if (!refs) return;
 
@@ -830,50 +689,9 @@ export class JwTimerView extends ItemView {
   }
 
   // ─── Advice card ─────────────────────────────────────────────────────────────────────────────
+  // renderAdviceCard is implemented in ./ui/card-renderer.ts and called from renderCard.
 
-  private renderAdviceCard(parentEl: HTMLElement, part: MeetingPart): void {
-    const labels = this.getLabels();
-    const card = parentEl.createDiv({ cls: "jw-timer-card jw-timer-card--advice" });
-    card.setAttribute("data-state", "idle");
-    card.setAttribute("data-running", "false");
-
-    // Badge: arrow icon + label
-    const badge = card.createDiv({ cls: "jw-timer-advice-badge" });
-    badge.createSpan({ cls: "jw-timer-advice-icon", text: "↳" });
-    badge.createSpan({ cls: "jw-timer-advice-label", text: `${labels.advice} · 1 min` });
-
-    // Progress bar
-    const barEl = card.createDiv({ cls: "jw-timer-bar" });
-    const barFillEl = barEl.createDiv({ cls: "jw-timer-bar-fill" });
-
-    // Stopped-at row
-    const timeRow = card.createDiv({ cls: "jw-timer-time-row" });
-    const endTimeEl = timeRow.createSpan();
-    const stoppedAtEl = timeRow.createSpan({ cls: "jw-timer-stopped-at" });
-    void endTimeEl;
-
-    // Elapsed clock
-    const clockRow = card.createDiv({ cls: "jw-timer-clock-row" });
-    const elapsedEl = clockRow.createDiv({ cls: "jw-timer-elapsed jw-timer-elapsed--advice", text: "00:00" });
-
-    // Controls
-    const controls = card.createDiv({ cls: "jw-timer-controls" });
-    const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: labels.play });
-    playBtn.setAttr("aria-label", "Start advice timer");
-    const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: labels.reset });
-    resetBtn.setAttr("aria-label", "Reset advice timer");
-
-    playBtn.addEventListener("click", () => this.handleAdvicePlayPause(part));
-    resetBtn.addEventListener("click", () => this.armReset(resetBtn, () => this.handleAdviceReset(part)));
-
-    const deltaEl = card.createDiv({ cls: "jw-timer-delta" });
-    deltaEl.style.display = "none";
-
-    this.adviceCards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, deltaEl, playBtn, resetBtn, barFillEl });
-    this.updateAdviceCard(part);
-  }
-
-  private handleAdvicePlayPause(part: MeetingPart): void {
+  handleAdvicePlayPause(part: MeetingPart): void {
     const aOrder = this.adviceOrder(part.order);
     const snap = this.plugin.timerEngine.get(this.weekKey, aOrder);
     if (snap.status === "running") {
@@ -886,14 +704,14 @@ export class JwTimerView extends ItemView {
     this.updateMeetingBar();
   }
 
-  private handleAdviceReset(part: MeetingPart): void {
+  handleAdviceReset(part: MeetingPart): void {
     this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
     this.updateAdviceCard(part);
     this.updateMeetingBar();
     void this.plugin.persistTimers();
   }
 
-  private updateAdviceCard(part: MeetingPart): void {
+  updateAdviceCard(part: MeetingPart): void {
     const refs = this.adviceCards.get(part.order);
     if (!refs) return;
     const labels = this.getLabels();
