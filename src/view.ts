@@ -16,6 +16,8 @@ import {
 import { AddPartModal } from "./ui/modals";
 import { renderCard, renderAdviceCard } from "./ui/card-renderer";
 import type { CardController } from "./ui/card-renderer";
+import { buildExportText, buildPrintHtml, shareText, printReport } from "./ui/exporter";
+import type { ExportData } from "./ui/exporter";
 
 export const VIEW_TYPE_JW_TIMER = "jw-timer-sidebar";
 
@@ -44,6 +46,8 @@ export class JwTimerView extends ItemView implements CardController {
   private firedAlerts = new Set<number>();
   /** Currently visible card overlay, if any */
   activeOverlay: HTMLElement | null = null;
+  private exportFooterEl!: HTMLElement;
+  private exportToastEl!: HTMLElement;
 
   // Pagination state — initialised to current week in onOpen
   private viewYear: number = new Date().getFullYear();
@@ -119,6 +123,26 @@ export class JwTimerView extends ItemView implements CardController {
         this.activeOverlay = null;
       }
     });
+
+    // ── Export footer ────────────────────────────────────────────────────────────────────────────
+    this.exportFooterEl = root.createDiv({ cls: "jw-timer-export-footer" });
+    this.exportFooterEl.style.display = "none";
+
+    const shareBtn = this.exportFooterEl.createEl("button", {
+      cls: "jw-timer-btn jw-timer-export-btn",
+      text: this.getLabels().shareBtn,
+    });
+    shareBtn.setAttr("aria-label", "Share meeting timings");
+    shareBtn.addEventListener("click", () => void this.doShare());
+
+    const pdfBtn = this.exportFooterEl.createEl("button", {
+      cls: "jw-timer-btn jw-timer-export-btn",
+      text: this.getLabels().pdfBtn,
+    });
+    pdfBtn.setAttr("aria-label", "Export meeting timings to PDF");
+    pdfBtn.addEventListener("click", () => this.doPrint());
+
+    this.exportToastEl = this.exportFooterEl.createDiv({ cls: "jw-timer-toast" });
 
     this.tickHandle = window.setInterval(() => this.tick(), 250);
     this.viewYear = new Date().getFullYear();
@@ -359,6 +383,7 @@ export class JwTimerView extends ItemView implements CardController {
       if (ep.hasAdvice && this.plugin.settings.showAdvice) this.totalTimedMs += 60_000;
     }
     this.meetingBarContainerEl.style.display = "";
+    this.exportFooterEl.style.display = "";
 
     const startMinutes = timeToMinutes(this.plugin.settings.meetingStartTime);
     let cursor = startMinutes + this.plugin.settings.openingSongMinutes;
@@ -686,6 +711,56 @@ export class JwTimerView extends ItemView implements CardController {
     }
     this.renderSchedule(this.schedule);
     void this.plugin.persistTimers();
+  }
+
+  // ─── Export ───────────────────────────────────────────────────────────────────────────────────
+
+  private buildExportData(): ExportData {
+    const sectionOrder: MeetingSection[] = ["opening", "treasures", "ministry", "living", "closing"];
+    const langKey = this.getLang();
+    const [openingLabel, closingLabel] = (LOCALE_OPENING_CLOSING[langKey] ?? ["Opening", "Closing"]) as [string, string];
+    const sectionLabels: Record<string, string> = {
+      ...SECTION_FALLBACK,
+      ...(this.schedule?.sectionLabels ?? {}),
+      opening: openingLabel,
+      closing: closingLabel,
+    };
+
+    const allParts = this.buildMergedParts();
+    const sections = sectionOrder.map(key => {
+      const rows = allParts
+        .filter(p => p.section === key && !p.isSeparator && !this.isPartDeleted(p))
+        .map(p => {
+          const ep = this.getEffectivePart(p);
+          const snap = this.plugin.timerEngine.get(this.weekKey, p.order);
+          return {
+            label: ep.label,
+            durationSec: ep.durationSec,
+            elapsedMs: snap.elapsedMs,
+            status: snap.status,
+          };
+        });
+      return { key, label: sectionLabels[key] ?? key, rows };
+    }).filter(s => s.rows.length > 0);
+
+    return {
+      weekLabel: this.schedule?.weekLabel ?? this.weekKey,
+      meetingStartTime: this.plugin.settings.meetingStartTime,
+      sections,
+    };
+  }
+
+  private async doShare(): Promise<void> {
+    const data = this.buildExportData();
+    const text = buildExportText(data);
+    const labels = this.getLabels();
+    await shareText(text, labels.copyOk, this.exportToastEl);
+  }
+
+  private doPrint(): void {
+    const data = this.buildExportData();
+    const html = buildPrintHtml(data, this.getLabels());
+    printReport(html);
   }
 
   // ─── Advice card ─────────────────────────────────────────────────────────────────────────────

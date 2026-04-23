@@ -707,3 +707,46 @@ body.theme-dark {
   margin: 0;
   flex-shrink: 0;
 }
+
+/* ─── Export footer ──────────────────────────────────────────────────────── */
+
+.jw-timer-export-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.jw-timer-export-btn {
+  flex: 1;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.5rem;
+  min-height: 2.2rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.jw-timer-export-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* ─── Clipboard copy toast ───────────────────────────────────────────────── */
+
+.jw-timer-toast {
+  font-size: 0.78rem;
+  color: var(--text-success, #16a34a);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms;
+  white-space: nowrap;
+}
+
+.jw-timer-toast--visible {
+  opacity: 1;
+}

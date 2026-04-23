@@ -26,6 +26,10 @@ export interface UiLabels {
   fieldSection: string;
   fieldAdvice: string;
   placeholder: string;
+  // Export actions
+  shareBtn: string;
+  pdfBtn: string;
+  copyOk: string;
 }
 
 // prettier-ignore
@@ -39,6 +43,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Title",          fieldDuration: "Duration (min)",
     fieldSection: "Section",      fieldAdvice: "Advice timer (1 min)",
     placeholder: "Part name…",
+    shareBtn: "Share",  pdfBtn: "PDF",  copyOk: "Copied!",
   },
   "lp-s": {
     play: "Iniciar",        pause: "Pausar",      reset: "Reiniciar",       resetAll: "Reiniciar todo",
@@ -49,6 +54,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Título",               fieldDuration: "Duración (min)",
     fieldSection: "Sección",            fieldAdvice: "Tiempo de consejo (1 min)",
     placeholder: "Nombre de la parte…",
+    shareBtn: "Compartir",  pdfBtn: "PDF",  copyOk: "¡Copiado!",
   },
   "lp-f": {
     play: "Démarrer",       pause: "Pause",        reset: "Réinit.",         resetAll: "Tout réinit.",
@@ -59,6 +65,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titre",                fieldDuration: "Durée (min)",
     fieldSection: "Section",            fieldAdvice: "Chrono conseil (1 min)",
     placeholder: "Nom de la partie…",
+    shareBtn: "Partager",  pdfBtn: "PDF",  copyOk: "Copié !",
   },
   "lp-t": {
     play: "Iniciar",        pause: "Pausar",       reset: "Reiniciar",       resetAll: "Reiniciar tudo",
@@ -69,6 +76,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Título",               fieldDuration: "Duração (min)",
     fieldSection: "Seção",              fieldAdvice: "Tempo de conselho (1 min)",
     placeholder: "Nome da parte…",
+    shareBtn: "Partilhar",  pdfBtn: "PDF",  copyOk: "Copiado!",
   },
   "lp-x": {
     play: "Start",          pause: "Pause",        reset: "Zurücksetzen",    resetAll: "Alles zurücksetzen",
@@ -79,6 +87,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titel",                fieldDuration: "Dauer (min)",
     fieldSection: "Abschnitt",          fieldAdvice: "Ratgeber-Timer (1 min)",
     placeholder: "Teilname…",
+    shareBtn: "Teilen",  pdfBtn: "PDF",  copyOk: "Kopiert!",
   },
   "lp-i": {
     play: "Avvia",          pause: "Pausa",        reset: "Azzera",          resetAll: "Azzera tutto",
@@ -89,6 +98,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titolo",               fieldDuration: "Durata (min)",
     fieldSection: "Sezione",            fieldAdvice: "Timer consiglio (1 min)",
     placeholder: "Nome parte…",
+    shareBtn: "Condividi",  pdfBtn: "PDF",  copyOk: "Copiato!",
   },
   "lp-u": {
     play: "Старт",          pause: "Пауза",        reset: "Сброс",           resetAll: "Сбросить всё",
@@ -99,6 +109,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Заголовок",            fieldDuration: "Длит. (мин)",
     fieldSection: "Раздел",             fieldAdvice: "Таймер совета (1 мин)",
     placeholder: "Название части…",
+    shareBtn: "Поделиться",  pdfBtn: "PDF",  copyOk: "Скопировано!",
   },
   "lp-m": {
     play: "Start",          pause: "Pauză",        reset: "Resetare",        resetAll: "Resetare totală",
@@ -109,6 +120,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titlu",                fieldDuration: "Durată (min)",
     fieldSection: "Secțiune",           fieldAdvice: "Temporizator sfat (1 min)",
     placeholder: "Numele părții…",
+    shareBtn: "Distribuie",  pdfBtn: "PDF",  copyOk: "Copiat!",
   },
   "lp-bl": {
     play: "Старт",          pause: "Пауза",        reset: "Нулиране",        resetAll: "Нулиране на всичко",
@@ -119,6 +131,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Заглавие",             fieldDuration: "Продълж. (мин)",
     fieldSection: "Раздел",             fieldAdvice: "Таймер съвет (1 мин)",
     placeholder: "Наименование…",
+    shareBtn: "Сподели се",  pdfBtn: "PDF",  copyOk: "Копирано!",
   },
   "lp-o": {
     play: "Start",          pause: "Pauze",        reset: "Reset",           resetAll: "Alles resetten",
@@ -129,6 +142,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titel",                fieldDuration: "Duur (min)",
     fieldSection: "Sectie",             fieldAdvice: "Advies-timer (1 min)",
     placeholder: "Naam onderdeel…",
+    shareBtn: "Delen",  pdfBtn: "PDF",  copyOk: "Gekopieerd!",
   },
   "lp-p": {
     play: "Start",          pause: "Pauza",        reset: "Resetuj",         resetAll: "Resetuj wszystko",
@@ -139,6 +153,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Tytuł",                fieldDuration: "Czas (min)",
     fieldSection: "Sekcja",             fieldAdvice: "Timer porady (1 min)",
     placeholder: "Nazwa części…",
+    shareBtn: "Udostępnij",  pdfBtn: "PDF",  copyOk: "Skopiowano!",
   },
   "lp-j": {
     play: "スタート",        pause: "一時停止",      reset: "リセット",         resetAll: "全リセット",
@@ -149,6 +164,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "タイトル",              fieldDuration: "時間（分）",
     fieldSection: "セクション",          fieldAdvice: "アドバイスタイマー（1分）",
     placeholder: "部分の名前…",
+    shareBtn: "共有",  pdfBtn: "PDF",  copyOk: "コピーしました",
   },
   "lp-ko": {
     play: "시작",           pause: "일시정지",       reset: "초기화",          resetAll: "전체 초기화",
@@ -159,6 +175,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "제목",                  fieldDuration: "시간 (분)",
     fieldSection: "섹션",                fieldAdvice: "조언 타이머 (1분)",
     placeholder: "부분 이름…",
+    shareBtn: "공유",  pdfBtn: "PDF",  copyOk: "복사됨!",
   },
   "lp-chs": {
     play: "开始",           pause: "暂停",          reset: "重置",            resetAll: "全部重置",
@@ -169,6 +186,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "标题",                  fieldDuration: "时长（分）",
     fieldSection: "部分",                fieldAdvice: "指导计时（1分钟）",
     placeholder: "部分名称…",
+    shareBtn: "分享",  pdfBtn: "PDF",  copyOk: "已复制!",
   },
 };
 
