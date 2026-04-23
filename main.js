@@ -400,18 +400,35 @@ function colorState(elapsedMs, durationSec, status) {
   if (ratio >= WARN_THRESHOLD) return "warn";
   return "ok";
 }
-function formatFetchedAt(fetchedAt) {
+var LOCALE_STALE = {
+  "lp-e":   { justNow: "Fetched just now",         todayAt: "Fetched today at {time}",          yesterday: "Fetched yesterday",        daysAgo: "Fetched {n} days ago"           },
+  "lp-s":   { justNow: "Obtenido hace un momento", todayAt: "Obtenido hoy a las {time}",        yesterday: "Obtenido ayer",            daysAgo: "Obtenido hace {n} d\xEDas"     },
+  "lp-f":   { justNow: "Obtenu \xE0 l'instant",    todayAt: "Obtenu aujourd'hui \xE0 {time}",   yesterday: "Obtenu hier",              daysAgo: "Obtenu il y a {n} jours"        },
+  "lp-t":   { justNow: "Obtido h\xE1 pouco",       todayAt: "Obtido hoje \xE0s {time}",         yesterday: "Obtido ontem",             daysAgo: "Obtido h\xE1 {n} dias"          },
+  "lp-x":   { justNow: "Gerade abgerufen",         todayAt: "Heute um {time} abgerufen",        yesterday: "Gestern abgerufen",        daysAgo: "Vor {n} Tagen abgerufen"        },
+  "lp-i":   { justNow: "Ottenuto poco fa",         todayAt: "Ottenuto oggi alle {time}",        yesterday: "Ottenuto ieri",            daysAgo: "Ottenuto {n} giorni fa"         },
+  "lp-u":   { justNow: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u043E \u0442\u043E\u043B\u044C\u043A\u043E \u0447\u0442\u043E", todayAt: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u043E \u0441\u0435\u0433\u043E\u0434\u043D\u044F \u0432 {time}", yesterday: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u043E \u0432\u0447\u0435\u0440\u0430", daysAgo: "\u041F\u043E\u043B\u0443\u0447\u0435\u043D\u043E {n} \u0434\u043D\u0435\u0439 \u043D\u0430\u0437\u0430\u0434" },
+  "lp-m":   { justNow: "Actualizat acum",          todayAt: "Actualizat azi la {time}",         yesterday: "Actualizat ieri",          daysAgo: "Actualizat acum {n} zile"       },
+  "lp-bl":  { justNow: "\u0418\u0437\u0442\u0435\u0433\u043B\u0435\u043D\u043E \u043F\u0440\u0435\u0434\u0438 \u043C\u0430\u043B\u043A\u043E", todayAt: "\u0418\u0437\u0442\u0435\u0433\u043B\u0435\u043D\u043E \u0434\u043D\u0435\u0441 \u0432 {time}", yesterday: "\u0418\u0437\u0442\u0435\u0433\u043B\u0435\u043D\u043E \u0432\u0447\u0435\u0440\u0430", daysAgo: "\u0418\u0437\u0442\u0435\u0433\u043B\u0435\u043D\u043E \u043F\u0440\u0435\u0434\u0438 {n} \u0434\u043D\u0438" },
+  "lp-o":   { justNow: "Zojuist opgehaald",        todayAt: "Vandaag om {time} opgehaald",      yesterday: "Gisteren opgehaald",       daysAgo: "{n} dagen geleden opgehaald"    },
+  "lp-p":   { justNow: "Pobrano przed chwil\u0105", todayAt: "Pobrano dzi\u015B o {time}",      yesterday: "Pobrano wczoraj",          daysAgo: "Pobrano {n} dni temu"           },
+  "lp-j":   { justNow: "\u305F\u3063\u305F\u4ECA\u53D6\u5F97", todayAt: "\u4ECA\u65E5\u306E{time}\u306B\u53D6\u5F97", yesterday: "\u6628\u65E5\u53D6\u5F97", daysAgo: "{n}\u65E5\u524D\u306B\u53D6\u5F97" },
+  "lp-ko":  { justNow: "\uBC29\uAE08 \uAC00\uC838\uC634", todayAt: "\uC624\uB298 {time}\uC5D0 \uAC00\uC838\uC634", yesterday: "\uC5B4\uC81C \uAC00\uC838\uC634", daysAgo: "{n}\uC77C \uC804\uC5D0 \uAC00\uC838\uC634" },
+  "lp-chs": { justNow: "\u521A\u521A\u83B7\u53D6",  todayAt: "\u4ECA\u5929{time}\u83B7\u53D6",   yesterday: "\u6628\u5929\u83B7\u53D6",  daysAgo: "{n}\u5929\u524D\u83B7\u53D6"  }
+};
+function formatFetchedAt(fetchedAt, lang) {
   const ageH = (Date.now() - fetchedAt) / 36e5;
+  const sl = LOCALE_STALE[lang] ?? LOCALE_STALE["lp-e"];
   let text;
   if (ageH < 1) {
-    text = "Fetched just now";
+    text = sl.justNow;
   } else if (ageH < 24) {
     const d = new Date(fetchedAt);
     const hhmm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    text = `Fetched today at ${hhmm}`;
+    text = sl.todayAt.replace("{time}", hhmm);
   } else {
     const days = Math.floor(ageH / 24);
-    text = days === 1 ? "Fetched yesterday" : `Fetched ${days} days ago`;
+    text = days === 1 ? sl.yesterday : sl.daysAgo.replace("{n}", String(days));
   }
   const level = ageH < 24 ? "fresh" : ageH < 72 ? "stale" : "old";
   return { text, level };
@@ -569,7 +586,7 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     this.schedule = schedule;
     this.navLabelEl.setText(schedule.weekLabel);
     this.setStatus("ok", "");
-    const { text: staleText, level: staleLevel } = formatFetchedAt(schedule.fetchedAt);
+    const { text: staleText, level: staleLevel } = formatFetchedAt(schedule.fetchedAt, this.getLang());
     this.staleTextEl.setText(staleText);
     this.staleEl.className = `jw-timer-stale jw-timer-stale--${staleLevel}`;
     this.staleEl.style.display = "";

@@ -102,18 +102,46 @@ function isoWeeksInYear(year: number): number {
 }
 
 /** Returns a short, language-agnostic staleness label + severity for a fetch timestamp. */
-function formatFetchedAt(fetchedAt: number): { text: string; level: "fresh" | "stale" | "old" } {
+interface StaleLabels {
+  justNow: string;
+  /** "{time}" is replaced with HH:MM */
+  todayAt: string;
+  yesterday: string;
+  /** "{n}" is replaced with the number of days */
+  daysAgo: string;
+}
+
+const LOCALE_STALE: Record<string, StaleLabels> = {
+  "lp-e":   { justNow: "Fetched just now",         todayAt: "Fetched today at {time}",       yesterday: "Fetched yesterday",         daysAgo: "Fetched {n} days ago"          },
+  "lp-s":   { justNow: "Obtenido hace un momento", todayAt: "Obtenido hoy a las {time}",     yesterday: "Obtenido ayer",             daysAgo: "Obtenido hace {n} d\u00edas"  },
+  "lp-f":   { justNow: "Obtenu \u00e0 l'instant",  todayAt: "Obtenu aujourd'hui \u00e0 {time}", yesterday: "Obtenu hier",             daysAgo: "Obtenu il y a {n} jours"      },
+  "lp-t":   { justNow: "Obtido h\u00e1 pouco",     todayAt: "Obtido hoje \u00e0s {time}",     yesterday: "Obtido ontem",              daysAgo: "Obtido h\u00e1 {n} dias"      },
+  "lp-x":   { justNow: "Gerade abgerufen",         todayAt: "Heute um {time} abgerufen",     yesterday: "Gestern abgerufen",         daysAgo: "Vor {n} Tagen abgerufen"      },
+  "lp-i":   { justNow: "Ottenuto poco fa",         todayAt: "Ottenuto oggi alle {time}",     yesterday: "Ottenuto ieri",             daysAgo: "Ottenuto {n} giorni fa"       },
+  "lp-u":   { justNow: "\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u043e \u0442\u043e\u043b\u044c\u043a\u043e \u0447\u0442\u043e", todayAt: "\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u043e \u0441\u0435\u0433\u043e\u0434\u043d\u044f \u0432 {time}", yesterday: "\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u043e \u0432\u0447\u0435\u0440\u0430", daysAgo: "\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u043e {n} \u0434\u043d\u0435\u0439 \u043d\u0430\u0437\u0430\u0434" },
+  "lp-m":   { justNow: "Actualizat acum",          todayAt: "Actualizat azi la {time}",      yesterday: "Actualizat ieri",           daysAgo: "Actualizat acum {n} zile"     },
+  "lp-bl":  { justNow: "\u0418\u0437\u0442\u0435\u0433\u043b\u0435\u043d\u043e \u043f\u0440\u0435\u0434\u0438 \u043c\u0430\u043b\u043a\u043e", todayAt: "\u0418\u0437\u0442\u0435\u0433\u043b\u0435\u043d\u043e \u0434\u043d\u0435\u0441 \u0432 {time}", yesterday: "\u0418\u0437\u0442\u0435\u0433\u043b\u0435\u043d\u043e \u0432\u0447\u0435\u0440\u0430", daysAgo: "\u0418\u0437\u0442\u0435\u0433\u043b\u0435\u043d\u043e \u043f\u0440\u0435\u0434\u0438 {n} \u0434\u043d\u0438" },
+  "lp-o":   { justNow: "Zojuist opgehaald",        todayAt: "Vandaag om {time} opgehaald",   yesterday: "Gisteren opgehaald",        daysAgo: "{n} dagen geleden opgehaald"  },
+  "lp-p":   { justNow: "Pobrano przed chwil\u0105", todayAt: "Pobrano dzi\u015b o {time}",   yesterday: "Pobrano wczoraj",           daysAgo: "Pobrano {n} dni temu"         },
+  "lp-j":   { justNow: "\u305f\u3063\u305f\u4eca\u53d6\u5f97", todayAt: "\u4eca\u65e5\u306e{time}\u306b\u53d6\u5f97", yesterday: "\u6628\u65e5\u53d6\u5f97", daysAgo: "{n}\u65e5\u524d\u306b\u53d6\u5f97" },
+  "lp-ko":  { justNow: "\ubc29\uae08 \uac00\uc838\uc634", todayAt: "\uc624\ub298 {time}\uc5d0 \uac00\uc838\uc634", yesterday: "\uc5b4\uc81c \uac00\uc838\uc634", daysAgo: "{n}\uc77c \uc804\uc5d0 \uac00\uc838\uc634" },
+  "lp-chs": { justNow: "\u521a\u521a\u83b7\u53d6",  todayAt: "\u4eca\u5929{time}\u83b7\u53d6", yesterday: "\u6628\u5929\u83b7\u53d6",  daysAgo: "{n}\u5929\u524d\u83b7\u53d6"  },
+};
+
+/** Returns a localised staleness label + severity for a fetch timestamp. */
+function formatFetchedAt(fetchedAt: number, lang: string): { text: string; level: "fresh" | "stale" | "old" } {
   const ageH = (Date.now() - fetchedAt) / 3_600_000;
+  const sl = LOCALE_STALE[lang] ?? LOCALE_STALE["lp-e"];
   let text: string;
   if (ageH < 1) {
-    text = "Fetched just now";
+    text = sl.justNow;
   } else if (ageH < 24) {
     const d = new Date(fetchedAt);
     const hhmm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    text = `Fetched today at ${hhmm}`;
+    text = sl.todayAt.replace("{time}", hhmm);
   } else {
     const days = Math.floor(ageH / 24);
-    text = days === 1 ? "Fetched yesterday" : `Fetched ${days} days ago`;
+    text = days === 1 ? sl.yesterday : sl.daysAgo.replace("{n}", String(days));
   }
   const level: "fresh" | "stale" | "old" = ageH < 24 ? "fresh" : ageH < 72 ? "stale" : "old";
   return { text, level };
@@ -334,7 +362,7 @@ export class JwTimerView extends ItemView {
     this.schedule = schedule;
     this.navLabelEl.setText(schedule.weekLabel);
     this.setStatus("ok", "");
-    const { text: staleText, level: staleLevel } = formatFetchedAt(schedule.fetchedAt);
+    const { text: staleText, level: staleLevel } = formatFetchedAt(schedule.fetchedAt, this.getLang());
     this.staleTextEl.setText(staleText);
     this.staleEl.className = `jw-timer-stale jw-timer-stale--${staleLevel}`;
     this.staleEl.style.display = "";
