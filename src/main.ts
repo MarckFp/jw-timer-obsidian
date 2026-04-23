@@ -1,6 +1,6 @@
 import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS } from "./types";
-import type { PluginSettings, PluginData, WeeklySchedule, TimerState, PartOverride } from "./types";
+import type { PluginSettings, PluginData, WeeklySchedule, TimerState, PartOverride, MeetingPart } from "./types";
 import { TimerEngine } from "./timer-engine";
 import { JwTimerSettingsTab } from "./settings-tab";
 import { JwTimerView, VIEW_TYPE_JW_TIMER } from "./view";
@@ -9,6 +9,7 @@ export default class JwTimerPlugin extends Plugin {
   settings: PluginSettings = { ...DEFAULT_SETTINGS };
   timerEngine = new TimerEngine();
   partOverrides: Record<string, PartOverride> = {};
+  customParts: Record<string, MeetingPart[]> = {};
   private scheduleCache: Record<string, WeeklySchedule> = {};
   private saveHandle: number | null = null;
 
@@ -62,6 +63,9 @@ export default class JwTimerPlugin extends Plugin {
     if (raw.partOverrides) {
       this.partOverrides = raw.partOverrides;
     }
+    if (raw.customParts) {
+      this.customParts = raw.customParts;
+    }
   }
 
   private async persistData(): Promise<void> {
@@ -74,6 +78,7 @@ export default class JwTimerPlugin extends Plugin {
       scheduleCache: this.scheduleCache,
       timerStates,
       partOverrides: this.partOverrides,
+      customParts: this.customParts,
     };
     await this.saveData(data);
   }
@@ -127,6 +132,40 @@ export default class JwTimerPlugin extends Plugin {
     for (const key of Object.keys(this.partOverrides)) {
       if (key.startsWith(weekKey + ":")) delete this.partOverrides[key];
     }
+    this.scheduleSave();
+  }
+
+  // ─── Custom parts ──────────────────────────────────────────────────────────────────
+
+  getCustomParts(weekKey: string): MeetingPart[] {
+    return this.customParts[weekKey] ?? [];
+  }
+
+  getNextCustomOrder(weekKey: string): number {
+    const existing = this.getCustomParts(weekKey);
+    if (existing.length === 0) return 500;
+    return Math.max(...existing.map(p => p.order)) + 1;
+  }
+
+  addCustomPart(weekKey: string, part: MeetingPart): void {
+    if (!this.customParts[weekKey]) this.customParts[weekKey] = [];
+    this.customParts[weekKey].push(part);
+    this.scheduleSave();
+  }
+
+  updateCustomPart(weekKey: string, order: number, fields: Partial<Pick<MeetingPart, "label" | "durationSec" | "hasAdvice">>): void {
+    const parts = this.customParts[weekKey];
+    if (!parts) return;
+    const idx = parts.findIndex(p => p.order === order);
+    if (idx === -1) return;
+    this.customParts[weekKey][idx] = { ...parts[idx], ...fields };
+    this.scheduleSave();
+  }
+
+  removeCustomPart(weekKey: string, order: number): void {
+    const parts = this.customParts[weekKey];
+    if (!parts) return;
+    this.customParts[weekKey] = parts.filter(p => p.order !== order);
     this.scheduleSave();
   }
 

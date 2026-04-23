@@ -13,6 +13,8 @@ export interface MeetingPart {
   isSeparator?: boolean;
   /** If true, a secondary 1-minute instructor-advice stopwatch is shown below this part's card */
   hasAdvice?: boolean;
+  /** If true, this part was added manually by the user (not scraped) */
+  isCustom?: boolean;
 }
 
 export type MeetingSection =
@@ -58,6 +60,10 @@ export interface PartOverride {
   durationSec?: number;
   /** If true the card is hidden until Reset All or re-scrape */
   deleted?: boolean;
+  /** Override for the advice timer visibility */
+  hasAdvice?: boolean;
+  /** Display rank for manual reordering within a section (lower = earlier) */
+  rank?: number;
 }
 
 export interface PluginData {
@@ -68,6 +74,8 @@ export interface PluginData {
   timerStates: Record<string, TimerState>;
   /** Per-part user overrides, keyed by "weekKey:partOrder" */
   partOverrides: Record<string, PartOverride>;
+  /** User-added custom parts, keyed by weekKey */
+  customParts: Record<string, MeetingPart[]>;
 }
 
 export interface PluginSettings {

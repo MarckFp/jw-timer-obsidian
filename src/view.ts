@@ -1,6 +1,6 @@
 import { App, ItemView, Modal, WorkspaceLeaf } from "obsidian";
 import type JwTimerPlugin from "./main";
-import type { WeeklySchedule, MeetingPart } from "./types";
+import type { WeeklySchedule, MeetingPart, MeetingSection } from "./types";
 import type { TimerSnapshot } from "./timer-engine";
 import { cacheKey, currentWeekNumber, fetchWeekSchedule } from "./scraper";
 
@@ -12,7 +12,7 @@ class EditPartModal extends Modal {
   constructor(
     app: App,
     private readonly part: MeetingPart,
-    private readonly onSave: (label: string, durationSec: number) => void,
+    private readonly onSave: (label: string, durationSec: number, hasAdvice: boolean) => void,
   ) {
     super(app);
   }
@@ -37,17 +37,90 @@ class EditPartModal extends Modal {
     durInput.max = "60";
     durInput.value = String(Math.round(this.part.durationSec / 60));
 
+    const adviceRow = form.createDiv({ cls: "jw-timer-edit-row jw-timer-edit-row--checkbox" });
+    const adviceInput = adviceRow.createEl("input", { cls: "jw-timer-edit-checkbox" });
+    adviceInput.type = "checkbox";
+    adviceInput.id = "jw-edit-part-advice";
+    adviceInput.checked = this.part.hasAdvice ?? false;
+    const adviceLabel = adviceRow.createEl("label", { cls: "jw-timer-edit-label", text: "Advice timer (1 min)" });
+    adviceLabel.setAttr("for", "jw-edit-part-advice");
+
     const footer = contentEl.createDiv({ cls: "jw-timer-edit-footer" });
     const saveBtn = footer.createEl("button", { cls: "mod-cta", text: "Save" });
     saveBtn.addEventListener("click", () => {
       const newLabel = labelInput.value.trim() || this.part.label;
       const newMins = Math.max(1, parseInt(durInput.value, 10) || Math.round(this.part.durationSec / 60));
-      this.onSave(newLabel, newMins * 60);
+      this.onSave(newLabel, newMins * 60, adviceInput.checked);
       this.close();
     });
     [labelInput, durInput].forEach((el) =>
       el.addEventListener("keydown", (e) => { if (e.key === "Enter") saveBtn.click(); })
     );
+    window.setTimeout(() => labelInput.focus(), 50);
+  }
+
+  onClose(): void { this.contentEl.empty(); }
+}
+
+// ─── Add-part modal ──────────────────────────────────────────────────────────────
+
+class AddPartModal extends Modal {
+  constructor(
+    app: App,
+    private readonly sectionLabels: Record<string, string>,
+    private readonly onSave: (label: string, durationSec: number, section: MeetingSection, hasAdvice: boolean) => void,
+  ) {
+    super(app);
+  }
+
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h3", { cls: "jw-timer-edit-title", text: "New stopwatch" });
+    const form = contentEl.createDiv({ cls: "jw-timer-edit-form" });
+
+    const labelRow = form.createDiv({ cls: "jw-timer-edit-row" });
+    labelRow.createEl("label", { cls: "jw-timer-edit-label", text: "Title" });
+    const labelInput = labelRow.createEl("input", { cls: "jw-timer-edit-input" });
+    labelInput.type = "text";
+    labelInput.placeholder = "Part name…";
+
+    const durRow = form.createDiv({ cls: "jw-timer-edit-row" });
+    durRow.createEl("label", { cls: "jw-timer-edit-label", text: "Duration (minutes)" });
+    const durInput = durRow.createEl("input", { cls: "jw-timer-edit-input" });
+    durInput.type = "number";
+    durInput.min = "1";
+    durInput.max = "60";
+    durInput.value = "5";
+
+    const sectionRow = form.createDiv({ cls: "jw-timer-edit-row" });
+    sectionRow.createEl("label", { cls: "jw-timer-edit-label", text: "Section" });
+    const sectionSelect = sectionRow.createEl("select", { cls: "jw-timer-edit-input" });
+    const sectionOrder: MeetingSection[] = ["opening", "treasures", "ministry", "living", "closing"];
+    for (const key of sectionOrder) {
+      const opt = sectionSelect.createEl("option");
+      opt.value = key;
+      opt.text = this.sectionLabels[key] ?? key;
+    }
+    sectionSelect.value = "ministry";
+
+    const adviceRow = form.createDiv({ cls: "jw-timer-edit-row jw-timer-edit-row--checkbox" });
+    const adviceInput = adviceRow.createEl("input", { cls: "jw-timer-edit-checkbox" });
+    adviceInput.type = "checkbox";
+    adviceInput.id = "jw-add-part-advice";
+    const adviceLabel = adviceRow.createEl("label", { cls: "jw-timer-edit-label", text: "Advice timer (1 min)" });
+    adviceLabel.setAttr("for", "jw-add-part-advice");
+
+    const footer = contentEl.createDiv({ cls: "jw-timer-edit-footer" });
+    const saveBtn = footer.createEl("button", { cls: "mod-cta", text: "Add" });
+    saveBtn.addEventListener("click", () => {
+      const newLabel = labelInput.value.trim();
+      if (!newLabel) { labelInput.focus(); return; }
+      const newMins = Math.max(1, parseInt(durInput.value, 10) || 5);
+      this.onSave(newLabel, newMins * 60, sectionSelect.value as MeetingSection, adviceInput.checked);
+      this.close();
+    });
+    labelInput.addEventListener("keydown", (e) => { if (e.key === "Enter") saveBtn.click(); });
     window.setTimeout(() => labelInput.focus(), 50);
   }
 
@@ -291,6 +364,12 @@ export class JwTimerView extends ItemView {
       text: this.getLabels().resetAll,
     });
     this.resetAllBtn.addEventListener("click", () => this.armReset(this.resetAllBtn, () => this.handleResetAll()));
+    const addPartBtn = toolbar.createEl("button", {
+      cls: "jw-timer-btn jw-timer-btn-add",
+      text: "+",
+    });
+    addPartBtn.setAttr("aria-label", "Add new stopwatch");
+    addPartBtn.addEventListener("click", () => this.handleAddPart());
 
     // ── Status + list ────────────────────────────────────────────────────────
     this.statusEl = root.createDiv({ cls: "jw-timer-status" });
@@ -377,11 +456,64 @@ export class JwTimerView extends ItemView {
       ...part,
       ...(override.label !== undefined ? { label: override.label } : {}),
       ...(override.durationSec !== undefined ? { durationSec: override.durationSec } : {}),
+      ...(override.hasAdvice !== undefined ? { hasAdvice: override.hasAdvice } : {}),
     };
   }
 
   private isPartDeleted(part: MeetingPart): boolean {
     return this.plugin.getPartOverride(`${this.weekKey}:${part.order}`)?.deleted === true;
+  }
+
+  /** Display rank for sorting within a section (lower = earlier). Falls back to original order. */
+  private getEffectiveRank(part: MeetingPart): number {
+    return this.plugin.getPartOverride(`${this.weekKey}:${part.order}`)?.rank ?? part.order;
+  }
+
+  /**
+   * Returns all parts (scraped + custom) merged and sorted by section order,
+   * then by effective rank within each section.
+   */
+  private buildMergedParts(): MeetingPart[] {
+    if (!this.schedule) return [];
+    const allParts = [
+      ...this.schedule.parts,
+      ...this.plugin.getCustomParts(this.weekKey),
+    ];
+    const sectionOrder = ["opening", "treasures", "ministry", "living", "closing"];
+    const bySection = new Map<string, MeetingPart[]>();
+    for (const key of sectionOrder) bySection.set(key, []);
+    for (const p of allParts) {
+      const list = bySection.get(p.section);
+      if (list) list.push(p);
+    }
+    for (const [, parts] of bySection) {
+      parts.sort((a, b) => this.getEffectiveRank(a) - this.getEffectiveRank(b));
+    }
+    const result: MeetingPart[] = [];
+    for (const key of sectionOrder) result.push(...(bySection.get(key) ?? []));
+    return result;
+  }
+
+  /**
+   * Move a part one step up (delta = -1) or down (delta = 1) within its section.
+   * Normalises ranks of all section parts, then swaps the two adjacent ranks.
+   */
+  private movePartInSection(part: MeetingPart, delta: -1 | 1): void {
+    const sectionParts = this.buildMergedParts()
+      .filter(p => p.section === part.section && !p.isSeparator && !this.isPartDeleted(p));
+    const idx = sectionParts.findIndex(p => p.order === part.order);
+    if (idx === -1) return;
+    const swapIdx = idx + delta;
+    if (swapIdx < 0 || swapIdx >= sectionParts.length) return;
+    // Assign normalised ranks (0, 10, 20, …) then swap the two
+    sectionParts.forEach((p, i) => {
+      this.plugin.setPartOverride(`${this.weekKey}:${p.order}`, { rank: i * 10 });
+    });
+    this.plugin.setPartOverride(`${this.weekKey}:${sectionParts[idx].order}`, { rank: swapIdx * 10 });
+    this.plugin.setPartOverride(`${this.weekKey}:${sectionParts[swapIdx].order}`, { rank: idx * 10 });
+    void this.plugin.persistTimers();
+    this.renderSchedule(this.schedule!);
+    this.updateMeetingBar();
   }
 
   /** Virtual partOrder for advice timer — avoids clash with real part orders (≤ ~20). */
@@ -412,6 +544,32 @@ export class JwTimerView extends ItemView {
   }
 
   // ─── Schedule loading ─────────────────────────────────────────────────────────
+
+  private handleAddPart(): void {
+    if (!this.schedule) return;
+    const langKey = this.getLang();
+    const [openingLabel, closingLabel] = LOCALE_OPENING_CLOSING[langKey] ?? ["Opening", "Closing"];
+    const sectionLabels: Record<string, string> = {
+      ...SECTION_FALLBACK,
+      ...(this.schedule.sectionLabels ?? {}),
+      opening: openingLabel,
+      closing: closingLabel,
+    };
+    new AddPartModal(this.app, sectionLabels, (label, durationSec, section, hasAdvice) => {
+      const order = this.plugin.getNextCustomOrder(this.weekKey);
+      this.plugin.addCustomPart(this.weekKey, {
+        label,
+        durationSec,
+        section,
+        order,
+        hasAdvice: hasAdvice || undefined,
+        isCustom: true,
+      });
+      void this.plugin.persistTimers();
+      this.renderSchedule(this.schedule!);
+      this.updateMeetingBar();
+    }).open();
+  }
 
   private async loadScheduleForWeek(year: number, week: number): Promise<void> {
     this.weekKey = cacheKey(year, week);
@@ -459,11 +617,15 @@ export class JwTimerView extends ItemView {
     this.adviceCards.clear();
     this.firedAlerts.clear();
 
-    // Compute total timed content duration (non-separator parts + advice slots)
+    const allParts = this.buildMergedParts();
+
+    // Compute total timed content duration (non-separator, non-deleted parts + advice slots)
     this.totalTimedMs = 0;
-    for (const p of schedule.parts) {
-      if (!p.isSeparator) this.totalTimedMs += p.durationSec * 1000;
-      if (p.hasAdvice && this.plugin.settings.showAdvice) this.totalTimedMs += 60_000;
+    for (const p of allParts) {
+      if (p.isSeparator || this.isPartDeleted(p)) continue;
+      const ep = this.getEffectivePart(p);
+      this.totalTimedMs += ep.durationSec * 1000;
+      if (ep.hasAdvice && this.plugin.settings.showAdvice) this.totalTimedMs += 60_000;
     }
     this.meetingBarContainerEl.style.display = "";
 
@@ -471,11 +633,13 @@ export class JwTimerView extends ItemView {
     let cursor = startMinutes + this.plugin.settings.openingSongMinutes;
 
     const scheduledStart = new Map<number, number>();
-    for (const part of schedule.parts) {
+    for (const part of allParts) {
+      if (part.isSeparator) { cursor += Math.ceil(part.durationSec / 60); continue; }
+      if (this.isPartDeleted(part)) continue;
+      const ep = this.getEffectivePart(part);
       scheduledStart.set(part.order, cursor);
-      // Include the 1-minute advice slot in the schedule so subsequent parts
-      // (and the final "End" time) reflect the real meeting duration.
-      cursor += Math.ceil(part.durationSec / 60) + (part.hasAdvice ? 1 : 0);
+      // Include the 1-minute advice slot so subsequent parts reflect the real meeting duration.
+      cursor += Math.ceil(ep.durationSec / 60) + (ep.hasAdvice && this.plugin.settings.showAdvice ? 1 : 0);
     }
 
     // Opening/Closing labels from locale map; middle sections from scraper (page language)
@@ -488,17 +652,18 @@ export class JwTimerView extends ItemView {
       closing: closingLabel,
     };
 
-    // Group parts by section
-    const sections = new Map<string, MeetingPart[]>();
-    for (const part of schedule.parts) {
-      const list = sections.get(part.section) ?? [];
-      list.push(part);
-      sections.set(part.section, list);
+    // Group by section (already sorted within each section by buildMergedParts)
+    const sectionOrder = ["opening", "treasures", "ministry", "living", "closing"];
+    const bySection = new Map<string, MeetingPart[]>();
+    for (const key of sectionOrder) bySection.set(key, []);
+    for (const p of allParts) {
+      if (p.isSeparator || this.isPartDeleted(p)) continue;
+      const list = bySection.get(p.section);
+      if (list) list.push(p);
     }
 
-    const sectionOrder = ["opening", "treasures", "ministry", "living", "closing"];
     for (const sectionKey of sectionOrder) {
-      const parts = sections.get(sectionKey);
+      const parts = bySection.get(sectionKey);
       if (!parts?.length) continue;
 
       const sectionEl = this.listEl.createDiv({ cls: "jw-timer-section" });
@@ -509,8 +674,6 @@ export class JwTimerView extends ItemView {
       });
 
       for (const part of parts) {
-        if (part.isSeparator) continue;
-        if (this.isPartDeleted(part)) continue;
         this.renderCard(sectionEl, this.getEffectivePart(part), scheduledStart.get(part.order) ?? startMinutes);
       }
     }
@@ -571,6 +734,17 @@ export class JwTimerView extends ItemView {
       cls: "jw-timer-overlay-btn jw-timer-overlay-btn--edit",
       text: "\u270F\uFE0F Edit",
     });
+    const moveRow = overlay.createDiv({ cls: "jw-timer-overlay-move-row" });
+    const moveUpBtn = moveRow.createEl("button", {
+      cls: "jw-timer-overlay-btn jw-timer-overlay-btn--move",
+      text: "↑",
+    });
+    moveUpBtn.setAttr("aria-label", "Move part up");
+    const moveDownBtn = moveRow.createEl("button", {
+      cls: "jw-timer-overlay-btn jw-timer-overlay-btn--move",
+      text: "↓",
+    });
+    moveDownBtn.setAttr("aria-label", "Move part down");
     const deleteBtn = overlay.createEl("button", {
       cls: "jw-timer-overlay-btn jw-timer-overlay-btn--delete",
       text: "\uD83D\uDDD1\uFE0F Delete",
@@ -625,17 +799,43 @@ export class JwTimerView extends ItemView {
     editBtn.addEventListener("click", () => {
       overlay.removeClass("jw-timer-card-overlay--visible");
       if (this.activeOverlay === overlay) this.activeOverlay = null;
-      new EditPartModal(this.app, part, (newLabel, newDurationSec) => {
-        this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, { label: newLabel, durationSec: newDurationSec });
+      new EditPartModal(this.app, part, (newLabel, newDurationSec, newHasAdvice) => {
+        if (part.isCustom) {
+          this.plugin.updateCustomPart(this.weekKey, part.order, {
+            label: newLabel,
+            durationSec: newDurationSec,
+            hasAdvice: newHasAdvice || undefined,
+          });
+        } else {
+          this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, {
+            label: newLabel,
+            durationSec: newDurationSec,
+            hasAdvice: newHasAdvice,
+          });
+        }
         void this.plugin.persistTimers();
         this.renderSchedule(this.schedule!);
         this.updateMeetingBar();
       }).open();
     });
+    moveUpBtn.addEventListener("click", () => {
+      overlay.removeClass("jw-timer-card-overlay--visible");
+      if (this.activeOverlay === overlay) this.activeOverlay = null;
+      this.movePartInSection(part, -1);
+    });
+    moveDownBtn.addEventListener("click", () => {
+      overlay.removeClass("jw-timer-card-overlay--visible");
+      if (this.activeOverlay === overlay) this.activeOverlay = null;
+      this.movePartInSection(part, 1);
+    });
     deleteBtn.addEventListener("click", () => {
       overlay.removeClass("jw-timer-card-overlay--visible");
       if (this.activeOverlay === overlay) this.activeOverlay = null;
-      this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, { deleted: true });
+      if (part.isCustom) {
+        this.plugin.removeCustomPart(this.weekKey, part.order);
+      } else {
+        this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, { deleted: true });
+      }
       void this.plugin.persistTimers();
       this.renderSchedule(this.schedule!);
       this.updateMeetingBar();
@@ -725,14 +925,16 @@ export class JwTimerView extends ItemView {
   private tick(): void {
     if (!this.schedule) return;
     let anyRunning = false;
-    for (const part of this.schedule.parts) {
+    for (const part of this.buildMergedParts()) {
+      if (part.isSeparator) continue;
+      const ep = this.getEffectivePart(part);
       const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
       if (snap.status === "running") {
         this.updateCardByOrder(part);
         anyRunning = true;
-        if (snap.elapsedMs >= part.durationSec * 1000) this.fireAlert(part.order);
+        if (snap.elapsedMs >= ep.durationSec * 1000) this.fireAlert(part.order);
       }
-      if (part.hasAdvice) {
+      if (ep.hasAdvice && this.plugin.settings.showAdvice) {
         const aSnap = this.plugin.timerEngine.get(this.weekKey, this.adviceOrder(part.order));
         if (aSnap.status === "running") {
           this.updateAdviceCard(part);
@@ -752,7 +954,16 @@ export class JwTimerView extends ItemView {
     if (alertSound) this.playBeep(alertSoundSec);
     if (alertVibrate && "vibrate" in navigator) {
       try {
-        navigator.vibrate(alertVibrateSec * 1000);
+        const patternMs = alertVibrateSec * 1000;
+        const onMs = 300;
+        const offMs = 100;
+        const cycles = Math.max(1, Math.round(patternMs / (onMs + offMs)));
+        const pattern: number[] = [];
+        for (let i = 0; i < cycles; i++) {
+          pattern.push(onMs);
+          if (i < cycles - 1) pattern.push(offMs);
+        }
+        navigator.vibrate(pattern);
       } catch { /* unsupported */ }
     }
   }
@@ -787,11 +998,11 @@ export class JwTimerView extends ItemView {
   private updateMeetingBar(): void {
     if (!this.schedule || this.totalTimedMs === 0) return;
     let elapsedMs = 0;
-    for (const part of this.schedule.parts) {
-      if (!part.isSeparator) {
-        elapsedMs += this.plugin.timerEngine.get(this.weekKey, part.order).elapsedMs;
-      }
-      if (part.hasAdvice) {
+    for (const part of this.buildMergedParts()) {
+      if (part.isSeparator || this.isPartDeleted(part)) continue;
+      const ep = this.getEffectivePart(part);
+      elapsedMs += this.plugin.timerEngine.get(this.weekKey, part.order).elapsedMs;
+      if (ep.hasAdvice && this.plugin.settings.showAdvice) {
         elapsedMs += this.plugin.timerEngine.get(this.weekKey, this.adviceOrder(part.order)).elapsedMs;
       }
     }
@@ -804,9 +1015,13 @@ export class JwTimerView extends ItemView {
     const startMinutes = timeToMinutes(this.plugin.settings.meetingStartTime);
     let cursor = startMinutes + this.plugin.settings.openingSongMinutes;
     let scheduledStart = cursor;
-    for (const p of (this.schedule?.parts ?? [])) {
+    for (const p of this.buildMergedParts()) {
+      if (p.isSeparator) { cursor += Math.ceil(p.durationSec / 60); continue; }
       if (p.order === part.order) { scheduledStart = cursor; break; }
-      cursor += Math.ceil(p.durationSec / 60) + (p.hasAdvice ? 1 : 0);
+      if (!this.isPartDeleted(p)) {
+        const ep = this.getEffectivePart(p);
+        cursor += Math.ceil(ep.durationSec / 60) + (ep.hasAdvice && this.plugin.settings.showAdvice ? 1 : 0);
+      }
     }
     this.updateCard(this.getEffectivePart(part), scheduledStart);
   }
@@ -886,9 +1101,11 @@ export class JwTimerView extends ItemView {
     }
     this.pendingResets.clear();
     this.plugin.clearPartOverrides(this.weekKey);
-    for (const part of this.schedule.parts) {
+    for (const part of this.buildMergedParts()) {
+      if (part.isSeparator) continue;
+      const ep = this.getEffectivePart(part);
       this.plugin.timerEngine.reset(this.weekKey, part.order);
-      if (part.hasAdvice) this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
+      if (ep.hasAdvice) this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
     }
     this.renderSchedule(this.schedule);
     void this.plugin.persistTimers();
@@ -931,7 +1148,11 @@ export class JwTimerView extends ItemView {
     playBtn.addEventListener("click", () => this.handleAdvicePlayPause(part));
     resetBtn.addEventListener("click", () => this.armReset(resetBtn, () => this.handleAdviceReset(part)));
 
-    this.adviceCards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, playBtn, resetBtn, barFillEl });
+    // Advice cards don't show a delta badge but CardRefs requires the element
+    const deltaEl = card.createDiv({ cls: "jw-timer-delta" });
+    deltaEl.style.display = "none";
+
+    this.adviceCards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, deltaEl, playBtn, resetBtn, barFillEl });
     this.updateAdviceCard(part);
   }
 

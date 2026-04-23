@@ -645,3 +645,65 @@ body.theme-dark {
 .jw-timer-btn--confirm:hover {
   background: color-mix(in srgb, var(--color-red) 22%, var(--background-secondary)) !important;
 }
+
+/* ─── Add-part toolbar button ────────────────────────────────────────────── */
+
+.jw-timer-btn-add {
+  background: none;
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  min-height: 2.2rem;
+  min-width: 2.4rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 0.4rem;
+  transition: background 100ms, color 100ms, border-color 100ms;
+}
+
+.jw-timer-btn-add:hover {
+  background: color-mix(in srgb, var(--color-green) 12%, var(--background-secondary));
+  border-color: var(--color-green);
+  color: var(--color-green);
+}
+
+/* ─── Overlay move row (up/down buttons between Edit and Delete) ─────────── */
+
+.jw-timer-overlay-move-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+}
+
+.jw-timer-overlay-btn--move {
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  min-height: 1.6rem;
+  min-width: 2.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 100ms;
+  flex: 0;
+}
+
+.jw-timer-overlay-btn--move:hover { filter: brightness(1.2); }
+
+/* ─── Edit/Add modal checkbox row ────────────────────────────────────────── */
+
+.jw-timer-edit-row--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.jw-timer-edit-checkbox {
+  width: auto;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}

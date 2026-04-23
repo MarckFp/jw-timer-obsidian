@@ -178,10 +178,10 @@ export class JwTimerSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Vibration alert duration (seconds)")
-      .setDesc("How long the device vibrates. Has no effect on desktop. Default: 2 s.")
+      .setDesc("How long the device vibrates. Has no effect on desktop. Default: 5 s.")
       .addSlider((slider) => {
         slider
-          .setLimits(1, 10, 1)
+          .setLimits(1, 30, 1)
           .setValue(this.plugin.settings.alertVibrateSec)
           .setDynamicTooltip()
           .onChange(async (value) => {
