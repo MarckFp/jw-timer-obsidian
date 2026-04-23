@@ -560,8 +560,10 @@ export class JwTimerView extends ItemView {
 
   private handleReset(part: MeetingPart): void {
     this.plugin.timerEngine.reset(this.weekKey, part.order);
+    this.firedAlerts.delete(part.order);
     if (part.hasAdvice) {
       this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
+      this.firedAlerts.delete(this.adviceOrder(part.order));
       this.updateAdviceCard(part);
     }
     this.updateCardByOrder(part);
@@ -599,7 +601,7 @@ export class JwTimerView extends ItemView {
     this.firedAlerts.add(slotOrder);
     const { alertSound, alertVibrate } = this.plugin.settings;
     if (alertSound) this.playBeep();
-    if (alertVibrate && typeof navigator.vibrate === "function") navigator.vibrate([120, 60, 120]);
+    if (alertVibrate && "vibrate" in navigator) { try { navigator.vibrate([120, 60, 120]); } catch { /* unsupported */ } }
   }
 
   /** Synthesise a short double-beep using the Web Audio API. */
