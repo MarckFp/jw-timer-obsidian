@@ -64,6 +64,8 @@ export interface PartOverride {
   hasAdvice?: boolean;
   /** Display rank for manual reordering within a section (lower = earlier) */
   rank?: number;
+  /** Free-text note attached to this part (shown on the card and included in export) */
+  note?: string;
 }
 
 export interface PluginData {

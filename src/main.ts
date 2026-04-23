@@ -1,6 +1,13 @@
 import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS } from "./types";
-import type { PluginSettings, PluginData, WeeklySchedule, TimerState, PartOverride, MeetingPart } from "./types";
+import type {
+  PluginSettings,
+  PluginData,
+  WeeklySchedule,
+  TimerState,
+  PartOverride,
+  MeetingPart,
+} from "./types";
 import { TimerEngine } from "./timer-engine";
 import { JwTimerSettingsTab, detectWolLocale } from "./settings-tab";
 import { JwTimerView, VIEW_TYPE_JW_TIMER } from "./view";
@@ -18,9 +25,16 @@ export default class JwTimerPlugin extends Plugin {
   async onload(): Promise<void> {
     await this.loadData_();
 
-    this.registerView(VIEW_TYPE_JW_TIMER, (leaf) => new JwTimerView(leaf, this));
+    this.registerView(
+      VIEW_TYPE_JW_TIMER,
+      (leaf) => new JwTimerView(leaf, this),
+    );
 
-    this.addRibbonIcon("timer", "Open JW Meeting Timer", () => void this.activateView());
+    this.addRibbonIcon(
+      "timer",
+      "Open JW Meeting Timer",
+      () => void this.activateView(),
+    );
 
     this.addCommand({
       id: "open-jw-timer",
@@ -29,8 +43,6 @@ export default class JwTimerPlugin extends Plugin {
     });
 
     this.addSettingTab(new JwTimerSettingsTab(this.app, this));
-
-    this.app.workspace.onLayoutReady(() => void this.activateView());
   }
 
   onunload(): void {
@@ -49,7 +61,7 @@ export default class JwTimerPlugin extends Plugin {
   }
 
   private async loadData_(): Promise<void> {
-    const raw = await this.loadData() as Partial<PluginData> | null;
+    const raw = (await this.loadData()) as Partial<PluginData> | null;
     if (!raw) {
       // First install — auto-detect device language and set matching WOL locale
       this.settings.wolLocale = detectWolLocale();
@@ -128,7 +140,10 @@ export default class JwTimerPlugin extends Plugin {
   }
 
   setPartOverride(key: string, override: PartOverride): void {
-    this.partOverrides[key] = { ...(this.partOverrides[key] ?? {}), ...override };
+    this.partOverrides[key] = {
+      ...(this.partOverrides[key] ?? {}),
+      ...override,
+    };
     this.scheduleSave();
   }
 
@@ -148,7 +163,7 @@ export default class JwTimerPlugin extends Plugin {
   getNextCustomOrder(weekKey: string): number {
     const existing = this.getCustomParts(weekKey);
     if (existing.length === 0) return 500;
-    return Math.max(...existing.map(p => p.order)) + 1;
+    return Math.max(...existing.map((p) => p.order)) + 1;
   }
 
   addCustomPart(weekKey: string, part: MeetingPart): void {
@@ -157,10 +172,14 @@ export default class JwTimerPlugin extends Plugin {
     this.scheduleSave();
   }
 
-  updateCustomPart(weekKey: string, order: number, fields: Partial<Pick<MeetingPart, "label" | "durationSec" | "hasAdvice">>): void {
+  updateCustomPart(
+    weekKey: string,
+    order: number,
+    fields: Partial<Pick<MeetingPart, "label" | "durationSec" | "hasAdvice">>,
+  ): void {
     const parts = this.customParts[weekKey];
     if (!parts) return;
-    const idx = parts.findIndex(p => p.order === order);
+    const idx = parts.findIndex((p) => p.order === order);
     if (idx === -1) return;
     this.customParts[weekKey][idx] = { ...parts[idx], ...fields };
     this.scheduleSave();
@@ -169,7 +188,7 @@ export default class JwTimerPlugin extends Plugin {
   removeCustomPart(weekKey: string, order: number): void {
     const parts = this.customParts[weekKey];
     if (!parts) return;
-    this.customParts[weekKey] = parts.filter(p => p.order !== order);
+    this.customParts[weekKey] = parts.filter((p) => p.order !== order);
     this.scheduleSave();
   }
 

@@ -2,18 +2,18 @@
 /* Dark-mode defaults; light mode overrides below */
 :root {
   --jw-treasures: #2dd4bf;
-  --jw-ministry:  #fcd34d;
-  --jw-living:    #fb7185;
+  --jw-ministry: #fcd34d;
+  --jw-living: #fb7185;
 }
 body.theme-light {
   --jw-treasures: #0f766e;
-  --jw-ministry:  #92400e;
-  --jw-living:    #881337;
+  --jw-ministry: #92400e;
+  --jw-living: #881337;
 }
 body.theme-dark {
   --jw-treasures: #2dd4bf;
-  --jw-ministry:  #fcd34d;
-  --jw-living:    #fb7185;
+  --jw-ministry: #fcd34d;
+  --jw-living: #fb7185;
 }
 
 /* ─── Root ───────────────────────────────────────────────────────────────── */
@@ -66,7 +66,10 @@ body.theme-dark {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 100ms, color 100ms, border-color 100ms;
+  transition:
+    background 100ms,
+    color 100ms,
+    border-color 100ms;
 }
 
 .jw-timer-nav-btn:hover {
@@ -87,7 +90,9 @@ body.theme-dark {
   font-size: 0.75rem;
   font-weight: 600;
   flex-shrink: 0;
-  transition: background 100ms, color 100ms;
+  transition:
+    background 100ms,
+    color 100ms;
 }
 
 .jw-timer-nav-today:hover {
@@ -114,11 +119,18 @@ body.theme-dark {
   font-size: 0.78rem;
   border-radius: 5px;
   cursor: pointer;
-  transition: background 100ms, color 100ms, border-color 100ms;
+  transition:
+    background 100ms,
+    color 100ms,
+    border-color 100ms;
 }
 
 .jw-timer-btn-reset-all:hover {
-  background: color-mix(in srgb, var(--color-red) 10%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-red) 10%,
+    var(--background-secondary)
+  );
   border-color: var(--color-red);
   color: var(--color-red);
 }
@@ -152,7 +164,10 @@ body.theme-dark {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 100ms, background 100ms, border-color 100ms;
+  transition:
+    opacity 100ms,
+    background 100ms,
+    border-color 100ms;
   flex-shrink: 0;
 }
 
@@ -162,9 +177,16 @@ body.theme-dark {
   border-color: var(--background-modifier-border);
 }
 
-.jw-timer-stale--fresh { color: var(--color-green); }
-.jw-timer-stale--stale { color: var(--color-orange); }
-.jw-timer-stale--old   { color: var(--color-red); font-weight: 600; }
+.jw-timer-stale--fresh {
+  color: var(--color-green);
+}
+.jw-timer-stale--stale {
+  color: var(--color-orange);
+}
+.jw-timer-stale--old {
+  color: var(--color-red);
+  font-weight: 600;
+}
 
 /* ─── Meeting progress bar ───────────────────────────────────────────────── */
 
@@ -265,14 +287,16 @@ body.theme-dark {
 /* ─── Cards ──────────────────────────────────────────────────────────────── */
 
 .jw-timer-card {
-  position: relative;        /* needed for overlay positioning */
+  position: relative; /* needed for overlay positioning */
   padding: 0.55rem 0.65rem;
   margin-bottom: 0.3rem;
   border-radius: 7px;
   border: 1px solid transparent;
   background: var(--background-secondary);
-  transition: background 200ms ease, border-color 200ms ease;
-  user-select: none;         /* prevent text selection during long-press */
+  transition:
+    background 200ms ease,
+    border-color 200ms ease;
+  user-select: none; /* prevent text selection during long-press */
   -webkit-user-select: none;
 }
 
@@ -296,8 +320,12 @@ body.theme-dark {
 }
 
 @keyframes jw-longpress-fill {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* ─── Card edit/delete overlay ───────────────────────────────────────────── */
@@ -333,7 +361,9 @@ body.theme-dark {
   transition: filter 100ms;
 }
 
-.jw-timer-overlay-btn:hover { filter: brightness(1.15); }
+.jw-timer-overlay-btn:hover {
+  filter: brightness(1.15);
+}
 
 .jw-timer-overlay-btn--edit {
   background: var(--interactive-accent);
@@ -392,33 +422,54 @@ body.theme-dark {
 
 /* Running — on time */
 .jw-timer-card[data-state="ok"][data-running="true"] {
-  background: color-mix(in srgb, var(--color-green) 14%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-green) 14%,
+    var(--background-secondary)
+  );
   border-color: color-mix(in srgb, var(--color-green) 35%, transparent);
 }
 
 /* Running — warning (≥ 90%) */
 .jw-timer-card[data-state="warn"][data-running="true"] {
-  background: color-mix(in srgb, var(--color-orange) 16%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-orange) 16%,
+    var(--background-secondary)
+  );
   border-color: color-mix(in srgb, var(--color-orange) 40%, transparent);
 }
 
 /* Running — over time */
 .jw-timer-card[data-state="over"][data-running="true"] {
-  background: color-mix(in srgb, var(--color-red) 16%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-red) 16%,
+    var(--background-secondary)
+  );
   border-color: color-mix(in srgb, var(--color-red) 40%, transparent);
   animation: jw-overtime-pulse 1.4s ease-in-out infinite;
 }
 
 @keyframes jw-overtime-pulse {
-  0%, 100% { border-color: color-mix(in srgb, var(--color-red) 40%, transparent); }
-  50%       { border-color: color-mix(in srgb, var(--color-red) 85%, transparent); }
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--color-red) 40%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--color-red) 85%, transparent);
+  }
 }
 
 /* Paused — very faint accent tint so it reads as "touched but not running" */
 .jw-timer-card[data-running="false"][data-state="ok"],
 .jw-timer-card[data-running="false"][data-state="warn"],
 .jw-timer-card[data-running="false"][data-state="over"] {
-  background: color-mix(in srgb, var(--interactive-accent) 6%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--interactive-accent) 6%,
+    var(--background-secondary)
+  );
   border-color: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
 }
 
@@ -427,31 +478,52 @@ body.theme-dark {
 .jw-timer-card--advice {
   margin-left: 1.1rem;
   margin-top: -0.15rem;
-  border-left: 3px solid color-mix(in srgb, var(--color-yellow) 55%, transparent);
+  border-left: 3px solid
+    color-mix(in srgb, var(--color-yellow) 55%, transparent);
   border-top: none;
   border-right: none;
   border-bottom: none;
-  background: color-mix(in srgb, var(--color-yellow) 7%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-yellow) 7%,
+    var(--background-secondary)
+  );
   border-radius: 0 7px 7px 0;
 }
 
 /* Advice running states */
 .jw-timer-card--advice[data-state="ok"][data-running="true"] {
-  background: color-mix(in srgb, var(--color-yellow) 16%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-yellow) 16%,
+    var(--background-secondary)
+  );
   border-left-color: color-mix(in srgb, var(--color-yellow) 70%, transparent);
 }
 .jw-timer-card--advice[data-state="warn"][data-running="true"] {
-  background: color-mix(in srgb, var(--color-orange) 16%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-orange) 16%,
+    var(--background-secondary)
+  );
   border-left-color: color-mix(in srgb, var(--color-orange) 70%, transparent);
 }
 .jw-timer-card--advice[data-state="over"][data-running="true"] {
-  background: color-mix(in srgb, var(--color-red) 16%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-red) 16%,
+    var(--background-secondary)
+  );
   border-left-color: color-mix(in srgb, var(--color-red) 70%, transparent);
 }
 .jw-timer-card--advice[data-running="false"][data-state="ok"],
 .jw-timer-card--advice[data-running="false"][data-state="warn"],
 .jw-timer-card--advice[data-running="false"][data-state="over"] {
-  background: color-mix(in srgb, var(--color-yellow) 12%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-yellow) 12%,
+    var(--background-secondary)
+  );
   border-left-color: color-mix(in srgb, var(--color-yellow) 55%, transparent);
 }
 
@@ -460,7 +532,8 @@ body.theme-dark {
 .jw-timer-card--advice[data-running="false"][data-state="warn"],
 .jw-timer-card--advice[data-running="false"][data-state="over"] {
   border-color: unset;
-  border-left: 3px solid color-mix(in srgb, var(--color-yellow) 55%, transparent);
+  border-left: 3px solid
+    color-mix(in srgb, var(--color-yellow) 55%, transparent);
 }
 
 .jw-timer-advice-badge {
@@ -564,7 +637,9 @@ body.theme-dark {
   width: 0%;
   background: var(--color-green);
   border-radius: 2px;
-  transition: width 250ms linear, background 200ms;
+  transition:
+    width 250ms linear,
+    background 200ms;
 }
 
 .jw-timer-card[data-state="warn"] .jw-timer-bar-fill {
@@ -609,7 +684,10 @@ body.theme-dark {
   cursor: pointer;
   line-height: 1;
   flex: 1;
-  transition: background 100ms, color 100ms, border-color 100ms;
+  transition:
+    background 100ms,
+    color 100ms,
+    border-color 100ms;
 }
 
 .jw-timer-btn:hover:not(:disabled) {
@@ -637,14 +715,22 @@ body.theme-dark {
 
 /* Reset button in pending-confirm state */
 .jw-timer-btn--confirm {
-  background: color-mix(in srgb, var(--color-red) 12%, var(--background-secondary)) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-red) 12%,
+    var(--background-secondary)
+  ) !important;
   border-color: var(--color-red) !important;
   color: var(--color-red) !important;
   font-weight: 700;
 }
 
 .jw-timer-btn--confirm:hover {
-  background: color-mix(in srgb, var(--color-red) 22%, var(--background-secondary)) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-red) 22%,
+    var(--background-secondary)
+  ) !important;
 }
 
 /* ─── Add-part toolbar button ────────────────────────────────────────────── */
@@ -659,11 +745,18 @@ body.theme-dark {
   border-radius: 5px;
   cursor: pointer;
   margin-left: 0.4rem;
-  transition: background 100ms, color 100ms, border-color 100ms;
+  transition:
+    background 100ms,
+    color 100ms,
+    border-color 100ms;
 }
 
 .jw-timer-btn-add:hover {
-  background: color-mix(in srgb, var(--color-green) 12%, var(--background-secondary));
+  background: color-mix(
+    in srgb,
+    var(--color-green) 12%,
+    var(--background-secondary)
+  );
   border-color: var(--color-green);
   color: var(--color-green);
 }
@@ -691,7 +784,9 @@ body.theme-dark {
   flex: 0;
 }
 
-.jw-timer-overlay-btn--move:hover { filter: brightness(1.2); }
+.jw-timer-overlay-btn--move:hover {
+  filter: brightness(1.2);
+}
 
 /* ─── Edit/Add modal checkbox row ────────────────────────────────────────── */
 
@@ -706,6 +801,40 @@ body.theme-dark {
   cursor: pointer;
   margin: 0;
   flex-shrink: 0;
+}
+
+/* ─── Per-part note textarea ─────────────────────────────────────────────── */
+
+.jw-timer-note {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  overflow: hidden;
+  min-height: 1.7rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.78rem;
+  font-family: inherit;
+  background: transparent;
+  border: none;
+  border-top: 1px dashed var(--background-modifier-border);
+  color: var(--text-muted);
+  transition:
+    border-color 120ms,
+    color 120ms;
+  /* Modern auto-resize */
+  field-sizing: content;
+}
+
+.jw-timer-note:focus {
+  outline: none;
+  color: var(--text-normal);
+  border-top-color: var(--color-accent);
+}
+
+.jw-timer-note::placeholder {
+  color: var(--text-faint);
+  font-style: italic;
 }
 
 /* ─── Export footer ──────────────────────────────────────────────────────── */

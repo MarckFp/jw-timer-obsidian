@@ -48,7 +48,10 @@ export function renderCard(
   // Title + allotted minutes
   const header = card.createDiv({ cls: "jw-timer-card-header" });
   header.createDiv({ cls: "jw-timer-card-title", text: part.label });
-  header.createDiv({ cls: "jw-timer-card-allotted", text: `${Math.round(part.durationSec / 60)} min` });
+  header.createDiv({
+    cls: "jw-timer-card-allotted",
+    text: `${Math.round(part.durationSec / 60)} min`,
+  });
 
   // Scheduled end time + actual stopped-at time
   const endTimeMins = scheduledStartMins + Math.ceil(part.durationSec / 60);
@@ -67,26 +70,75 @@ export function renderCard(
 
   // Large elapsed clock
   const clockRow = card.createDiv({ cls: "jw-timer-clock-row" });
-  const elapsedEl = clockRow.createDiv({ cls: "jw-timer-elapsed", text: "00:00" });
+  const elapsedEl = clockRow.createDiv({
+    cls: "jw-timer-elapsed",
+    text: "00:00",
+  });
 
   // Controls
   const controls = card.createDiv({ cls: "jw-timer-controls" });
-  const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: labels.play });
+  const playBtn = controls.createEl("button", {
+    cls: "jw-timer-btn jw-timer-btn-play",
+    text: labels.play,
+  });
   playBtn.setAttr("aria-label", "Start timer");
-  const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: labels.reset });
+  const resetBtn = controls.createEl("button", {
+    cls: "jw-timer-btn jw-timer-btn-reset",
+    text: labels.reset,
+  });
   resetBtn.setAttr("aria-label", "Reset timer");
 
   playBtn.addEventListener("click", () => ctx.handlePlayPause(part));
-  resetBtn.addEventListener("click", () => ctx.armReset(resetBtn, () => ctx.handleReset(part)));
+  resetBtn.addEventListener("click", () =>
+    ctx.armReset(resetBtn, () => ctx.handleReset(part)),
+  );
 
   // Suppress unused-var warning
   void endTimeEl;
 
-  ctx.cards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, deltaEl, playBtn, resetBtn, barFillEl });
+  ctx.cards.set(part.order, {
+    cardEl: card,
+    elapsedEl,
+    endTimeEl,
+    stoppedAtEl,
+    deltaEl,
+    playBtn,
+    resetBtn,
+    barFillEl,
+  });
   ctx.updateCard(part, scheduledStartMins);
 
+  // ─── Per-part note ───────────────────────────────────────────────────────────
+  const noteKey = `${ctx.weekKey}:${part.order}`;
+  const existingNote = ctx.plugin.getPartOverride(noteKey)?.note ?? "";
+  const noteEl = card.createEl("textarea", { cls: "jw-timer-note" });
+  noteEl.placeholder = labels.notePlaceholder;
+  noteEl.rows = 1;
+  noteEl.value = existingNote;
+  if (existingNote) {
+    // Resize to fit saved content on initial render
+    window.requestAnimationFrame(() => {
+      noteEl.style.height = "auto";
+      noteEl.style.height = `${noteEl.scrollHeight}px`;
+    });
+  }
+  let noteDebounce: number | null = null;
+  noteEl.addEventListener("input", () => {
+    noteEl.style.height = "auto";
+    noteEl.style.height = `${noteEl.scrollHeight}px`;
+    if (noteDebounce !== null) window.clearTimeout(noteDebounce);
+    noteDebounce = window.setTimeout(() => {
+      noteDebounce = null;
+      const val = noteEl.value.trim();
+      const curr = ctx.plugin.getPartOverride(noteKey) ?? {};
+      ctx.plugin.setPartOverride(noteKey, { ...curr, note: val || undefined });
+      void ctx.plugin.persistTimers();
+    }, 400);
+  });
+
   // Advice sub-card for parts with instructor feedback (Bible reading + ministry parts)
-  if (part.hasAdvice && ctx.plugin.settings.showAdvice) renderAdviceCard(ctx, parentEl, part);
+  if (part.hasAdvice && ctx.plugin.settings.showAdvice)
+    renderAdviceCard(ctx, parentEl, part);
 
   // ─── Long-press overlay ──────────────────────────────────────────────────────────────────────
   const overlay = card.createDiv({ cls: "jw-timer-card-overlay" });
@@ -122,7 +174,8 @@ export function renderCard(
     }
   };
   card.addEventListener("pointerdown", (e) => {
-    if ((e.target as HTMLElement).closest("button, .jw-timer-card-overlay")) return;
+    if ((e.target as HTMLElement).closest("button, .jw-timer-card-overlay"))
+      return;
     pressStartX = e.clientX;
     pressStartY = e.clientY;
     card.style.touchAction = "none";
@@ -136,7 +189,7 @@ export function renderCard(
       }
       ctx.activeOverlay = overlay;
       overlay.addClass("jw-timer-card-overlay--visible");
-    }, 600);
+    }, 1000);
   });
   card.addEventListener("pointerup", cancelPress);
   card.addEventListener("pointermove", (e) => {
@@ -156,24 +209,29 @@ export function renderCard(
   editBtn.addEventListener("click", () => {
     overlay.removeClass("jw-timer-card-overlay--visible");
     if (ctx.activeOverlay === overlay) ctx.activeOverlay = null;
-    new EditPartModal(ctx.app, part, labels, (newLabel, newDurationSec, newHasAdvice) => {
-      if (part.isCustom) {
-        ctx.plugin.updateCustomPart(ctx.weekKey, part.order, {
-          label: newLabel,
-          durationSec: newDurationSec,
-          hasAdvice: newHasAdvice || undefined,
-        });
-      } else {
-        ctx.plugin.setPartOverride(`${ctx.weekKey}:${part.order}`, {
-          label: newLabel,
-          durationSec: newDurationSec,
-          hasAdvice: newHasAdvice,
-        });
-      }
-      void ctx.plugin.persistTimers();
-      ctx.renderSchedule(ctx.schedule!);
-      ctx.updateMeetingBar();
-    }).open();
+    new EditPartModal(
+      ctx.app,
+      part,
+      labels,
+      (newLabel, newDurationSec, newHasAdvice) => {
+        if (part.isCustom) {
+          ctx.plugin.updateCustomPart(ctx.weekKey, part.order, {
+            label: newLabel,
+            durationSec: newDurationSec,
+            hasAdvice: newHasAdvice || undefined,
+          });
+        } else {
+          ctx.plugin.setPartOverride(`${ctx.weekKey}:${part.order}`, {
+            label: newLabel,
+            durationSec: newDurationSec,
+            hasAdvice: newHasAdvice,
+          });
+        }
+        void ctx.plugin.persistTimers();
+        ctx.renderSchedule(ctx.schedule!);
+        ctx.updateMeetingBar();
+      },
+    ).open();
   });
   moveUpBtn.addEventListener("click", () => {
     overlay.removeClass("jw-timer-card-overlay--visible");
@@ -191,7 +249,9 @@ export function renderCard(
     if (part.isCustom) {
       ctx.plugin.removeCustomPart(ctx.weekKey, part.order);
     } else {
-      ctx.plugin.setPartOverride(`${ctx.weekKey}:${part.order}`, { deleted: true });
+      ctx.plugin.setPartOverride(`${ctx.weekKey}:${part.order}`, {
+        deleted: true,
+      });
     }
     void ctx.plugin.persistTimers();
     ctx.renderSchedule(ctx.schedule!);
@@ -206,14 +266,19 @@ export function renderAdviceCard(
   part: MeetingPart,
 ): void {
   const labels = ctx.getLabels();
-  const card = parentEl.createDiv({ cls: "jw-timer-card jw-timer-card--advice" });
+  const card = parentEl.createDiv({
+    cls: "jw-timer-card jw-timer-card--advice",
+  });
   card.setAttribute("data-state", "idle");
   card.setAttribute("data-running", "false");
 
   // Badge: arrow icon + label
   const badge = card.createDiv({ cls: "jw-timer-advice-badge" });
   badge.createSpan({ cls: "jw-timer-advice-icon", text: "↳" });
-  badge.createSpan({ cls: "jw-timer-advice-label", text: `${labels.advice} · 1 min` });
+  badge.createSpan({
+    cls: "jw-timer-advice-label",
+    text: `${labels.advice} · 1 min`,
+  });
 
   // Progress bar
   const barEl = card.createDiv({ cls: "jw-timer-bar" });
@@ -227,21 +292,41 @@ export function renderAdviceCard(
 
   // Elapsed clock
   const clockRow = card.createDiv({ cls: "jw-timer-clock-row" });
-  const elapsedEl = clockRow.createDiv({ cls: "jw-timer-elapsed jw-timer-elapsed--advice", text: "00:00" });
+  const elapsedEl = clockRow.createDiv({
+    cls: "jw-timer-elapsed jw-timer-elapsed--advice",
+    text: "00:00",
+  });
 
   // Controls
   const controls = card.createDiv({ cls: "jw-timer-controls" });
-  const playBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-play", text: labels.play });
+  const playBtn = controls.createEl("button", {
+    cls: "jw-timer-btn jw-timer-btn-play",
+    text: labels.play,
+  });
   playBtn.setAttr("aria-label", "Start advice timer");
-  const resetBtn = controls.createEl("button", { cls: "jw-timer-btn jw-timer-btn-reset", text: labels.reset });
+  const resetBtn = controls.createEl("button", {
+    cls: "jw-timer-btn jw-timer-btn-reset",
+    text: labels.reset,
+  });
   resetBtn.setAttr("aria-label", "Reset advice timer");
 
   playBtn.addEventListener("click", () => ctx.handleAdvicePlayPause(part));
-  resetBtn.addEventListener("click", () => ctx.armReset(resetBtn, () => ctx.handleAdviceReset(part)));
+  resetBtn.addEventListener("click", () =>
+    ctx.armReset(resetBtn, () => ctx.handleAdviceReset(part)),
+  );
 
   const deltaEl = card.createDiv({ cls: "jw-timer-delta" });
   deltaEl.style.display = "none";
 
-  ctx.adviceCards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, deltaEl, playBtn, resetBtn, barFillEl });
+  ctx.adviceCards.set(part.order, {
+    cardEl: card,
+    elapsedEl,
+    endTimeEl,
+    stoppedAtEl,
+    deltaEl,
+    playBtn,
+    resetBtn,
+    barFillEl,
+  });
   ctx.updateAdviceCard(part);
 }

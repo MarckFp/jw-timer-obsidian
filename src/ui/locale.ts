@@ -28,8 +28,8 @@ export interface UiLabels {
   placeholder: string;
   // Export actions
   shareBtn: string;
-  pdfBtn: string;
   copyOk: string;
+  notePlaceholder: string;
 }
 
 // prettier-ignore
@@ -43,7 +43,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Title",          fieldDuration: "Duration (min)",
     fieldSection: "Section",      fieldAdvice: "Advice timer (1 min)",
     placeholder: "Part name…",
-    shareBtn: "Share",  pdfBtn: "PDF",  copyOk: "Copied!",
+    shareBtn: "Share",  copyOk: "Copied!",  notePlaceholder: "Note…",
   },
   "lp-s": {
     play: "Iniciar",        pause: "Pausar",      reset: "Reiniciar",       resetAll: "Reiniciar todo",
@@ -54,7 +54,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Título",               fieldDuration: "Duración (min)",
     fieldSection: "Sección",            fieldAdvice: "Tiempo de consejo (1 min)",
     placeholder: "Nombre de la parte…",
-    shareBtn: "Compartir",  pdfBtn: "PDF",  copyOk: "¡Copiado!",
+    shareBtn: "Compartir",  copyOk: "¡Copiado!",  notePlaceholder: "Nota…",
   },
   "lp-f": {
     play: "Démarrer",       pause: "Pause",        reset: "Réinit.",         resetAll: "Tout réinit.",
@@ -65,7 +65,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titre",                fieldDuration: "Durée (min)",
     fieldSection: "Section",            fieldAdvice: "Chrono conseil (1 min)",
     placeholder: "Nom de la partie…",
-    shareBtn: "Partager",  pdfBtn: "PDF",  copyOk: "Copié !",
+    shareBtn: "Partager",  copyOk: "Copié !",  notePlaceholder: "Note…",
   },
   "lp-t": {
     play: "Iniciar",        pause: "Pausar",       reset: "Reiniciar",       resetAll: "Reiniciar tudo",
@@ -76,7 +76,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Título",               fieldDuration: "Duração (min)",
     fieldSection: "Seção",              fieldAdvice: "Tempo de conselho (1 min)",
     placeholder: "Nome da parte…",
-    shareBtn: "Partilhar",  pdfBtn: "PDF",  copyOk: "Copiado!",
+    shareBtn: "Partilhar",  copyOk: "Copiado!",  notePlaceholder: "Nota…",
   },
   "lp-x": {
     play: "Start",          pause: "Pause",        reset: "Zurücksetzen",    resetAll: "Alles zurücksetzen",
@@ -87,7 +87,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titel",                fieldDuration: "Dauer (min)",
     fieldSection: "Abschnitt",          fieldAdvice: "Ratgeber-Timer (1 min)",
     placeholder: "Teilname…",
-    shareBtn: "Teilen",  pdfBtn: "PDF",  copyOk: "Kopiert!",
+    shareBtn: "Teilen",  copyOk: "Kopiert!",  notePlaceholder: "Notiz…",
   },
   "lp-i": {
     play: "Avvia",          pause: "Pausa",        reset: "Azzera",          resetAll: "Azzera tutto",
@@ -98,7 +98,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titolo",               fieldDuration: "Durata (min)",
     fieldSection: "Sezione",            fieldAdvice: "Timer consiglio (1 min)",
     placeholder: "Nome parte…",
-    shareBtn: "Condividi",  pdfBtn: "PDF",  copyOk: "Copiato!",
+    shareBtn: "Condividi",  copyOk: "Copiato!",  notePlaceholder: "Nota…",
   },
   "lp-u": {
     play: "Старт",          pause: "Пауза",        reset: "Сброс",           resetAll: "Сбросить всё",
@@ -109,7 +109,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Заголовок",            fieldDuration: "Длит. (мин)",
     fieldSection: "Раздел",             fieldAdvice: "Таймер совета (1 мин)",
     placeholder: "Название части…",
-    shareBtn: "Поделиться",  pdfBtn: "PDF",  copyOk: "Скопировано!",
+    shareBtn: "Поделиться",  copyOk: "Скопировано!",  notePlaceholder: "Заметка…",
   },
   "lp-m": {
     play: "Start",          pause: "Pauză",        reset: "Resetare",        resetAll: "Resetare totală",
@@ -120,7 +120,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titlu",                fieldDuration: "Durată (min)",
     fieldSection: "Secțiune",           fieldAdvice: "Temporizator sfat (1 min)",
     placeholder: "Numele părții…",
-    shareBtn: "Distribuie",  pdfBtn: "PDF",  copyOk: "Copiat!",
+    shareBtn: "Distribuie",  copyOk: "Copiat!",  notePlaceholder: "Notă…",
   },
   "lp-bl": {
     play: "Старт",          pause: "Пауза",        reset: "Нулиране",        resetAll: "Нулиране на всичко",
@@ -131,7 +131,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Заглавие",             fieldDuration: "Продълж. (мин)",
     fieldSection: "Раздел",             fieldAdvice: "Таймер съвет (1 мин)",
     placeholder: "Наименование…",
-    shareBtn: "Сподели се",  pdfBtn: "PDF",  copyOk: "Копирано!",
+    shareBtn: "Сподели се",  copyOk: "Копирано!",  notePlaceholder: "Бележка…",
   },
   "lp-o": {
     play: "Start",          pause: "Pauze",        reset: "Reset",           resetAll: "Alles resetten",
@@ -142,7 +142,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titel",                fieldDuration: "Duur (min)",
     fieldSection: "Sectie",             fieldAdvice: "Advies-timer (1 min)",
     placeholder: "Naam onderdeel…",
-    shareBtn: "Delen",  pdfBtn: "PDF",  copyOk: "Gekopieerd!",
+    shareBtn: "Delen",  copyOk: "Gekopieerd!",  notePlaceholder: "Notitie…",
   },
   "lp-p": {
     play: "Start",          pause: "Pauza",        reset: "Resetuj",         resetAll: "Resetuj wszystko",
@@ -153,7 +153,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Tytuł",                fieldDuration: "Czas (min)",
     fieldSection: "Sekcja",             fieldAdvice: "Timer porady (1 min)",
     placeholder: "Nazwa części…",
-    shareBtn: "Udostępnij",  pdfBtn: "PDF",  copyOk: "Skopiowano!",
+    shareBtn: "Udostępnij",  copyOk: "Skopiowano!",  notePlaceholder: "Notatka…",
   },
   "lp-j": {
     play: "スタート",        pause: "一時停止",      reset: "リセット",         resetAll: "全リセット",
@@ -164,7 +164,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "タイトル",              fieldDuration: "時間（分）",
     fieldSection: "セクション",          fieldAdvice: "アドバイスタイマー（1分）",
     placeholder: "部分の名前…",
-    shareBtn: "共有",  pdfBtn: "PDF",  copyOk: "コピーしました",
+    shareBtn: "共有",  copyOk: "コピーしました",  notePlaceholder: "メモ…",
   },
   "lp-ko": {
     play: "시작",           pause: "일시정지",       reset: "초기화",          resetAll: "전체 초기화",
@@ -175,7 +175,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "제목",                  fieldDuration: "시간 (분)",
     fieldSection: "섹션",                fieldAdvice: "조언 타이머 (1분)",
     placeholder: "부분 이름…",
-    shareBtn: "공유",  pdfBtn: "PDF",  copyOk: "복사됨!",
+    shareBtn: "공유",  copyOk: "복사됨!",  notePlaceholder: "메모…",
   },
   "lp-chs": {
     play: "开始",           pause: "暂停",          reset: "重置",            resetAll: "全部重置",
@@ -186,7 +186,40 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "标题",                  fieldDuration: "时长（分）",
     fieldSection: "部分",                fieldAdvice: "指导计时（1分钟）",
     placeholder: "部分名称…",
-    shareBtn: "分享",  pdfBtn: "PDF",  copyOk: "已复制!",
+    shareBtn: "分享",  copyOk: "已复制!",  notePlaceholder: "备注…",
+  },
+  "lp-a": {
+    play: "تشغيل",      pause: "إيقاف مؤقت",  reset: "إعادة تعيين",    resetAll: "إعادة تعيين الكل",
+    confirm: "تأكيد؟",  today: "اليوم",   advice: "النصيحة",   end: "النهاية",   stopped: "متوقف",
+    editOverlay: "تعديل",  deleteOverlay: "حذف",
+    editModal: "تعديل الجزء",           newStopwatch: "ساعة إيقاف جديدة",
+    saveBtn: "حفظ",                   addBtn: "إضافة",
+    fieldTitle: "العنوان",          fieldDuration: "المدة (دقيقة)",
+    fieldSection: "القسم",              fieldAdvice: "مؤقت النصيحة (دقيقة)",
+    placeholder: "اسم الجزء…",
+    shareBtn: "مشاركة",  copyOk: "تم النسخ!",  notePlaceholder: "ملاحظة…",
+  },
+  "lp-z": {
+    play: "Starta",         pause: "Paus",          reset: "Nollställ",      resetAll: "Nollställ alla",
+    confirm: "Bekräfta?",  today: "Idag",      advice: "Råd",           end: "Slut",            stopped: "Stoppad",
+    editOverlay: "Redigera", deleteOverlay: "Ta bort",
+    editModal: "Redigera del",          newStopwatch: "Ny tidtagare",
+    saveBtn: "Spara",                   addBtn: "Lägg till",
+    fieldTitle: "Titel",                fieldDuration: "Tid (min)",
+    fieldSection: "Avsnitt",            fieldAdvice: "Råd-timer (1 min)",
+    placeholder: "Delens namn…",
+    shareBtn: "Dela",  copyOk: "Kopierat!",  notePlaceholder: "Anteckning…",
+  },
+  "lp-tk": {
+    play: "Başlat",       pause: "Duraklat",    reset: "Sıfırla",    resetAll: "Tümünü sıfırla",
+    confirm: "Onayla?",     today: "Bugün",    advice: "Tavsiye",        end: "Bitiş",          stopped: "Durdu",
+    editOverlay: "Düzenle", deleteOverlay: "Sil",
+    editModal: "Bölümü düzenle",       newStopwatch: "Yeni kronometre",
+    saveBtn: "Kaydet",                  addBtn: "Ekle",
+    fieldTitle: "Başlık",              fieldDuration: "Süre (dk)",
+    fieldSection: "Bölüm",             fieldAdvice: "Tavsiye zamanlayıcı (1 dk)",
+    placeholder: "Bölüm adı…",
+    shareBtn: "Paylaş",  copyOk: "Kopyalıktı!",  notePlaceholder: "Not…",
   },
 };
 
@@ -194,32 +227,35 @@ export const LOCALE_UI: Record<string, UiLabels> = {
 // WOL only has h2 for the 3 middle sections; these fill in opening/closing.
 
 export const LOCALE_OPENING_CLOSING: Record<string, [string, string]> = {
-  "lp-e":   ["Opening",           "Closing"],
-  "lp-s":   ["Apertura",          "Conclusión"],
-  "lp-f":   ["Ouverture",         "Conclusion"],
-  "lp-t":   ["Abertura",          "Conclusão"],
-  "lp-g":   ["Eröffnung",         "Abschluss"],
-  "lp-i":   ["Apertura",          "Conclusione"],
-  "lp-u":   ["Начало",            "Заключение"],
-  "lp-m":   ["Deschidere",        "Încheiere"],
-  "lp-bl":  ["Встъпителна част",  "Заключителна част"],
-  "lp-o":   ["Opening",           "Sluiting"],
-  "lp-x":   ["Eröffnung",         "Abschluss"],
-  "lp-p":   ["Otwarcie",          "Zakończenie"],
-  "lp-j":   ["開会の言葉",          "閉会の言葉"],
-  "lp-ko":  ["소개말",              "맺음말"],
-  "lp-chs": ["开场",               "结束"],
+  "lp-e": ["Opening", "Closing"],
+  "lp-s": ["Apertura", "Conclusión"],
+  "lp-f": ["Ouverture", "Conclusion"],
+  "lp-t": ["Abertura", "Conclusão"],
+  "lp-g": ["Eröffnung", "Abschluss"],
+  "lp-i": ["Apertura", "Conclusione"],
+  "lp-u": ["Начало", "Заключение"],
+  "lp-m": ["Deschidere", "Încheiere"],
+  "lp-bl": ["Встъпителна част", "Заключителна част"],
+  "lp-o": ["Opening", "Sluiting"],
+  "lp-x": ["Eröffnung", "Abschluss"],
+  "lp-p": ["Otwarcie", "Zakończenie"],
+  "lp-j": ["開会の言葉", "閉会の言葉"],
+  "lp-ko": ["소개말", "맺음말"],
+  "lp-chs": ["开场", "结束"],
+  "lp-a": ["الافتتاح", "الاختتام"],
+  "lp-z": ["Öppning", "Avslutning"],
+  "lp-tk": ["Açılış", "Kapanış"],
 };
 
 // ─── Fallback section labels ────────────────────────────────────────────────
 // Used when scraper sectionLabels is absent (old cache entries).
 
 export const SECTION_FALLBACK: Record<string, string> = {
-  opening:   "Opening",
+  opening: "Opening",
   treasures: "Treasures from God's Word",
-  ministry:  "Apply Yourself to the Ministry",
-  living:    "Living as Christians",
-  closing:   "Closing",
+  ministry: "Apply Yourself to the Ministry",
+  living: "Living as Christians",
+  closing: "Closing",
 };
 
 // ─── Staleness labels ─────────────────────────────────────────────────────────
@@ -248,11 +284,17 @@ export const LOCALE_STALE: Record<string, StaleLabels> = {
   "lp-p":   { justNow: "Pobrano przed chwilą",       todayAt: "Pobrano dziś o {time}",            yesterday: "Pobrano wczoraj",            daysAgo: "Pobrano {n} dni temu"          },
   "lp-j":   { justNow: "たった今取得",                 todayAt: "今日の{time}に取得",                 yesterday: "昨日取得",                    daysAgo: "{n}日前に取得"                  },
   "lp-ko":  { justNow: "방금 가져옴",                  todayAt: "오늘 {time}에 가져옴",               yesterday: "어제 가져옴",                  daysAgo: "{n}일 전에 가져옴"               },
+  "lp-a":  { justNow: "تم الجلب الآن",         todayAt: "تم الجلب اليوم في {time}",   yesterday: "تم الجلب أمس",         daysAgo: "تم الجلب منذ {n} أيام"       },
+  "lp-z":  { justNow: "Hämtad precis nu",        todayAt: "Hämtad idag kl. {time}",     yesterday: "Hämtad igår",          daysAgo: "Hämtad för {n} dagar sedan"   },
+  "lp-tk": { justNow: "Az önce alındı",           todayAt: "Bugün {time}'de alındı",     yesterday: "Dün alındı",           daysAgo: "{n} gün önce alındı"          },
   "lp-chs": { justNow: "刚刚获取",                    todayAt: "今天{time}获取",                    yesterday: "昨天获取",                    daysAgo: "{n}天前获取"                    },
 };
 
 /** Returns a localised staleness label + severity for a fetch timestamp. */
-export function formatFetchedAt(fetchedAt: number, lang: string): { text: string; level: "fresh" | "stale" | "old" } {
+export function formatFetchedAt(
+  fetchedAt: number,
+  lang: string,
+): { text: string; level: "fresh" | "stale" | "old" } {
   const ageH = (Date.now() - fetchedAt) / 3_600_000;
   const sl = LOCALE_STALE[lang] ?? LOCALE_STALE["lp-e"];
   let text: string;
@@ -266,7 +308,8 @@ export function formatFetchedAt(fetchedAt: number, lang: string): { text: string
     const days = Math.floor(ageH / 24);
     text = days === 1 ? sl.yesterday : sl.daysAgo.replace("{n}", String(days));
   }
-  const level: "fresh" | "stale" | "old" = ageH < 24 ? "fresh" : ageH < 72 ? "stale" : "old";
+  const level: "fresh" | "stale" | "old" =
+    ageH < 24 ? "fresh" : ageH < 72 ? "stale" : "old";
   return { text, level };
 }
 
@@ -627,6 +670,81 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "타이머가 할당된 시간에 도달하면 장치를 진동시킵니다. 모바일 전용.",
     vibrateDurName: "진동 알림 지속 시간 (초)",
     vibrateDurDesc: "진동 지속 시간. 모바일 전용. 기본값: 2초.",
+  },
+  "lp-a": {
+    pageTitle: "JW Meeting Timer — الإعدادات",
+    langName: "لغة الاجتماع",
+    langDesc: "اللغة المستخدمة لجلب البرنامج الأسبوعي من wol.jw.org.",
+    customLocaleName: "لغة مخصصة (متقدم)",
+    customLocaleDesc: 'استخدم أي مسار لغة WOL، مثل "r4/lp-s". اتركه فارغاً للقائمة المنسدلة.',
+    startTimeName: "وقت بدء الاجتماع",
+    startTimeDesc: 'تنسيق 24 ساعة، مثل "20:00" أو "18:30".',
+    openingSongName: "الترنيمة الافتتاحية + الصلاة (دقائق)",
+    openingSongDesc: "الدقائق الثابتة قبل أول جزء (ترنيمة + صلاة). الافتراضي: 5.",
+    displayHeading: "العرض",
+    showAdviceName: "إظهار مؤقتات النصيحة",
+    showAdviceDesc: "إظهار بطاقة النصيحة لمدة دقيقة واحدة أسفل الأجزاء المعنية.",
+    autoNextPartName: "بدء الجزء التالي تلقائياً",
+    autoNextPartDesc: "عند إيقاف جزء مؤقتاً، يبدأ الجزء التالي في نفس القسم تلقائياً.",
+    alertsHeading: "التنبيهات",
+    soundAlertName: "تنبيه صوتي عند تجاوز الوقت",
+    soundAlertDesc: "تشغيل صوت متكرر عندما يصل المؤقت إلى المدة المخصصة.",
+    soundDurName: "مدة التنبيه الصوتي (ثوانٍ)",
+    soundDurDesc: "مدة تشغيل الصوت. الافتراضي: 1 ثانية.",
+    vibrateAlertName: "تنبيه اهتزازي عند تجاوز الوقت",
+    vibrateAlertDesc: "اهتزاز الجهاز عندما يصل المؤقت إلى المدة المخصصة. الهاتف فقط.",
+    vibrateDurName: "مدة التنبيه الاهتزازي (ثوانٍ)",
+    vibrateDurDesc: "مدة الاهتزاز. الهاتف فقط. الافتراضي: 2 ثانية.",
+  },
+  "lp-z": {
+    pageTitle: "JW Meeting Timer — Inställningar",
+    langName: "Mötets språk",
+    langDesc: "Språk för att hämta veckoprogrammet från wol.jw.org.",
+    customLocaleName: "Anpassad region (avancerat)",
+    customLocaleDesc: 'Använd valfri WOL-sökväg, t.ex. "r4/lp-s". Lämna tomt för rullgardinslistan.',
+    startTimeName: "Mötets starttid",
+    startTimeDesc: '24-timmarsformat, t.ex. "20:00" eller "18:30".',
+    openingSongName: "Inledningssång + bön (minuter)",
+    openingSongDesc: "Fasta minuter före det första programpunkten (sång + bön). Standard: 5.",
+    displayHeading: "Visning",
+    showAdviceName: "Visa råd-timers",
+    showAdviceDesc: "Visa 1-minuters råd-underkortet under tillämpliga delar.",
+    autoNextPartName: "Starta nästa del automatiskt",
+    autoNextPartDesc: "När du pausar en del startar nästa del i samma avsnitt automatiskt.",
+    alertsHeading: "Aviseringar",
+    soundAlertName: "Ljud-avisering vid övertid",
+    soundAlertDesc: "Spela ett upprepande ljud när en timer når sin tilldelade tid.",
+    soundDurName: "Ljud-aviseringens varaktighet (sekunder)",
+    soundDurDesc: "Hur länge ljudet spelas. Standard: 1 s.",
+    vibrateAlertName: "Vibrations-avisering vid övertid",
+    vibrateAlertDesc: "Vibrera enheten när en timer når sin tilldelade tid. Endast mobil.",
+    vibrateDurName: "Vibrations-aviseringens varaktighet (sekunder)",
+    vibrateDurDesc: "Hur länge enheten vibrerar. Endast mobil. Standard: 2 s.",
+  },
+  "lp-tk": {
+    pageTitle: "JW Meeting Timer — Ayarlar",
+    langName: "Toplantı dili",
+    langDesc: "wol.jw.org'dan haftalık programı almak için kullanılan dil.",
+    customLocaleName: "Özel yerel ayar (gelişmiş)",
+    customLocaleDesc: 'Herhangi bir WOL yerel ayar yolu kullanın, ör. "r4/lp-s". Açılır listesi için boş bırakın.',
+    startTimeName: "Toplantı başlangıç saati",
+    startTimeDesc: '24 saat formatı, ör. "20:00" veya "18:30".',
+    openingSongName: "Açılış ilahisi + dua (dakika)",
+    openingSongDesc: "İlk programın öncesindeki sabit dakikalar (ilahi + dua). Varsayılan: 5.",
+    displayHeading: "Görünüm",
+    showAdviceName: "Tavsiye zamanlayıcılarını göster",
+    showAdviceDesc: "Uygun bölümlerin altında 1 dakikalık tavsiye alt kartını göster.",
+    autoNextPartName: "Sonraki bölümü otomatik başlat",
+    autoNextPartDesc: "Bir bölümü duraklatınca, aynı kısımdaki sonraki bölüm otomatik olarak başlar.",
+    alertsHeading: "Uyarılar",
+    soundAlertName: "Süre aşımında ses uyarısı",
+    soundAlertDesc: "Zamanlayıcı tahsis edilen süreye ulaşınca tekrarlayan bir bip sesi çal.",
+    soundDurName: "Ses uyarısı süresi (saniye)",
+    soundDurDesc: "Bip sesinin çalma süresi. Varsayılan: 1 s.",
+    vibrateAlertName: "Süre aşımında titreşim uyarısı",
+    vibrateAlertDesc: "Zamanlayıcı tahsis edilen süreye ulaşınca cihazı titret. Yalnızca mobil.",
+    vibrateDurName: "Titreşim uyarısı süresi (saniye)",
+    vibrateDurDesc: "Cihazın titreşim süresi. Yalnızca mobil. Varsayılan: 2 s.",
   },
   "lp-chs": {
     pageTitle: "JW Meeting Timer — 设置",

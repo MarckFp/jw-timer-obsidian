@@ -70,14 +70,14 @@ Use the **◀ ▶** arrows in the nav bar to browse weeks. The **Today** button 
 
 ### Using the timers
 
-| Action | How |
-|--------|-----|
-| Start a part | Tap **Play** |
-| Pause a part | Tap **Pause** |
-| Reset a part | Tap **Reset** → **Confirm?** |
-| Reset all | Tap **Reset All** → **Confirm?** |
-| Edit / Delete / Move a part | Long-press a card (600 ms) → overlay menu |
-| Add a custom stopwatch | Tap the **+** button in the toolbar |
+| Action                      | How                                 |
+| --------------------------- | ----------------------------------- |
+| Start a part                | Tap **Play**                        |
+| Pause a part                | Tap **Pause**                       |
+| Reset a part                | Tap **Reset** → **Confirm?**        |
+| Reset all                   | Tap **Reset All** → **Confirm?**    |
+| Edit / Delete / Move a part | Long-press a card → overlay menu    |
+| Add a custom stopwatch      | Tap the **+** button in the toolbar |
 
 ### Exporting results
 
@@ -91,18 +91,18 @@ Scroll to the bottom of the list to find the **Share** button:
 
 Open **Settings** → **JW Meeting Timer**.
 
-| Setting | Description |
-|---------|-------------|
-| **Language** | WOL locale used to fetch and display the schedule. |
-| **Custom locale (advanced)** | Enter any WOL locale path (e.g. `r4/lp-s`) to use a language not in the dropdown. |
-| **Meeting start time** | Start time in 24-hour format, e.g. `20:00`. |
-| **Opening song + prayer (min)** | Minutes reserved before the first programme part (song + prayer). Default: 5. |
-| **Show advice timers** | Show the 1-minute instructor advice sub-card below applicable parts. |
-| **Auto-start next part** | When you pause a part, automatically start the next one in the same section. |
-| **Sound alert at overtime** | Play a repeating beep when a part exceeds its allotted time. |
-| **Sound alert duration** | How long the beep plays (seconds). |
-| **Vibration alert at overtime** | Vibrate the device at overtime. Mobile only. |
-| **Vibration alert duration** | How long the device vibrates (seconds). |
+| Setting                         | Description                                                                       |
+| ------------------------------- | --------------------------------------------------------------------------------- |
+| **Language**                    | WOL locale used to fetch and display the schedule.                                |
+| **Custom locale (advanced)**    | Enter any WOL locale path (e.g. `r4/lp-s`) to use a language not in the dropdown. |
+| **Meeting start time**          | Start time in 24-hour format, e.g. `20:00`.                                       |
+| **Opening song + prayer (min)** | Minutes reserved before the first programme part (song + prayer). Default: 5.     |
+| **Show advice timers**          | Show the 1-minute instructor advice sub-card below applicable parts.              |
+| **Auto-start next part**        | When you pause a part, automatically start the next one in the same section.      |
+| **Sound alert at overtime**     | Play a repeating beep when a part exceeds its allotted time.                      |
+| **Sound alert duration**        | How long the beep plays (seconds).                                                |
+| **Vibration alert at overtime** | Vibrate the device at overtime. Mobile only.                                      |
+| **Vibration alert duration**    | How long the device vibrates (seconds).                                           |
 
 ---
 

@@ -4,20 +4,23 @@ import { LOCALE_SETTINGS } from "./ui/locale";
 
 // Available WOL locales shown in the dropdown: [display label, locale path]
 const WOL_LOCALES: [string, string][] = [
-  ["English",               "r1/lp-e"],
-  ["Español",               "r4/lp-s"],
-  ["Português",             "r5/lp-t"],
-  ["Français",              "r30/lp-f"],
-  ["Italiano",              "r6/lp-i"],
-  ["Deutsch",               "r10/lp-x"],
-  ["Nederlands",            "r18/lp-o"],
-  ["Русский",               "r2/lp-u"],
-  ["Română",                "r34/lp-m"],
-  ["Български",             "r46/lp-bl"],
-  ["Polski",                "r17/lp-p"],
-  ["日本語",                 "r7/lp-j"],
-  ["한국어",                 "r8/lp-ko"],
-  ["中文（简体）",            "r23/lp-chs"],
+  ["English", "r1/lp-e"],
+  ["Español", "r4/lp-s"],
+  ["Português", "r5/lp-t"],
+  ["Français", "r30/lp-f"],
+  ["Italiano", "r6/lp-i"],
+  ["Deutsch", "r10/lp-x"],
+  ["Nederlands", "r18/lp-o"],
+  ["Русский", "r2/lp-u"],
+  ["Română", "r34/lp-m"],
+  ["Български", "r46/lp-bl"],
+  ["Polski", "r17/lp-p"],
+  ["Arabic / عربي", "r8/lp-a"],
+  ["Svenska", "r16/lp-z"],
+  ["Türkçe", "r24/lp-tk"],
+  ["日本語", "r7/lp-j"],
+  ["한국어", "r8/lp-ko"],
+  ["中文（简体）", "r23/lp-chs"],
 ];
 
 /** Map browser language codes to WOL locale paths. Used on first install only. */
@@ -36,19 +39,26 @@ export function detectWolLocale(): string {
   if (lang.startsWith("bg")) return "r46/lp-bl";
   if (lang.startsWith("ru")) return "r2/lp-u";
   if (lang.startsWith("pl")) return "r17/lp-p";
+  if (lang.startsWith("ar")) return "r8/lp-a";
+  if (lang.startsWith("sv")) return "r16/lp-z";
+  if (lang.startsWith("tr")) return "r24/lp-tk";
   return "r1/lp-e";
 }
 
 export class JwTimerSettingsTab extends PluginSettingTab {
   private reloadDebounceHandle: number | null = null;
 
-  constructor(app: App, private readonly plugin: JwTimerPlugin) {
+  constructor(
+    app: App,
+    private readonly plugin: JwTimerPlugin,
+  ) {
     super(app, plugin);
   }
 
   /** Debounced reloadView — coalesces rapid input changes (e.g. typing start time) into one reload. */
   private scheduleReload(): void {
-    if (this.reloadDebounceHandle !== null) window.clearTimeout(this.reloadDebounceHandle);
+    if (this.reloadDebounceHandle !== null)
+      window.clearTimeout(this.reloadDebounceHandle);
     this.reloadDebounceHandle = window.setTimeout(async () => {
       this.reloadDebounceHandle = null;
       await this.plugin.reloadView();
@@ -72,7 +82,9 @@ export class JwTimerSettingsTab extends PluginSettingTab {
 
     // ── Language / locale ────────────────────────────────────────────────────
     const knownValues = WOL_LOCALES.map(([, v]) => v);
-    const currentIsCustom = !knownValues.includes(this.plugin.settings.wolLocale);
+    const currentIsCustom = !knownValues.includes(
+      this.plugin.settings.wolLocale,
+    );
 
     new Setting(containerEl)
       .setName(L.langName)
