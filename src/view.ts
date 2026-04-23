@@ -669,18 +669,21 @@ export class JwTimerView extends ItemView {
     if (alertSound) this.playBeep(alertSoundSec);
     if (alertVibrate && "vibrate" in navigator) {
       try {
-        // Use repeated single pulses via setTimeout recursion.
-        // Android WebView/Capacitor ignores pattern arrays and only fires the first pulse.
-        const pulseMs = 500;
-        const intervalMs = 650;
-        const totalCycles = Math.max(1, Math.round((alertVibrateSec * 1000) / intervalMs));
-        let fired = 0;
-        const pulse = () => {
-          navigator.vibrate(pulseMs);
-          fired++;
-          if (fired < totalCycles) window.setTimeout(pulse, intervalMs);
+        // Double-pulse "ba-dum" pattern — more attention-grabbing than single pulses.
+        // Uses recursive setTimeout since Android WebView ignores pattern arrays.
+        const pulse1 = 300;
+        const gap    = 120;
+        const pulse2 = 300;
+        const beatMs = pulse1 + gap + pulse2 + 280; // ~1 000 ms per beat
+        const totalBeats = Math.max(1, Math.round((alertVibrateSec * 1000) / beatMs));
+        let beat = 0;
+        const doBeat = () => {
+          navigator.vibrate(pulse1);
+          window.setTimeout(() => navigator.vibrate(pulse2), pulse1 + gap);
+          beat++;
+          if (beat < totalBeats) window.setTimeout(doBeat, beatMs);
         };
-        pulse();
+        doBeat();
       } catch { /* unsupported */ }
     }
   }

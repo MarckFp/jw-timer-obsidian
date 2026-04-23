@@ -1,84 +1,109 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type JwTimerPlugin from "./main";
-import type { PluginSettings } from "./types";
+import { LOCALE_SETTINGS } from "./ui/locale";
 
-// Available WOL locales: label → locale path segment
-const WOL_LOCALES: Record<string, string> = {
-  "English":    "r1/lp-e",
-  "Spanish":    "r4/lp-s",
-  "Portuguese": "r5/lp-t",
-  "French":     "r30/lp-f",
-  "Italian":    "r6/lp-i",
-  "German":     "r10/lp-x",
-  "Dutch":      "r18/lp-o",
-  "Japanese":   "r7/lp-j",
-  "Korean":     "r8/lp-ko",
-  "Chinese (Simplified)": "r23/lp-chs",
-  "Romanian":   "r34/lp-m",
-  "Bulgarian":  "r46/lp-bl",
-  "Russian":    "r2/lp-u",
-};
+// Available WOL locales shown in the dropdown: [display label, locale path]
+const WOL_LOCALES: [string, string][] = [
+  ["English",               "r1/lp-e"],
+  ["\u00c9Español",               "r4/lp-s"],
+  ["Português",             "r5/lp-t"],
+  ["Français",              "r30/lp-f"],
+  ["Italiano",              "r6/lp-i"],
+  ["Deutsch",               "r10/lp-x"],
+  ["Nederlands",            "r18/lp-o"],
+  ["Русский",               "r2/lp-u"],
+  ["Română",                "r34/lp-m"],
+  ["Български",             "r46/lp-bl"],
+  ["Polski",                "r17/lp-p"],
+  ["日本語",                 "r7/lp-j"],
+  ["한국어",                 "r8/lp-ko"],
+  ["中文（简体）",            "r23/lp-chs"],
+];
+
+/** Map browser language codes to WOL locale paths. Used on first install only. */
+export function detectWolLocale(): string {
+  const lang = (navigator.language ?? "en").toLowerCase();
+  if (lang.startsWith("es")) return "r4/lp-s";
+  if (lang.startsWith("pt")) return "r5/lp-t";
+  if (lang.startsWith("fr")) return "r30/lp-f";
+  if (lang.startsWith("it")) return "r6/lp-i";
+  if (lang.startsWith("de")) return "r10/lp-x";
+  if (lang.startsWith("nl")) return "r18/lp-o";
+  if (lang.startsWith("ja")) return "r7/lp-j";
+  if (lang.startsWith("ko")) return "r8/lp-ko";
+  if (lang.startsWith("zh")) return "r23/lp-chs";
+  if (lang.startsWith("ro")) return "r34/lp-m";
+  if (lang.startsWith("bg")) return "r46/lp-bl";
+  if (lang.startsWith("ru")) return "r2/lp-u";
+  if (lang.startsWith("pl")) return "r17/lp-p";
+  return "r1/lp-e";
+}
 
 export class JwTimerSettingsTab extends PluginSettingTab {
   constructor(app: App, private readonly plugin: JwTimerPlugin) {
     super(app, plugin);
   }
 
+  private getLang(): string {
+    return this.plugin.settings.wolLocale.split("/")[1] ?? "lp-e";
+  }
+
+  private getLabels() {
+    return LOCALE_SETTINGS[this.getLang()] ?? LOCALE_SETTINGS["lp-e"];
+  }
+
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+    const L = this.getLabels();
 
-    containerEl.createEl("h2", { text: "JW Meeting Timer — Settings" });
+    containerEl.createEl("h2", { text: L.pageTitle });
 
-    // Language / locale
+    // ── Language / locale ────────────────────────────────────────────────────
+    const knownValues = WOL_LOCALES.map(([, v]) => v);
+    const currentIsCustom = !knownValues.includes(this.plugin.settings.wolLocale);
+
     new Setting(containerEl)
-      .setName("Meeting language")
-      .setDesc("Language used to fetch the weekly programme from wol.jw.org.")
+      .setName(L.langName)
+      .setDesc(L.langDesc)
       .addDropdown((drop) => {
-        for (const [label, value] of Object.entries(WOL_LOCALES)) {
+        for (const [label, value] of WOL_LOCALES) {
           drop.addOption(value, label);
         }
-        // If the current locale is a known dropdown value, select it; otherwise leave at default
-        const knownValues = Object.values(WOL_LOCALES);
-        if (knownValues.includes(this.plugin.settings.wolLocale)) {
-          drop.setValue(this.plugin.settings.wolLocale);
-        }
+        if (!currentIsCustom) drop.setValue(this.plugin.settings.wolLocale);
         drop.onChange(async (value) => {
           this.plugin.settings.wolLocale = value;
           await this.plugin.saveSettings();
-          // Clear the custom-locale text field so it doesn’t mislead
-          if (customLocaleText) customLocaleText.setValue("");
+          // Changing language requires re-fetching the schedule from WOL
+          await this.plugin.clearCacheAndRefresh();
+          // Re-render settings panel in the newly selected language
+          this.display();
         });
       });
 
-    // Custom locale override
-    let customLocaleText: import("obsidian").TextComponent;
-    const knownValues = Object.values(WOL_LOCALES);
-    const currentIsCustom = !knownValues.includes(this.plugin.settings.wolLocale);
+    // ── Custom locale override ───────────────────────────────────────────────
     new Setting(containerEl)
-      .setName("Custom locale (advanced)")
-      .setDesc(
-        'Override with any WOL locale path, e.g. "r4/lp-s". Leave blank to use the dropdown selection.'
-      )
+      .setName(L.customLocaleName)
+      .setDesc(L.customLocaleDesc)
       .addText((text) => {
-        customLocaleText = text;
         text
           .setPlaceholder("r1/lp-e")
-          // Show the saved custom value only when it isn’t one of the dropdown options
           .setValue(currentIsCustom ? this.plugin.settings.wolLocale : "")
           .onChange(async (value) => {
             const trimmed = value.trim();
             if (trimmed) {
               this.plugin.settings.wolLocale = trimmed;
               await this.plugin.saveSettings();
+              await this.plugin.clearCacheAndRefresh();
+              this.display();
             }
           });
       });
 
-    // Meeting start time
+    // ── Meeting start time ───────────────────────────────────────────────────
     new Setting(containerEl)
-      .setName("Meeting start time")
-      .setDesc('24-hour format, e.g. "20:00" or "18:30".')
+      .setName(L.startTimeName)
+      .setDesc(L.startTimeDesc)
       .addText((text) => {
         text
           .setPlaceholder("20:00")
@@ -88,42 +113,38 @@ export class JwTimerSettingsTab extends PluginSettingTab {
             if (/^\d{1,2}:\d{2}$/.test(trimmed)) {
               this.plugin.settings.meetingStartTime = trimmed;
               await this.plugin.saveSettings();
+              await this.plugin.reloadView();
             }
           });
       });
 
-    // Opening song duration
+    // ── Opening song duration ────────────────────────────────────────────────
     new Setting(containerEl)
-      .setName("Opening song + prayer (minutes)")
-      .setDesc("Fixed minutes before the first programme part (song + prayer). Default: 5.")
-      .addSlider((slider) => {
-        slider
-          .setLimits(1, 15, 1)
-          .setValue(this.plugin.settings.openingSongMinutes)
-          .setDynamicTooltip()
+      .setName(L.openingSongName)
+      .setDesc(L.openingSongDesc)
+      .addText((text) => {
+        text.inputEl.type = "number";
+        text.inputEl.min = "1";
+        text.inputEl.max = "15";
+        text.inputEl.style.width = "4.5rem";
+        text
+          .setValue(String(this.plugin.settings.openingSongMinutes))
           .onChange(async (value) => {
-            this.plugin.settings.openingSongMinutes = value;
-            await this.plugin.saveSettings();
+            const n = parseInt(value, 10);
+            if (!isNaN(n) && n >= 1 && n <= 15) {
+              this.plugin.settings.openingSongMinutes = n;
+              await this.plugin.saveSettings();
+              await this.plugin.reloadView();
+            }
           });
       });
 
-    // Manual refresh button
-    new Setting(containerEl)
-      .setName("Refresh schedule")
-      .setDesc("Clear the cached schedule and re-fetch from wol.jw.org.")
-      .addButton((btn) => {
-        btn.setButtonText("Refresh now").onClick(async () => {
-          await this.plugin.clearCacheAndRefresh();
-          btn.setButtonText("Done ✓");
-          window.setTimeout(() => btn.setButtonText("Refresh now"), 2000);
-        });
-      });
-
-    containerEl.createEl("h3", { text: "Display" });
+    // ── Display ──────────────────────────────────────────────────────────────
+    containerEl.createEl("h3", { text: L.displayHeading });
 
     new Setting(containerEl)
-      .setName("Show advice timers")
-      .setDesc("Show the 1-minute instructor advice sub-card below applicable parts.")
+      .setName(L.showAdviceName)
+      .setDesc(L.showAdviceDesc)
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.showAdvice)
@@ -134,12 +155,12 @@ export class JwTimerSettingsTab extends PluginSettingTab {
           });
       });
 
-    containerEl.createEl("h3", { text: "Alerts" });
+    // ── Alerts ───────────────────────────────────────────────────────────────
+    containerEl.createEl("h3", { text: L.alertsHeading });
 
-    // Sound alert
     new Setting(containerEl)
-      .setName("Sound alert at overtime")
-      .setDesc("Play a repeating beep when a timer reaches its allotted duration.")
+      .setName(L.soundAlertName)
+      .setDesc(L.soundAlertDesc)
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.alertSound)
@@ -150,23 +171,27 @@ export class JwTimerSettingsTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Sound alert duration (seconds)")
-      .setDesc("How long the beep plays. Default: 2 s.")
-      .addSlider((slider) => {
-        slider
-          .setLimits(1, 10, 1)
-          .setValue(this.plugin.settings.alertSoundSec)
-          .setDynamicTooltip()
+      .setName(L.soundDurName)
+      .setDesc(L.soundDurDesc)
+      .addText((text) => {
+        text.inputEl.type = "number";
+        text.inputEl.min = "1";
+        text.inputEl.max = "10";
+        text.inputEl.style.width = "4.5rem";
+        text
+          .setValue(String(this.plugin.settings.alertSoundSec))
           .onChange(async (value) => {
-            this.plugin.settings.alertSoundSec = value;
-            await this.plugin.saveSettings();
+            const n = parseInt(value, 10);
+            if (!isNaN(n) && n >= 1 && n <= 10) {
+              this.plugin.settings.alertSoundSec = n;
+              await this.plugin.saveSettings();
+            }
           });
       });
 
-    // Vibration alert
     new Setting(containerEl)
-      .setName("Vibration alert at overtime")
-      .setDesc("Vibrate the device when a timer reaches its allotted duration. Has no effect on desktop.")
+      .setName(L.vibrateAlertName)
+      .setDesc(L.vibrateAlertDesc)
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.alertVibrate)
@@ -177,16 +202,21 @@ export class JwTimerSettingsTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Vibration alert duration (seconds)")
-      .setDesc("How long the device vibrates. Has no effect on desktop. Default: 5 s.")
-      .addSlider((slider) => {
-        slider
-          .setLimits(1, 30, 1)
-          .setValue(this.plugin.settings.alertVibrateSec)
-          .setDynamicTooltip()
+      .setName(L.vibrateDurName)
+      .setDesc(L.vibrateDurDesc)
+      .addText((text) => {
+        text.inputEl.type = "number";
+        text.inputEl.min = "1";
+        text.inputEl.max = "30";
+        text.inputEl.style.width = "4.5rem";
+        text
+          .setValue(String(this.plugin.settings.alertVibrateSec))
           .onChange(async (value) => {
-            this.plugin.settings.alertVibrateSec = value;
-            await this.plugin.saveSettings();
+            const n = parseInt(value, 10);
+            if (!isNaN(n) && n >= 1 && n <= 30) {
+              this.plugin.settings.alertVibrateSec = n;
+              await this.plugin.saveSettings();
+            }
           });
       });
   }

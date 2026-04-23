@@ -2,7 +2,7 @@ import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS } from "./types";
 import type { PluginSettings, PluginData, WeeklySchedule, TimerState, PartOverride, MeetingPart } from "./types";
 import { TimerEngine } from "./timer-engine";
-import { JwTimerSettingsTab } from "./settings-tab";
+import { JwTimerSettingsTab, detectWolLocale } from "./settings-tab";
 import { JwTimerView, VIEW_TYPE_JW_TIMER } from "./view";
 
 export default class JwTimerPlugin extends Plugin {
@@ -50,7 +50,11 @@ export default class JwTimerPlugin extends Plugin {
 
   private async loadData_(): Promise<void> {
     const raw = await this.loadData() as Partial<PluginData> | null;
-    if (!raw) return;
+    if (!raw) {
+      // First install — auto-detect device language and set matching WOL locale
+      this.settings.wolLocale = detectWolLocale();
+      return;
+    }
     if (raw.settings) {
       this.settings = { ...DEFAULT_SETTINGS, ...raw.settings };
     }

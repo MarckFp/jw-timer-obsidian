@@ -104,6 +104,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   alertSound: false,
   alertSoundSec: 1,
   alertVibrate: false,
-  alertVibrateSec: 5,
+  alertVibrateSec: 2,
   showAdvice: true,
 };
