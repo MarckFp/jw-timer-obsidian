@@ -174,7 +174,11 @@ export function renderCard(
     }
   };
   card.addEventListener("pointerdown", (e) => {
-    if ((e.target as HTMLElement).closest("button, .jw-timer-card-overlay"))
+    if (
+      (e.target as HTMLElement).closest(
+        "button, .jw-timer-card-overlay, textarea",
+      )
+    )
       return;
     pressStartX = e.clientX;
     pressStartY = e.clientY;

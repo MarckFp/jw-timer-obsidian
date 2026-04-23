@@ -813,6 +813,7 @@ body.theme-dark {
   overflow: hidden;
   min-height: 1.7rem;
   padding: 0.25rem 0.5rem;
+  margin-top: 0.5rem;
   font-size: 0.78rem;
   font-family: inherit;
   background: transparent;

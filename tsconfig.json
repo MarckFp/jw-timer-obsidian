@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "types": ["node", "obsidian"]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "esbuild.config.ts"]
 }

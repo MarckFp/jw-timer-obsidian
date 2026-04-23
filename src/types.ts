@@ -99,6 +99,8 @@ export interface PluginSettings {
   showAdvice: boolean;
   /** Automatically start the next part in the same section when the current one is paused */
   autoNextPart: boolean;
+  /** Show the free-text note field on each part card */
+  showNotes: boolean;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -111,4 +113,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   alertVibrateSec: 2,
   showAdvice: true,
   autoNextPart: false,
+  showNotes: true,
 };

@@ -4,8 +4,8 @@
   "description": "Fetches the weekly Life and Ministry meeting programme from wol.jw.org and provides per-assignment countdown timers in an Obsidian sidebar.",
   "main": "main.js",
   "scripts": {
-    "build": "node esbuild.config.mjs",
-    "dev": "node esbuild.config.mjs --watch",
+    "build": "tsx esbuild.config.ts",
+    "dev": "tsx esbuild.config.ts --watch",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -16,6 +16,7 @@
     "lint-staged": "^16.4.0",
     "obsidian": "^1.12.3",
     "prettier": "3.8.3",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   },
   "lint-staged": {

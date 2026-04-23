@@ -190,6 +190,19 @@ export class JwTimerSettingsTab extends PluginSettingTab {
           });
       });
 
+    new Setting(containerEl)
+      .setName(L.showNotesName)
+      .setDesc(L.showNotesDesc)
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settings.showNotes)
+          .onChange(async (value) => {
+            this.plugin.settings.showNotes = value;
+            await this.plugin.saveSettings();
+            await this.plugin.reloadView();
+          });
+      });
+
     // ── Alerts ───────────────────────────────────────────────────────────────
     containerEl.createEl("h3", { text: L.alertsHeading });
 
