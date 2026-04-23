@@ -637,13 +637,22 @@ export class JwTimerView extends ItemView {
       refs.stoppedAtEl.className = late
         ? "jw-timer-stopped-at jw-timer-stopped-at--late"
         : "jw-timer-stopped-at";
-      if (deltaMin !== 0) {
-        const sign = late ? "+" : "\u2212";
-        refs.deltaEl.setText(`${sign}${Math.abs(deltaMin)}`);
-        refs.deltaEl.className = `jw-timer-delta jw-timer-delta--${late ? "late" : "early"}`;
+      const absMins = Math.abs(deltaMin);
+      const fmtDelta = (n: number): string => {
+        if (n < 60) return `${n}min`;
+        const h = Math.floor(n / 60);
+        const m = n % 60;
+        return m === 0 ? `${h}h` : `${h}h\u00a0${m}min`;
+      };
+      if (deltaMin === 0) {
+        refs.deltaEl.setText("\u2714");
+        refs.deltaEl.className = "jw-timer-delta jw-timer-delta--early";
         refs.deltaEl.style.display = "";
       } else {
-        refs.deltaEl.style.display = "none";
+        const sign = late ? "+" : "\u2212";
+        refs.deltaEl.setText(`${sign}${fmtDelta(absMins)}`);
+        refs.deltaEl.className = `jw-timer-delta jw-timer-delta--${late ? "late" : "early"}`;
+        refs.deltaEl.style.display = "";
       }
     } else {
       refs.stoppedAtEl.setText("");
