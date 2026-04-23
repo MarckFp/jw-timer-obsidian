@@ -16,7 +16,7 @@ import {
 import { AddPartModal } from "./ui/modals";
 import { renderCard, renderAdviceCard } from "./ui/card-renderer";
 import type { CardController } from "./ui/card-renderer";
-import { buildExportText, buildPrintHtml, shareText, printReport } from "./ui/exporter";
+import { buildExportText, shareText } from "./ui/exporter";
 import type { ExportData } from "./ui/exporter";
 
 export const VIEW_TYPE_JW_TIMER = "jw-timer-sidebar";
@@ -129,18 +129,11 @@ export class JwTimerView extends ItemView implements CardController {
     this.exportFooterEl.style.display = "none";
 
     const shareBtn = this.exportFooterEl.createEl("button", {
-      cls: "jw-timer-btn jw-timer-export-btn",
+      cls: "jw-timer-btn jw-timer-export-btn jw-timer-export-btn--full",
       text: this.getLabels().shareBtn,
     });
     shareBtn.setAttr("aria-label", "Share meeting timings");
     shareBtn.addEventListener("click", () => void this.doShare());
-
-    const pdfBtn = this.exportFooterEl.createEl("button", {
-      cls: "jw-timer-btn jw-timer-export-btn",
-      text: this.getLabels().pdfBtn,
-    });
-    pdfBtn.setAttr("aria-label", "Export meeting timings to PDF");
-    pdfBtn.addEventListener("click", () => this.doPrint());
 
     this.exportToastEl = this.exportFooterEl.createDiv({ cls: "jw-timer-toast" });
 
@@ -710,6 +703,7 @@ export class JwTimerView extends ItemView implements CardController {
       if (ep.hasAdvice) this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
     }
     this.renderSchedule(this.schedule);
+    this.updateMeetingBar();
     void this.plugin.persistTimers();
   }
 
@@ -755,12 +749,6 @@ export class JwTimerView extends ItemView implements CardController {
     const text = buildExportText(data);
     const labels = this.getLabels();
     await shareText(text, labels.copyOk, this.exportToastEl);
-  }
-
-  private doPrint(): void {
-    const data = this.buildExportData();
-    const html = buildPrintHtml(data, this.getLabels());
-    printReport(html);
   }
 
   // ─── Advice card ─────────────────────────────────────────────────────────────────────────────

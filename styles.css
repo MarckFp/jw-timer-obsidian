@@ -732,6 +732,10 @@ body.theme-dark {
   transition: background 120ms;
 }
 
+.jw-timer-export-btn--full {
+  flex: 1 1 100%;
+}
+
 .jw-timer-export-btn:hover {
   background: var(--background-modifier-hover);
 }

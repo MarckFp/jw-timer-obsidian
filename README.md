@@ -14,7 +14,7 @@ An [Obsidian](https://obsidian.md/) sidebar plugin that provides per-part stopwa
 - **Week navigation** — browse past and future weeks.
 - **Customisable parts** — add your own stopwatches, edit labels/durations, reorder parts with long-press, delete parts.
 - **Auto-start next part** — when you pause a part, the next one in the same section starts automatically (opt-in).
-- **Export** — share a text summary via WhatsApp, Telegram, etc., or print / export to PDF.
+- **Export** — share a text summary via WhatsApp, Telegram, etc.
 - **14 languages** — English, Spanish, French, Portuguese, German, Italian, Russian, Romanian, Bulgarian, Dutch, Polish, Japanese, Korean, Simplified Chinese.
 - **Auto-detect locale** on first install based on your device language.
 
@@ -81,10 +81,9 @@ Use the **◀ ▶** arrows in the nav bar to browse weeks. The **Today** button 
 
 ### Exporting results
 
-Scroll to the bottom of the list to find the **Share** and **PDF** buttons:
+Scroll to the bottom of the list to find the **Share** button:
 
 - **Share** — builds a plain-text summary of all parts and their elapsed times. On mobile (Android/iOS), this opens the native share sheet so you can send it via WhatsApp, Telegram, email, etc. On desktop it copies the text to the clipboard.
-- **PDF** — opens a print-friendly page in a new browser window. Use your browser or OS print dialog to save as PDF, print, or share.
 
 ---
 
@@ -150,7 +149,7 @@ src/
     ├── helpers.ts     Pure utility functions & CardRefs interface
     ├── modals.ts      EditPartModal, AddPartModal
     ├── card-renderer.ts  renderCard / renderAdviceCard (CardController pattern)
-    └── exporter.ts    Export-to-text and export-to-PDF logic
+    └── exporter.ts    Export-to-text (share / clipboard) logic
 ```
 
 ---
