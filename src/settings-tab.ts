@@ -9,11 +9,14 @@ const WOL_LOCALES: Record<string, string> = {
   "Portuguese": "r5/lp-t",
   "French":     "r30/lp-f",
   "Italian":    "r6/lp-i",
-  "German":     "r10/lp-g",
-  "Dutch":      "r13/lp-d",
+  "German":     "r10/lp-x",
+  "Dutch":      "r18/lp-o",
   "Japanese":   "r7/lp-j",
   "Korean":     "r8/lp-ko",
   "Chinese (Simplified)": "r23/lp-chs",
+  "Romanian":   "r34/lp-m",
+  "Bulgarian":  "r46/lp-bl",
+  "Russian":    "r2/lp-u",
 };
 
 export class JwTimerSettingsTab extends PluginSettingTab {

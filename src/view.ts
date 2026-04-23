@@ -26,8 +26,11 @@ const LOCALE_OPENING_CLOSING: Record<string, [string, string]> = {
   "lp-t":   ["Abertura",   "Conclusão"],
   "lp-g":   ["Eröffnung",  "Abschluss"],
   "lp-i":   ["Apertura",   "Conclusione"],
-  "lp-u":   ["Начало",     "Заключение"],
-  "lp-d":   ["Opening",    "Sluiting"],
+  "lp-u":   ["Начало",           "Заключение"],
+  "lp-m":   ["Deschidere",       "Încheiere"],
+  "lp-bl":  ["Встъпителна част", "Заключителна част"],
+  "lp-o":   ["Opening",          "Sluiting"],
+  "lp-x":   ["Eröffnung",  "Abschluss"],
   "lp-p":   ["Otwarcie",   "Zakończenie"],
   "lp-j":   ["開会の言葉", "閉会の言葉"],
   "lp-ko":  ["소개말",     "맺음말"],
@@ -45,21 +48,25 @@ interface UiLabels {
   resetAll: string;
   today: string;
   advice: string;
+  end: string;
+  stopped: string;
 }
 
 const LOCALE_UI: Record<string, UiLabels> = {
-  "lp-e":   { play: "Play",      pause: "Pause",      reset: "Reset",         resetAll: "Reset All",           today: "Today",      advice: "Advice"    },
-  "lp-s":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar todo",      today: "Hoy",        advice: "Consejo"   },
-  "lp-f":   { play: "D\u00e9marrer",  pause: "Pause",      reset: "R\u00e9init.",       resetAll: "Tout r\u00e9init.",        today: "Auj.",       advice: "Conseil"   },
-  "lp-t":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar tudo",      today: "Hoje",       advice: "Conselho"  },
-  "lp-g":   { play: "Start",     pause: "Pause",      reset: "Zur\u00fccksetzen",  resetAll: "Alles zur\u00fccksetzen",  today: "Heute",      advice: "Rat"       },
-  "lp-i":   { play: "Avvia",     pause: "Pausa",      reset: "Azzera",        resetAll: "Azzera tutto",        today: "Oggi",       advice: "Consiglio" },
-  "lp-u":   { play: "\u0421\u0442\u0430\u0440\u0442",     pause: "\u041f\u0430\u0443\u0437\u0430",      reset: "\u0421\u043a\u0438\u043d\u0443\u0442\u0438",       resetAll: "\u0421\u043a\u0438\u043d\u0443\u0442\u0438 \u0432\u0441\u0435",         today: "\u0421\u044c\u043e\u0433\u043e\u0434\u043d\u0456",   advice: "\u041f\u043e\u0440\u0430\u0434\u0430"    },
-  "lp-d":   { play: "Start",     pause: "Pauze",      reset: "Reset",         resetAll: "Alles resetten",      today: "Vandaag",    advice: "Advies"    },
-  "lp-p":   { play: "Start",     pause: "Pauza",      reset: "Resetuj",       resetAll: "Resetuj wszystko",    today: "Dzi\u015b",       advice: "Rada"      },
-  "lp-j":   { play: "\u30b9\u30bf\u30fc\u30c8",  pause: "\u4e00\u6642\u505c\u6b62",   reset: "\u30ea\u30bb\u30c3\u30c8",       resetAll: "\u5168\u30ea\u30bb\u30c3\u30c8",            today: "\u4eca\u65e5",       advice: "\u52a9\u8a00"      },
-  "lp-ko":  { play: "\uc2dc\uc791",      pause: "\uc77c\uc2dc\uc815\uc9c0",   reset: "\ucd08\uae30\ud654",        resetAll: "\uc804\uccb4 \ucd08\uae30\ud654",          today: "\uc624\ub298",       advice: "\uc870\uc5b8"      },
-  "lp-chs": { play: "\u5f00\u59cb",      pause: "\u6682\u505c",       reset: "\u91cd\u7f6e",          resetAll: "\u5168\u90e8\u91cd\u7f6e",               today: "\u4eca\u5929",       advice: "\u6307\u5bfc"      },
+  "lp-e":   { play: "Play",      pause: "Pause",      reset: "Reset",         resetAll: "Reset All",           today: "Today",      advice: "Advice",    end: "End",        stopped: "Stopped"   },
+  "lp-s":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar todo",      today: "Hoy",        advice: "Consejo",   end: "Fin",        stopped: "Parado"    },
+  "lp-f":   { play: "D\u00e9marrer",  pause: "Pause",      reset: "R\u00e9init.",       resetAll: "Tout r\u00e9init.",        today: "Auj.",       advice: "Conseil",   end: "Fin",        stopped: "Arrêté"   },
+  "lp-t":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar tudo",      today: "Hoje",       advice: "Conselho",  end: "Fim",        stopped: "Parado"    },
+  "lp-x":   { play: "Start",     pause: "Pause",      reset: "Zur\u00fccksetzen",  resetAll: "Alles zur\u00fccksetzen",  today: "Heute",      advice: "Rat",       end: "Ende",       stopped: "Gestoppt"  },
+  "lp-i":   { play: "Avvia",     pause: "Pausa",      reset: "Azzera",        resetAll: "Azzera tutto",        today: "Oggi",       advice: "Consiglio", end: "Fine",       stopped: "Fermato"   },
+  "lp-u":   { play: "Старт",  pause: "Пауза",  reset: "Сброс",      resetAll: "Сбросить всё",       today: "Сегодня", advice: "Совет",  end: "Кон.",  stopped: "Остановлено"     },
+  "lp-m":   { play: "Start",  pause: "Pauză",  reset: "Resetare",   resetAll: "Resetare totală",    today: "Azi",     advice: "Sfat",   end: "Sf.",   stopped: "Oprit"           },
+  "lp-bl":  { play: "Старт",  pause: "Пауза",  reset: "Нулиране",   resetAll: "Нулиране на всичко", today: "Днес",    advice: "Съвет",  end: "Край",  stopped: "Спряно"          },
+  "lp-o":   { play: "Start",  pause: "Pauze",  reset: "Reset",      resetAll: "Alles resetten",     today: "Vandaag", advice: "Advies", end: "Einde", stopped: "Gestopt"         },
+  "lp-p":   { play: "Start",     pause: "Pauza",      reset: "Resetuj",       resetAll: "Resetuj wszystko",    today: "Dzi\u015b",       advice: "Rada",       end: "Koniec",     stopped: "Zatrzymano" },
+  "lp-j":   { play: "\u30b9\u30bf\u30fc\u30c8",  pause: "\u4e00\u6642\u505c\u6b62",   reset: "\u30ea\u30bb\u30c3\u30c8",       resetAll: "\u5168\u30ea\u30bb\u30c3\u30c8",            today: "\u4eca\u65e5",       advice: "\u52a9\u8a00",      end: "終了",       stopped: "停止"      },
+  "lp-ko":  { play: "\uc2dc\uc791",      pause: "\uc77c\uc2dc\uc815\uc9c0",   reset: "\ucd08\uae30\ud654",        resetAll: "\uc804\uccb4 \ucd08\uae30\ud654",          today: "\uc624\ub298",       advice: "\uc870\uc5b8",      end: "종료",       stopped: "중지"      },
+  "lp-chs": { play: "\u5f00\u59cb",      pause: "\u6682\u505c",       reset: "\u91cd\u7f6e",          resetAll: "\u5168\u90e8\u91cd\u7f6e",               today: "\u4eca\u5929",       advice: "\u6307\u5bfc",      end: "结束",       stopped: "停止"      },
 };
 
 function formatMmSs(ms: number): string {
@@ -364,7 +371,7 @@ export class JwTimerView extends ItemView {
     const timeRow = card.createDiv({ cls: "jw-timer-time-row" });
     const endTimeEl = timeRow.createSpan({
       cls: "jw-timer-end-time",
-      text: `End ${minutesToTime(endTimeMins)}`,
+      text: `${this.getLabels().end} ${minutesToTime(endTimeMins)}`,
     });
     const stoppedAtEl = timeRow.createSpan({ cls: "jw-timer-stopped-at" });
 
@@ -459,13 +466,16 @@ export class JwTimerView extends ItemView {
     // Progress bar
     refs.barFillEl.style.width = `${(Math.min(1, elapsedMs / durationMs) * 100).toFixed(1)}%`;
 
+    // Play/pause button label (needed below too)
+    const labels = this.getLabels();
+
     // Stopped-at indicator (shown only when paused)
     const endTimeMins = scheduledStartMins + Math.ceil(part.durationSec / 60);
     if (status === "paused" && stoppedAt != null) {
       const d = new Date(stoppedAt);
       const stoppedMins = d.getHours() * 60 + d.getMinutes();
       const late = stoppedMins > endTimeMins;
-      refs.stoppedAtEl.setText(`· Stopped ${timestampToHHMM(stoppedAt)}`);
+      refs.stoppedAtEl.setText(`· ${labels.stopped} ${timestampToHHMM(stoppedAt)}`);
       refs.stoppedAtEl.className = late
         ? "jw-timer-stopped-at jw-timer-stopped-at--late"
         : "jw-timer-stopped-at";
@@ -480,7 +490,6 @@ export class JwTimerView extends ItemView {
     refs.cardEl.setAttribute("data-running", status === "running" ? "true" : "false");
 
     // Play/pause button label
-    const labels = this.getLabels();
     if (status === "running") {
       refs.playBtn.setText(labels.pause);
       refs.playBtn.setAttr("aria-label", "Pause timer");

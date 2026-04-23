@@ -28,6 +28,8 @@ export function cacheKey(year: number, week: number): string {
  * Matches duration annotations in all supported WOL languages:
  * - Latin-script:  (N min.)  (N mins.)  (N min)  — English, Spanish, French, Portuguese,
  *                  German (Min.), Dutch, Italian, Polish, etc.
+ * - Russian:       (N мин.)   — Cyrillic мин with period
+ * - Bulgarian:     (N мин)    — Cyrillic мин without period
  * - Korean:        (N분)      — ASCII parens + Hangul
  * - Japanese:      （N分）    — full-width parens + kanji
  * - Chinese:       （N分钟）  — full-width parens + 分钟
@@ -35,7 +37,7 @@ export function cacheKey(year: number, week: number): string {
  * Uses a character class for the opening/closing paren to handle full-width variants,
  * and an alternation for the unit suffix.
  */
-const DURATION_RE = /[(\uff08](\d+)\s*(?:mins?\.?|분|分钟?)[)\uff09]/i;
+const DURATION_RE = /[(\uff08](\d+)\s*(?:mins?\.?|мин\.?|분|分钟?)[)\uff09]/i;
 
 function parseDuration(text: string): number | null {
   const m = DURATION_RE.exec(text);

@@ -108,11 +108,14 @@ var WOL_LOCALES = {
   "Portuguese": "r5/lp-t",
   "French": "r30/lp-f",
   "Italian": "r6/lp-i",
-  "German": "r10/lp-g",
-  "Dutch": "r13/lp-d",
+  "German": "r10/lp-x",
+  "Dutch": "r18/lp-o",
   "Japanese": "r7/lp-j",
   "Korean": "r8/lp-ko",
-  "Chinese (Simplified)": "r23/lp-chs"
+  "Chinese (Simplified)": "r23/lp-chs",
+  "Romanian": "r34/lp-m",
+  "Bulgarian": "r46/lp-bl",
+  "Russian": "r2/lp-u"
 };
 var JwTimerSettingsTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
@@ -197,7 +200,7 @@ function buildWolUrl(locale, year, week) {
 function cacheKey(year, week) {
   return `${year}-${String(week).padStart(2, "0")}`;
 }
-var DURATION_RE = /[(\uFF08](\d+)\s*(?:mins?\.?|\uBD84|\u5206\u9418?)[)\uFF09]/i;
+var DURATION_RE = /[(\uFF08](\d+)\s*(?:mins?\.?|\u043C\u0438\u043D\.?|\uBD84|\u5206\u9418?)[)\uFF09]/i;
 function parseDuration(text) {
   const m = DURATION_RE.exec(text);
   return m ? parseInt(m[1], 10) * 60 : null;
@@ -340,25 +343,30 @@ var LOCALE_OPENING_CLOSING = {
   "lp-g": ["Er\xF6ffnung", "Abschluss"],
   "lp-i": ["Apertura", "Conclusione"],
   "lp-u": ["\u041D\u0430\u0447\u0430\u043B\u043E", "\u0417\u0430\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435"],
-  "lp-d": ["Opening", "Sluiting"],
+  "lp-m": ["Deschidere", "\xCEncheiere"],
+  "lp-bl": ["\u0412\u0441\u0442\u044A\u043F\u0438\u0442\u0435\u043B\u043D\u0430 \u0447\u0430\u0441\u0442", "\u0417\u0430\u043A\u043B\u044E\u0447\u0438\u0442\u0435\u043B\u043D\u0430 \u0447\u0430\u0441\u0442"],
+  "lp-o": ["Opening", "Sluiting"],
+  "lp-x": ["Er\xF6ffnung", "Abschluss"],
   "lp-p": ["Otwarcie", "Zako\u0144czenie"],
   "lp-j": ["\u958B\u4F1A\u306E\u8A00\u8449", "\u9589\u4F1A\u306E\u8A00\u8449"],
   "lp-ko": ["\uC18C\uAC1C\uB9D0", "\uB9FA\uC74C\uB9D0"],
   "lp-chs": ["\u5F00\u573A", "\u7ED3\u675F"]
 };
 var LOCALE_UI = {
-  "lp-e": { play: "Play", pause: "Pause", reset: "Reset", resetAll: "Reset All", today: "Today", advice: "Advice" },
-  "lp-s": { play: "Iniciar", pause: "Pausar", reset: "Reiniciar", resetAll: "Reiniciar todo", today: "Hoy", advice: "Consejo" },
-  "lp-f": { play: "D\xE9marrer", pause: "Pause", reset: "R\xE9init.", resetAll: "Tout r\xE9init.", today: "Auj.", advice: "Conseil" },
-  "lp-t": { play: "Iniciar", pause: "Pausar", reset: "Reiniciar", resetAll: "Reiniciar tudo", today: "Hoje", advice: "Conselho" },
-  "lp-g": { play: "Start", pause: "Pause", reset: "Zur\xFCcksetzen", resetAll: "Alles zur\xFCcksetzen", today: "Heute", advice: "Rat" },
-  "lp-i": { play: "Avvia", pause: "Pausa", reset: "Azzera", resetAll: "Azzera tutto", today: "Oggi", advice: "Consiglio" },
-  "lp-u": { play: "\u0421\u0442\u0430\u0440\u0442", pause: "\u041F\u0430\u0443\u0437\u0430", reset: "\u0421\u043A\u0438\u043D\u0443\u0442\u0438", resetAll: "\u0421\u043A\u0438\u043D\u0443\u0442\u0438 \u0432\u0441\u0435", today: "\u0421\u044C\u043E\u0433\u043E\u0434\u043D\u0456", advice: "\u041F\u043E\u0440\u0430\u0434\u0430" },
-  "lp-d": { play: "Start", pause: "Pauze", reset: "Reset", resetAll: "Alles resetten", today: "Vandaag", advice: "Advies" },
-  "lp-p": { play: "Start", pause: "Pauza", reset: "Resetuj", resetAll: "Resetuj wszystko", today: "Dzi\u015B", advice: "Rada" },
-  "lp-j": { play: "\u30B9\u30BF\u30FC\u30C8", pause: "\u4E00\u6642\u505C\u6B62", reset: "\u30EA\u30BB\u30C3\u30C8", resetAll: "\u5168\u30EA\u30BB\u30C3\u30C8", today: "\u4ECA\u65E5", advice: "\u52A9\u8A00" },
-  "lp-ko": { play: "\uC2DC\uC791", pause: "\uC77C\uC2DC\uC815\uC9C0", reset: "\uCD08\uAE30\uD654", resetAll: "\uC804\uCCB4 \uCD08\uAE30\uD654", today: "\uC624\uB298", advice: "\uC870\uC5B8" },
-  "lp-chs": { play: "\u5F00\u59CB", pause: "\u6682\u505C", reset: "\u91CD\u7F6E", resetAll: "\u5168\u90E8\u91CD\u7F6E", today: "\u4ECA\u5929", advice: "\u6307\u5BFC" }
+  "lp-e": { play: "Play", pause: "Pause", reset: "Reset", resetAll: "Reset All", today: "Today", advice: "Advice", end: "End", stopped: "Stopped" },
+  "lp-s": { play: "Iniciar", pause: "Pausar", reset: "Reiniciar", resetAll: "Reiniciar todo", today: "Hoy", advice: "Consejo", end: "Fin", stopped: "Parado" },
+  "lp-f": { play: "D\xE9marrer", pause: "Pause", reset: "R\xE9init.", resetAll: "Tout r\xE9init.", today: "Auj.", advice: "Conseil", end: "Fin", stopped: "Arr\xEAt\xE9" },
+  "lp-t": { play: "Iniciar", pause: "Pausar", reset: "Reiniciar", resetAll: "Reiniciar tudo", today: "Hoje", advice: "Conselho", end: "Fim", stopped: "Parado" },
+  "lp-x": { play: "Start", pause: "Pause", reset: "Zur\xFCcksetzen", resetAll: "Alles zur\xFCcksetzen", today: "Heute", advice: "Rat", end: "Ende", stopped: "Gestoppt" },
+  "lp-i": { play: "Avvia", pause: "Pausa", reset: "Azzera", resetAll: "Azzera tutto", today: "Oggi", advice: "Consiglio", end: "Fine", stopped: "Fermato" },
+  "lp-u": { play: "\u0421\u0442\u0430\u0440\u0442", pause: "\u041F\u0430\u0443\u0437\u0430", reset: "\u0421\u0431\u0440\u043E\u0441", resetAll: "\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u0432\u0441\u0451", today: "\u0421\u0435\u0433\u043E\u0434\u043D\u044F", advice: "\u0421\u043E\u0432\u0435\u0442", end: "\u041A\u043E\u043D.", stopped: "\u041E\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043E" },
+  "lp-m": { play: "Start", pause: "Pauz\u0103", reset: "Resetare", resetAll: "Resetare total\u0103", today: "Azi", advice: "Sfat", end: "Sf.", stopped: "Oprit" },
+  "lp-bl": { play: "\u0421\u0442\u0430\u0440\u0442", pause: "\u041F\u0430\u0443\u0437\u0430", reset: "\u041D\u0443\u043B\u0438\u0440\u0430\u043D\u0435", resetAll: "\u041D\u0443\u043B\u0438\u0440\u0430\u043D\u0435 \u043D\u0430 \u0432\u0441\u0438\u0447\u043A\u043E", today: "\u0414\u043D\u0435\u0441", advice: "\u0421\u044A\u0432\u0435\u0442", end: "\u041A\u0440\u0430\u0439", stopped: "\u0421\u043F\u0440\u044F\u043D\u043E" },
+  "lp-o": { play: "Start", pause: "Pauze", reset: "Reset", resetAll: "Alles resetten", today: "Vandaag", advice: "Advies", end: "Einde", stopped: "Gestopt" },
+  "lp-p": { play: "Start", pause: "Pauza", reset: "Resetuj", resetAll: "Resetuj wszystko", today: "Dzi\u015B", advice: "Rada", end: "Koniec", stopped: "Zatrzymano" },
+  "lp-j": { play: "\u30B9\u30BF\u30FC\u30C8", pause: "\u4E00\u6642\u505C\u6B62", reset: "\u30EA\u30BB\u30C3\u30C8", resetAll: "\u5168\u30EA\u30BB\u30C3\u30C8", today: "\u4ECA\u65E5", advice: "\u52A9\u8A00", end: "\u7D42\u4E86", stopped: "\u505C\u6B62" },
+  "lp-ko": { play: "\uC2DC\uC791", pause: "\uC77C\uC2DC\uC815\uC9C0", reset: "\uCD08\uAE30\uD654", resetAll: "\uC804\uCCB4 \uCD08\uAE30\uD654", today: "\uC624\uB298", advice: "\uC870\uC5B8", end: "\uC885\uB8CC", stopped: "\uC911\uC9C0" },
+  "lp-chs": { play: "\u5F00\u59CB", pause: "\u6682\u505C", reset: "\u91CD\u7F6E", resetAll: "\u5168\u90E8\u91CD\u7F6E", today: "\u4ECA\u5929", advice: "\u6307\u5BFC", end: "\u7ED3\u675F", stopped: "\u505C\u6B62" }
 };
 function formatMmSs(ms) {
   const totalSec = Math.max(0, Math.floor(ms / 1e3));
@@ -590,7 +598,7 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     const timeRow = card.createDiv({ cls: "jw-timer-time-row" });
     const endTimeEl = timeRow.createSpan({
       cls: "jw-timer-end-time",
-      text: `End ${minutesToTime(endTimeMins)}`
+      text: `${this.getLabels().end} ${minutesToTime(endTimeMins)}`
     });
     const stoppedAtEl = timeRow.createSpan({ cls: "jw-timer-stopped-at" });
     const barEl = card.createDiv({ cls: "jw-timer-bar" });
@@ -663,12 +671,13 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     const durationMs = part.durationSec * 1e3;
     refs.elapsedEl.setText(formatMmSs(elapsedMs));
     refs.barFillEl.style.width = `${(Math.min(1, elapsedMs / durationMs) * 100).toFixed(1)}%`;
+    const labels = this.getLabels();
     const endTimeMins = scheduledStartMins + Math.ceil(part.durationSec / 60);
     if (status === "paused" && stoppedAt != null) {
       const d = new Date(stoppedAt);
       const stoppedMins = d.getHours() * 60 + d.getMinutes();
       const late = stoppedMins > endTimeMins;
-      refs.stoppedAtEl.setText(`\xB7 Stopped ${timestampToHHMM(stoppedAt)}`);
+      refs.stoppedAtEl.setText(`\xB7 ${labels.stopped} ${timestampToHHMM(stoppedAt)}`);
       refs.stoppedAtEl.className = late ? "jw-timer-stopped-at jw-timer-stopped-at--late" : "jw-timer-stopped-at";
     } else {
       refs.stoppedAtEl.setText("");
@@ -677,7 +686,6 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     const state = colorState(elapsedMs, part.durationSec, status);
     refs.cardEl.setAttribute("data-state", state);
     refs.cardEl.setAttribute("data-running", status === "running" ? "true" : "false");
-    const labels = this.getLabels();
     if (status === "running") {
       refs.playBtn.setText(labels.pause);
       refs.playBtn.setAttr("aria-label", "Pause timer");
