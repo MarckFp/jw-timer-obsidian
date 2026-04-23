@@ -1,10 +1,58 @@
-import { ItemView, WorkspaceLeaf } from "obsidian";
+import { App, ItemView, Modal, WorkspaceLeaf } from "obsidian";
 import type JwTimerPlugin from "./main";
 import type { WeeklySchedule, MeetingPart } from "./types";
 import type { TimerSnapshot } from "./timer-engine";
 import { cacheKey, currentWeekNumber, fetchWeekSchedule } from "./scraper";
 
 export const VIEW_TYPE_JW_TIMER = "jw-timer-sidebar";
+
+// ─── Edit-part modal ────────────────────────────────────────────────────────────────
+
+class EditPartModal extends Modal {
+  constructor(
+    app: App,
+    private readonly part: MeetingPart,
+    private readonly onSave: (label: string, durationSec: number) => void,
+  ) {
+    super(app);
+  }
+
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h3", { cls: "jw-timer-edit-title", text: "Edit part" });
+    const form = contentEl.createDiv({ cls: "jw-timer-edit-form" });
+
+    const labelRow = form.createDiv({ cls: "jw-timer-edit-row" });
+    labelRow.createEl("label", { cls: "jw-timer-edit-label", text: "Title" });
+    const labelInput = labelRow.createEl("input", { cls: "jw-timer-edit-input" });
+    labelInput.type = "text";
+    labelInput.value = this.part.label;
+
+    const durRow = form.createDiv({ cls: "jw-timer-edit-row" });
+    durRow.createEl("label", { cls: "jw-timer-edit-label", text: "Duration (minutes)" });
+    const durInput = durRow.createEl("input", { cls: "jw-timer-edit-input" });
+    durInput.type = "number";
+    durInput.min = "1";
+    durInput.max = "60";
+    durInput.value = String(Math.round(this.part.durationSec / 60));
+
+    const footer = contentEl.createDiv({ cls: "jw-timer-edit-footer" });
+    const saveBtn = footer.createEl("button", { cls: "mod-cta", text: "Save" });
+    saveBtn.addEventListener("click", () => {
+      const newLabel = labelInput.value.trim() || this.part.label;
+      const newMins = Math.max(1, parseInt(durInput.value, 10) || Math.round(this.part.durationSec / 60));
+      this.onSave(newLabel, newMins * 60);
+      this.close();
+    });
+    [labelInput, durInput].forEach((el) =>
+      el.addEventListener("keydown", (e) => { if (e.key === "Enter") saveBtn.click(); })
+    );
+    window.setTimeout(() => labelInput.focus(), 50);
+  }
+
+  onClose(): void { this.contentEl.empty(); }
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const WARN_THRESHOLD = 0.9;
@@ -313,6 +361,20 @@ export class JwTimerView extends ItemView {
     return LOCALE_UI[this.getLang()] ?? LOCALE_UI["lp-e"];
   }
 
+  private getEffectivePart(part: MeetingPart): MeetingPart {
+    const override = this.plugin.getPartOverride(`${this.weekKey}:${part.order}`);
+    if (!override) return part;
+    return {
+      ...part,
+      ...(override.label !== undefined ? { label: override.label } : {}),
+      ...(override.durationSec !== undefined ? { durationSec: override.durationSec } : {}),
+    };
+  }
+
+  private isPartDeleted(part: MeetingPart): boolean {
+    return this.plugin.getPartOverride(`${this.weekKey}:${part.order}`)?.deleted === true;
+  }
+
   /** Virtual partOrder for advice timer — avoids clash with real part orders (≤ ~20). */
   private adviceOrder(partOrder: number): number {
     return 1000 + partOrder;
@@ -439,7 +501,8 @@ export class JwTimerView extends ItemView {
 
       for (const part of parts) {
         if (part.isSeparator) continue;
-        this.renderCard(sectionEl, part, scheduledStart.get(part.order) ?? startMinutes);
+        if (this.isPartDeleted(part)) continue;
+        this.renderCard(sectionEl, this.getEffectivePart(part), scheduledStart.get(part.order) ?? startMinutes);
       }
     }
   }
@@ -492,12 +555,65 @@ export class JwTimerView extends ItemView {
 
     // Advice sub-card for parts with instructor feedback (Bible reading + ministry parts)
     if (part.hasAdvice) this.renderAdviceCard(parentEl, part);
+
+    // ─── Long-press overlay ────────────────────────────────────────────────────────
+    const overlay = card.createDiv({ cls: "jw-timer-card-overlay" });
+    const editBtn = overlay.createEl("button", {
+      cls: "jw-timer-overlay-btn jw-timer-overlay-btn--edit",
+      text: "\u270F\uFE0F Edit",
+    });
+    const deleteBtn = overlay.createEl("button", {
+      cls: "jw-timer-overlay-btn jw-timer-overlay-btn--delete",
+      text: "\uD83D\uDDD1\uFE0F Delete",
+    });
+
+    let longPressTimer: number | null = null;
+    const cancelPress = () => {
+      if (longPressTimer !== null) {
+        window.clearTimeout(longPressTimer);
+        longPressTimer = null;
+        card.removeClass("jw-timer-card--pressing");
+      }
+    };
+    card.addEventListener("pointerdown", (e) => {
+      if ((e.target as HTMLElement).closest("button, .jw-timer-card-overlay")) return;
+      card.addClass("jw-timer-card--pressing");
+      longPressTimer = window.setTimeout(() => {
+        longPressTimer = null;
+        card.removeClass("jw-timer-card--pressing");
+        overlay.addClass("jw-timer-card-overlay--visible");
+      }, 600);
+    });
+    card.addEventListener("pointerup", cancelPress);
+    card.addEventListener("pointermove", cancelPress);
+    card.addEventListener("pointercancel", cancelPress);
+    card.addEventListener("contextmenu", (e) => e.preventDefault());
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.removeClass("jw-timer-card-overlay--visible");
+    });
+    editBtn.addEventListener("click", () => {
+      overlay.removeClass("jw-timer-card-overlay--visible");
+      new EditPartModal(this.app, part, (newLabel, newDurationSec) => {
+        this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, { label: newLabel, durationSec: newDurationSec });
+        void this.plugin.persistTimers();
+        this.renderSchedule(this.schedule!);
+        this.updateMeetingBar();
+      }).open();
+    });
+    deleteBtn.addEventListener("click", () => {
+      overlay.removeClass("jw-timer-card-overlay--visible");
+      this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, { deleted: true });
+      void this.plugin.persistTimers();
+      this.renderSchedule(this.schedule!);
+      this.updateMeetingBar();
+    });
   }
 
   // ─── Re-fetch schedule ────────────────────────────────────────────────────
 
   private async refetchSchedule(): Promise<void> {
     this.plugin.evictCachedSchedule(this.weekKey);
+    this.plugin.clearPartOverrides(this.weekKey);
     this.staleEl.style.display = "none";
     this.meetingBarContainerEl.style.display = "none";
     this.schedule = null;
@@ -669,7 +785,7 @@ export class JwTimerView extends ItemView {
       if (p.order === part.order) { scheduledStart = cursor; break; }
       cursor += Math.ceil(p.durationSec / 60) + (p.hasAdvice ? 1 : 0);
     }
-    this.updateCard(part, scheduledStart);
+    this.updateCard(this.getEffectivePart(part), scheduledStart);
   }
 
   private updateCard(part: MeetingPart, scheduledStartMins: number): void {
@@ -746,6 +862,7 @@ export class JwTimerView extends ItemView {
       btn.removeClass("jw-timer-btn--confirm");
     }
     this.pendingResets.clear();
+    this.plugin.clearPartOverrides(this.weekKey);
     for (const part of this.schedule.parts) {
       this.plugin.timerEngine.reset(this.weekKey, part.order);
       if (part.hasAdvice) this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));

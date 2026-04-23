@@ -1,6 +1,6 @@
 import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS } from "./types";
-import type { PluginSettings, PluginData, WeeklySchedule, TimerState } from "./types";
+import type { PluginSettings, PluginData, WeeklySchedule, TimerState, PartOverride } from "./types";
 import { TimerEngine } from "./timer-engine";
 import { JwTimerSettingsTab } from "./settings-tab";
 import { JwTimerView, VIEW_TYPE_JW_TIMER } from "./view";
@@ -8,6 +8,7 @@ import { JwTimerView, VIEW_TYPE_JW_TIMER } from "./view";
 export default class JwTimerPlugin extends Plugin {
   settings: PluginSettings = { ...DEFAULT_SETTINGS };
   timerEngine = new TimerEngine();
+  partOverrides: Record<string, PartOverride> = {};
   private scheduleCache: Record<string, WeeklySchedule> = {};
   private saveHandle: number | null = null;
 
@@ -58,6 +59,9 @@ export default class JwTimerPlugin extends Plugin {
     if (raw.timerStates) {
       this.timerEngine.restore(raw.timerStates);
     }
+    if (raw.partOverrides) {
+      this.partOverrides = raw.partOverrides;
+    }
   }
 
   private async persistData(): Promise<void> {
@@ -69,6 +73,7 @@ export default class JwTimerPlugin extends Plugin {
       settings: this.settings,
       scheduleCache: this.scheduleCache,
       timerStates,
+      partOverrides: this.partOverrides,
     };
     await this.saveData(data);
   }
@@ -104,6 +109,24 @@ export default class JwTimerPlugin extends Plugin {
 
   evictCachedSchedule(key: string): void {
     delete this.scheduleCache[key];
+    this.scheduleSave();
+  }
+
+  // ─── Part overrides ─────────────────────────────────────────────────────
+
+  getPartOverride(key: string): PartOverride | undefined {
+    return this.partOverrides[key];
+  }
+
+  setPartOverride(key: string, override: PartOverride): void {
+    this.partOverrides[key] = { ...(this.partOverrides[key] ?? {}), ...override };
+    this.scheduleSave();
+  }
+
+  clearPartOverrides(weekKey: string): void {
+    for (const key of Object.keys(this.partOverrides)) {
+      if (key.startsWith(weekKey + ":")) delete this.partOverrides[key];
+    }
     this.scheduleSave();
   }
 

@@ -51,12 +51,23 @@ export interface TimerState {
 
 // ─── Persisted plugin data ────────────────────────────────────────────────────
 
+export interface PartOverride {
+  /** Replacement label, if the user edited it */
+  label?: string;
+  /** Replacement duration in seconds, if the user edited it */
+  durationSec?: number;
+  /** If true the card is hidden until Reset All or re-scrape */
+  deleted?: boolean;
+}
+
 export interface PluginData {
   settings: PluginSettings;
   /** Cached schedule, keyed by "YYYY-WW" */
   scheduleCache: Record<string, WeeklySchedule>;
   /** Timer states, keyed by "YYYY-WW:partOrder" */
   timerStates: Record<string, TimerState>;
+  /** Per-part user overrides, keyed by "weekKey:partOrder" */
+  partOverrides: Record<string, PartOverride>;
 }
 
 export interface PluginSettings {
@@ -81,7 +92,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   meetingStartTime: "20:00",
   openingSongMinutes: 5,
   alertSound: false,
-  alertSoundSec: 2,
+  alertSoundSec: 1,
   alertVibrate: false,
-  alertVibrateSec: 2,
+  alertVibrateSec: 5,
 };

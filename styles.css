@@ -264,12 +264,111 @@ body.theme-dark {
 /* ─── Cards ──────────────────────────────────────────────────────────────── */
 
 .jw-timer-card {
+  position: relative;        /* needed for overlay positioning */
   padding: 0.55rem 0.65rem;
   margin-bottom: 0.3rem;
   border-radius: 7px;
   border: 1px solid transparent;
   background: var(--background-secondary);
   transition: background 200ms ease, border-color 200ms ease;
+  user-select: none;         /* prevent text selection during long-press */
+  -webkit-user-select: none;
+}
+
+/* Long-press visual feedback — border slowly fills in over 600 ms */
+.jw-timer-card--pressing {
+  border-color: var(--interactive-accent) !important;
+  transition: border-color 600ms ease !important;
+}
+
+/* ─── Card edit/delete overlay ───────────────────────────────────────────── */
+
+.jw-timer-card-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 10;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.6rem;
+}
+
+.jw-timer-card-overlay--visible {
+  display: flex;
+}
+
+.jw-timer-overlay-btn {
+  flex: 1;
+  min-height: 3.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 100ms;
+}
+
+.jw-timer-overlay-btn:hover { filter: brightness(1.15); }
+
+.jw-timer-overlay-btn--edit {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.jw-timer-overlay-btn--delete {
+  background: var(--color-red);
+  color: #fff;
+}
+
+/* ─── Edit-part modal form ───────────────────────────────────────────────── */
+
+.jw-timer-edit-title {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.jw-timer-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.2rem;
+}
+
+.jw-timer-edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.jw-timer-edit-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.jw-timer-edit-input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 0.9rem;
+}
+
+.jw-timer-edit-input:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+}
+
+.jw-timer-edit-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Running — on time */
