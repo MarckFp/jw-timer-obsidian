@@ -404,13 +404,14 @@ function formatFetchedAt(fetchedAt) {
   const ageH = (Date.now() - fetchedAt) / 36e5;
   let text;
   if (ageH < 1) {
-    text = "\u21BB just now";
+    text = "Fetched just now";
   } else if (ageH < 24) {
     const d = new Date(fetchedAt);
-    text = `\u21BB ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    const hhmm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    text = `Fetched today at ${hhmm}`;
   } else {
-    const d = new Date(fetchedAt);
-    text = `\u21BB ${d.toLocaleDateString(void 0, { month: "short", day: "numeric" })}`;
+    const days = Math.floor(ageH / 24);
+    text = days === 1 ? "Fetched yesterday" : `Fetched ${days} days ago`;
   }
   const level = ageH < 24 ? "fresh" : ageH < 72 ? "stale" : "old";
   return { text, level };
@@ -456,6 +457,10 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     nextBtn.addEventListener("click", () => void this.navigateWeek(1));
     this.todayBtn.addEventListener("click", () => void this.navigateToToday());
     this.staleEl = root.createDiv({ cls: "jw-timer-stale" });
+    const staleRefreshBtn = this.staleEl.createEl("button", { cls: "jw-timer-stale-refresh", text: "\u21BB" });
+    staleRefreshBtn.setAttr("aria-label", "Re-fetch schedule from wol.jw.org");
+    staleRefreshBtn.addEventListener("click", () => void this.refetchSchedule());
+    this.staleTextEl = this.staleEl.createSpan();
     this.staleEl.style.display = "none";
     const toolbar = root.createDiv({ cls: "jw-timer-toolbar" });
     this.resetAllBtn = toolbar.createEl("button", {
@@ -565,7 +570,7 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     this.navLabelEl.setText(schedule.weekLabel);
     this.setStatus("ok", "");
     const { text: staleText, level: staleLevel } = formatFetchedAt(schedule.fetchedAt);
-    this.staleEl.setText(staleText);
+    this.staleTextEl.setText(staleText);
     this.staleEl.className = `jw-timer-stale jw-timer-stale--${staleLevel}`;
     this.staleEl.style.display = "";
     this.renderSchedule(schedule);
@@ -752,12 +757,23 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     }
   }
   // ─── Reset All ────────────────────────────────────────────────────────────
+  async refetchSchedule() {
+    this.plugin.evictCachedSchedule(this.weekKey);
+    this.staleEl.style.display = "none";
+    this.meetingBarContainerEl.style.display = "none";
+    this.schedule = null;
+    this.cards.clear();
+    this.adviceCards.clear();
+    this.listEl.empty();
+    await this.loadScheduleForWeek(this.viewYear, this.viewWeek);
+  }
   armReset(btn, onConfirm) {
     if (this.pendingResets.has(btn)) {
       const tid = this.pendingResets.get(btn);
       window.clearTimeout(tid);
       this.pendingResets.delete(btn);
       btn.removeClass("jw-timer-btn--confirm");
+      btn.setText(btn === this.resetAllBtn ? this.getLabels().resetAll : this.getLabels().reset);
       onConfirm();
       return;
     }
@@ -934,6 +950,10 @@ var JwTimerPlugin = class extends import_obsidian4.Plugin {
   }
   cacheSchedule(key, schedule) {
     this.scheduleCache[key] = schedule;
+    this.scheduleSave();
+  }
+  evictCachedSchedule(key) {
+    delete this.scheduleCache[key];
     this.scheduleSave();
   }
   // ─── Settings change helpers ─────────────────────────────────────────────────

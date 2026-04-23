@@ -106,13 +106,14 @@ function formatFetchedAt(fetchedAt: number): { text: string; level: "fresh" | "s
   const ageH = (Date.now() - fetchedAt) / 3_600_000;
   let text: string;
   if (ageH < 1) {
-    text = "\u21BB just now";
+    text = "Fetched just now";
   } else if (ageH < 24) {
     const d = new Date(fetchedAt);
-    text = `\u21BB ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    const hhmm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    text = `Fetched today at ${hhmm}`;
   } else {
-    const d = new Date(fetchedAt);
-    text = `\u21BB ${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+    const days = Math.floor(ageH / 24);
+    text = days === 1 ? "Fetched yesterday" : `Fetched ${days} days ago`;
   }
   const level: "fresh" | "stale" | "old" = ageH < 24 ? "fresh" : ageH < 72 ? "stale" : "old";
   return { text, level };
@@ -156,6 +157,7 @@ export class JwTimerView extends ItemView {
   /** Tracks buttons in the pending-confirm state, with their revert timeout id */
   private pendingResets = new Map<HTMLButtonElement, number>();
   private staleEl!: HTMLElement;
+  private staleTextEl!: HTMLElement;
   private meetingBarContainerEl!: HTMLElement;
   private meetingBarFillEl!: HTMLElement;
   private meetingBarLabelEl!: HTMLElement;
@@ -193,6 +195,13 @@ export class JwTimerView extends ItemView {
     this.todayBtn.addEventListener("click", () => void this.navigateToToday());
     // ── Staleness indicator ──────────────────────────────────────────────
     this.staleEl = root.createDiv({ cls: "jw-timer-stale" });
+    const staleRefreshBtn = this.staleEl.createEl("button", {
+      cls: "jw-timer-stale-refresh",
+      text: "↻",
+    });
+    staleRefreshBtn.setAttr("aria-label", "Re-fetch schedule from wol.jw.org");
+    staleRefreshBtn.addEventListener("click", () => void this.refetchSchedule());
+    this.staleTextEl = this.staleEl.createSpan();
     this.staleEl.style.display = "none";
     // ── Reset-all toolbar ────────────────────────────────────────────────────
     const toolbar = root.createDiv({ cls: "jw-timer-toolbar" });
@@ -326,7 +335,7 @@ export class JwTimerView extends ItemView {
     this.navLabelEl.setText(schedule.weekLabel);
     this.setStatus("ok", "");
     const { text: staleText, level: staleLevel } = formatFetchedAt(schedule.fetchedAt);
-    this.staleEl.setText(staleText);
+    this.staleTextEl.setText(staleText);
     this.staleEl.className = `jw-timer-stale jw-timer-stale--${staleLevel}`;
     this.staleEl.style.display = "";
     this.renderSchedule(schedule);
@@ -451,6 +460,19 @@ export class JwTimerView extends ItemView {
     if (part.hasAdvice) this.renderAdviceCard(parentEl, part);
   }
 
+  // ─── Re-fetch schedule ────────────────────────────────────────────────────
+
+  private async refetchSchedule(): Promise<void> {
+    this.plugin.evictCachedSchedule(this.weekKey);
+    this.staleEl.style.display = "none";
+    this.meetingBarContainerEl.style.display = "none";
+    this.schedule = null;
+    this.cards.clear();
+    this.adviceCards.clear();
+    this.listEl.empty();
+    await this.loadScheduleForWeek(this.viewYear, this.viewWeek);
+  }
+
   // ─── Two-click reset guard ────────────────────────────────────────────────
 
   /**
@@ -465,6 +487,9 @@ export class JwTimerView extends ItemView {
       window.clearTimeout(tid);
       this.pendingResets.delete(btn);
       btn.removeClass("jw-timer-btn--confirm");
+      // Restore label before executing (handleResetAll re-renders the list, individual
+      // handleReset does not, so both paths need this here)
+      btn.setText(btn === this.resetAllBtn ? this.getLabels().resetAll : this.getLabels().reset);
       onConfirm();
       return;
     }

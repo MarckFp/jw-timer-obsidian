@@ -102,6 +102,11 @@ export default class JwTimerPlugin extends Plugin {
     this.scheduleSave();
   }
 
+  evictCachedSchedule(key: string): void {
+    delete this.scheduleCache[key];
+    this.scheduleSave();
+  }
+
   // ─── Settings change helpers ─────────────────────────────────────────────────
 
   async clearCacheAndRefresh(): Promise<void> {
