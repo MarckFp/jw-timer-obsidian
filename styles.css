@@ -314,7 +314,7 @@ body.theme-dark {
   opacity: 0.22;
   transform: scaleX(0);
   transform-origin: left center;
-  animation: jw-longpress-fill 600ms ease forwards;
+  animation: jw-longpress-fill 1000ms ease forwards;
   pointer-events: none;
   z-index: 9;
 }
