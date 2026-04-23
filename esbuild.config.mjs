@@ -8,13 +8,19 @@ const watch = process.argv.includes("--watch");
 const context = await esbuild.context({
   entryPoints: ["src/main.ts"],
   bundle: true,
-  external: ["obsidian", "electron", "@codemirror/state", "@codemirror/view", ...builtinModules],
+  external: [
+    "obsidian",
+    "electron",
+    "@codemirror/state",
+    "@codemirror/view",
+    ...builtinModules,
+  ],
   format: "cjs",
   target: "es2020",
   logLevel: "info",
   sourcemap: prod ? false : "inline",
   treeShaking: true,
-  outfile: "main.js"
+  outfile: "main.js",
 });
 
 if (watch) {

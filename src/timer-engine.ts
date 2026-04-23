@@ -19,10 +19,15 @@ export class TimerEngine {
   get(weekKey: string, partOrder: number): TimerSnapshot {
     const state = this.states.get(this.key(weekKey, partOrder));
     if (!state) return { elapsedMs: 0, status: "idle", stoppedAt: null };
-    const elapsed = state.running && state.startedAt !== null
-      ? state.elapsedMs + (Date.now() - state.startedAt)
-      : state.elapsedMs;
-    const status: TimerStatus = state.running ? "running" : state.elapsedMs > 0 ? "paused" : "idle";
+    const elapsed =
+      state.running && state.startedAt !== null
+        ? state.elapsedMs + (Date.now() - state.startedAt)
+        : state.elapsedMs;
+    const status: TimerStatus = state.running
+      ? "running"
+      : state.elapsedMs > 0
+        ? "paused"
+        : "idle";
     return { elapsedMs: elapsed, status, stoppedAt: state.stoppedAt ?? null };
   }
 

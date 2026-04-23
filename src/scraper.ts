@@ -4,7 +4,9 @@ import type { WeeklySchedule, MeetingPart, MeetingSection } from "./types";
 // ─── URL helpers ──────────────────────────────────────────────────────────────
 
 function isoWeek(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const d = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  );
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
@@ -14,7 +16,11 @@ export function currentWeekNumber(): number {
   return isoWeek(new Date());
 }
 
-export function buildWolUrl(locale: string, year: number, week: number): string {
+export function buildWolUrl(
+  locale: string,
+  year: number,
+  week: number,
+): string {
   return `https://wol.jw.org/en/wol/meetings/${locale}/${year}/${week}`;
 }
 
@@ -49,7 +55,7 @@ function parseDuration(text: string): number | null {
 export async function fetchWeekSchedule(
   locale: string,
   year: number,
-  week: number
+  week: number,
 ): Promise<WeeklySchedule | null> {
   // Step 1: fetch the meetings index page to find the MWB doc link
   const meetingsUrl = buildWolUrl(locale, year, week);
@@ -57,7 +63,9 @@ export async function fetchWeekSchedule(
   try {
     const resp = await requestUrl({
       url: meetingsUrl,
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)",
+      },
     });
     if (resp.status < 200 || resp.status >= 300) return null;
     meetingsHtml = resp.text;
@@ -80,7 +88,9 @@ export async function fetchWeekSchedule(
   try {
     const resp = await requestUrl({
       url: docUrl,
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)",
+      },
     });
     if (resp.status < 200 || resp.status >= 300) return null;
     docHtml = resp.text;
@@ -108,7 +118,11 @@ function cleanText(html: string): string {
 
 // ─── Doc page parsing ─────────────────────────────────────────────────────────
 
-function parseDocPage(html: string, year: number, week: number): WeeklySchedule | null {
+function parseDocPage(
+  html: string,
+  year: number,
+  week: number,
+): WeeklySchedule | null {
   // Week label from h1
   const h1Match = /<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(html);
   const weekLabel = h1Match ? cleanText(h1Match[1]) : `Week ${week}`;
@@ -117,7 +131,11 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
   // h2 with class du-color--teal-700   → TREASURES FROM GOD'S WORD
   // h2 with class du-color--gold-700   → APPLY YOURSELF TO THE FIELD MINISTRY
   // h2 with class du-color--maroon-600 → LIVING AS CHRISTIANS
-  type SectionBoundary = { pos: number; section: MeetingSection; label: string };
+  type SectionBoundary = {
+    pos: number;
+    section: MeetingSection;
+    label: string;
+  };
   const boundaries: SectionBoundary[] = [];
 
   const h2Re = /<h2([^>]*)>([\s\S]*?)<\/h2>/gi;
@@ -132,9 +150,15 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
     else if (cls.includes("maroon-600")) sec = "living";
     // Fallback: English section text
     else if (text.includes("TREASURES")) sec = "treasures";
-    else if (text.includes("APPLY YOURSELF") || text.includes("FIELD MINISTRY")) sec = "ministry";
+    else if (text.includes("APPLY YOURSELF") || text.includes("FIELD MINISTRY"))
+      sec = "ministry";
     else if (text.includes("LIVING AS CHRISTIANS")) sec = "living";
-    if (sec) boundaries.push({ pos: h2m.index, section: sec, label: cleanText(h2m[2]) });
+    if (sec)
+      boundaries.push({
+        pos: h2m.index,
+        section: sec,
+        label: cleanText(h2m[2]),
+      });
   }
 
   function sectionForPos(pos: number): MeetingSection {
@@ -150,15 +174,16 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
   let order = 0;
 
   // Captures: [1] h3 attrs, [2] h3 inner HTML, [3] sibling body HTML until next h3/h2
-  const h3Re = /<h3([^>]*)>([\s\S]*?)<\/h3>([\s\S]*?)(?=<h3|<h2|<\/article|$)/gi;
+  const h3Re =
+    /<h3([^>]*)>([\s\S]*?)<\/h3>([\s\S]*?)(?=<h3|<h2|<\/article|$)/gi;
   let h3m: RegExpExecArray | null;
   while ((h3m = h3Re.exec(html)) !== null) {
-    const h3Attrs   = h3m[1];
+    const h3Attrs = h3m[1];
     const titleHtml = h3m[2];
-    const bodyHtml  = h3m[3] ?? "";
-    const title     = cleanText(titleHtml);
-    const bodyText  = cleanText(bodyHtml);
-    const pos       = h3m.index;
+    const bodyHtml = h3m[3] ?? "";
+    const title = cleanText(titleHtml);
+    const bodyText = cleanText(bodyHtml);
+    const pos = h3m.index;
 
     const isSong = h3Attrs.includes("dc-icon--music");
 
@@ -181,13 +206,18 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
       // Only surface the programme label (the pipe segment that has the duration)
       const label = labelFromPipeSegment(title);
       if (!label) continue;
-      parts.push({ label, section: sectionForPos(pos), durationSec: durInTitle, order: order++ });
+      parts.push({
+        label,
+        section: sectionForPos(pos),
+        durationSec: durInTitle,
+        order: order++,
+      });
       continue;
     }
 
     // Regular programme part — duration may be in the h3 title (closing row) or in body
     const durInTitle = parseDuration(title);
-    const durInBody  = parseDuration(bodyText.slice(0, 200));
+    const durInBody = parseDuration(bodyText.slice(0, 200));
     const durationSec = durInTitle ?? durInBody;
     if (durationSec === null) continue;
 
@@ -200,12 +230,22 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
     }
 
     // Normal numbered part — strip duration annotation from label
-    const cleanLabel = title.replace(DURATION_RE, "").replace(/\s+/g, " ").trim();
+    const cleanLabel = title
+      .replace(DURATION_RE, "")
+      .replace(/\s+/g, " ")
+      .trim();
     const section = sectionForPos(pos);
     // Ministry parts and Bible reading (dc-icon--bible) get a 1-min instructor advice sub-timer
-    const hasAdvice = section === "ministry" ||
+    const hasAdvice =
+      section === "ministry" ||
       (section === "treasures" && h3Attrs.includes("dc-icon--bible"));
-    parts.push({ label: cleanLabel, section, durationSec, order: order++, ...(hasAdvice ? { hasAdvice } : {}) });
+    parts.push({
+      label: cleanLabel,
+      section,
+      durationSec,
+      order: order++,
+      ...(hasAdvice ? { hasAdvice } : {}),
+    });
   }
 
   if (parts.length < 5) return null;
@@ -215,7 +255,14 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
     sectionLabels[b.section] = b.label;
   }
 
-  return { weekLabel, year, weekNumber: week, parts, fetchedAt: Date.now(), sectionLabels };
+  return {
+    weekLabel,
+    year,
+    weekNumber: week,
+    parts,
+    fetchedAt: Date.now(),
+    sectionLabels,
+  };
 }
 
 /**
@@ -227,8 +274,8 @@ function parseDocPage(html: string, year: number, week: number): WeeklySchedule 
  * "Concluding Comments (3 min.) | Song 70 and Prayer" → "Concluding Comments"
  */
 function labelFromPipeSegment(title: string): string | null {
-  const segments = title.split("|").map(s => s.trim());
-  const withDur = segments.find(s => DURATION_RE.test(s));
+  const segments = title.split("|").map((s) => s.trim());
+  const withDur = segments.find((s) => DURATION_RE.test(s));
   if (!withDur) return null;
   return withDur.replace(DURATION_RE, "").replace(/\s+/g, " ").trim() || null;
 }
