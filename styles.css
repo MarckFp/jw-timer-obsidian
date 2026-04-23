@@ -99,6 +99,7 @@ body.theme-dark {
 
 .jw-timer-toolbar {
   display: flex;
+  align-items: stretch;
   padding: 0.35rem 0.6rem;
   border-bottom: 1px solid var(--background-modifier-border);
   flex-shrink: 0;
@@ -652,7 +653,6 @@ body.theme-dark {
   background: none;
   border: 1px solid var(--background-modifier-border);
   color: var(--text-muted);
-  min-height: 2.2rem;
   min-width: 2.4rem;
   font-size: 1.1rem;
   font-weight: 700;
