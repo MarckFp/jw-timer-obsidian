@@ -37,7 +37,7 @@ An [Obsidian](https://obsidian.md/) sidebar plugin that provides per-part stopwa
 2. Click **Add Beta plugin**.
 3. Paste the repository URL:
    ```
-   https://github.com/YOUR_USERNAME/jw-timer-obsidian
+   https://github.com/MarckFp/jw-timer-obsidian
    ```
 4. Click **Add Plugin**. BRAT will download and install it.
 5. Go to **Settings** → **Community plugins**, find **JW Meeting Timer**, and enable it.
