@@ -29,6 +29,8 @@ const LOCALE_OPENING_CLOSING: Record<string, [string, string]> = {
   "lp-u":   ["Начало",     "Заключение"],
   "lp-d":   ["Opening",    "Sluiting"],
   "lp-p":   ["Otwarcie",   "Zakończenie"],
+  "lp-j":   ["開会の言葉", "閉会の言葉"],
+  "lp-ko":  ["소개말",     "맺음말"],
   "lp-chs": ["开场",        "结束"],
 };
 
@@ -306,7 +308,9 @@ export class JwTimerView extends ItemView {
     const scheduledStart = new Map<number, number>();
     for (const part of schedule.parts) {
       scheduledStart.set(part.order, cursor);
-      cursor += Math.ceil(part.durationSec / 60);
+      // Include the 1-minute advice slot in the schedule so subsequent parts
+      // (and the final "End" time) reflect the real meeting duration.
+      cursor += Math.ceil(part.durationSec / 60) + (part.hasAdvice ? 1 : 0);
     }
 
     // Opening/Closing labels from locale map; middle sections from scraper (page language)
@@ -436,7 +440,7 @@ export class JwTimerView extends ItemView {
     let scheduledStart = cursor;
     for (const p of (this.schedule?.parts ?? [])) {
       if (p.order === part.order) { scheduledStart = cursor; break; }
-      cursor += Math.ceil(p.durationSec / 60);
+      cursor += Math.ceil(p.durationSec / 60) + (p.hasAdvice ? 1 : 0);
     }
     this.updateCard(part, scheduledStart);
   }

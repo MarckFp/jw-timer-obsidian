@@ -25,10 +25,17 @@ export function cacheKey(year: number, week: number): string {
 // ─── Duration parsing ─────────────────────────────────────────────────────────
 
 /**
- * Matches "(N min.)" OR "(N mins.)" — handles English ("min.") and Spanish ("mins.").
- * The regex is applied against plain text after stripping HTML tags.
+ * Matches duration annotations in all supported WOL languages:
+ * - Latin-script:  (N min.)  (N mins.)  (N min)  — English, Spanish, French, Portuguese,
+ *                  German (Min.), Dutch, Italian, Polish, etc.
+ * - Korean:        (N분)      — ASCII parens + Hangul
+ * - Japanese:      （N分）    — full-width parens + kanji
+ * - Chinese:       （N分钟）  — full-width parens + 分钟
+ *
+ * Uses a character class for the opening/closing paren to handle full-width variants,
+ * and an alternation for the unit suffix.
  */
-const DURATION_RE = /\((\d+)\s*mins?\.\)/i;
+const DURATION_RE = /[(\uff08](\d+)\s*(?:mins?\.?|분|分钟?)[)\uff09]/i;
 
 function parseDuration(text: string): number | null {
   const m = DURATION_RE.exec(text);

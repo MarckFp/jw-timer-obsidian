@@ -197,7 +197,7 @@ function buildWolUrl(locale, year, week) {
 function cacheKey(year, week) {
   return `${year}-${String(week).padStart(2, "0")}`;
 }
-var DURATION_RE = /\((\d+)\s*mins?\.\)/i;
+var DURATION_RE = /[(\uFF08](\d+)\s*(?:mins?\.?|\uBD84|\u5206\u9418?)[)\uFF09]/i;
 function parseDuration(text) {
   const m = DURATION_RE.exec(text);
   return m ? parseInt(m[1], 10) * 60 : null;
@@ -342,6 +342,8 @@ var LOCALE_OPENING_CLOSING = {
   "lp-u": ["\u041D\u0430\u0447\u0430\u043B\u043E", "\u0417\u0430\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435"],
   "lp-d": ["Opening", "Sluiting"],
   "lp-p": ["Otwarcie", "Zako\u0144czenie"],
+  "lp-j": ["\u958B\u4F1A\u306E\u8A00\u8449", "\u9589\u4F1A\u306E\u8A00\u8449"],
+  "lp-ko": ["\uC18C\uAC1C\uB9D0", "\uB9FA\uC74C\uB9D0"],
   "lp-chs": ["\u5F00\u573A", "\u7ED3\u675F"]
 };
 var LOCALE_UI = {
