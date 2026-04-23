@@ -1,3 +1,21 @@
+/* ─── Theme-adaptive palette ────────────────────────────────────────────── */
+/* Dark-mode defaults; light mode overrides below */
+:root {
+  --jw-treasures: #2dd4bf;
+  --jw-ministry:  #fcd34d;
+  --jw-living:    #fb7185;
+}
+body.theme-light {
+  --jw-treasures: #0f766e;
+  --jw-ministry:  #92400e;
+  --jw-living:    #881337;
+}
+body.theme-dark {
+  --jw-treasures: #2dd4bf;
+  --jw-ministry:  #fcd34d;
+  --jw-living:    #fb7185;
+}
+
 /* ─── Root ───────────────────────────────────────────────────────────────── */
 
 .jw-timer-root {
@@ -104,6 +122,50 @@
   color: var(--color-red);
 }
 
+/* ─── Staleness indicator ────────────────────────────────────────────────── */
+
+.jw-timer-stale {
+  text-align: center;
+  font-size: 0.68rem;
+  padding: 0.15rem 0.5rem;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.jw-timer-stale--fresh { color: var(--color-green); }
+.jw-timer-stale--stale { color: var(--color-orange); }
+.jw-timer-stale--old   { color: var(--color-red); font-weight: 600; }
+
+/* ─── Meeting progress bar ───────────────────────────────────────────────── */
+
+.jw-timer-meeting-bar-container {
+  padding: 0.2rem 0.6rem 0.1rem;
+  flex-shrink: 0;
+}
+
+.jw-timer-meeting-bar {
+  height: 4px;
+  background: var(--background-modifier-border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.2rem;
+}
+
+.jw-timer-meeting-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--interactive-accent);
+  border-radius: 2px;
+  transition: width 250ms linear;
+}
+
+.jw-timer-meeting-bar-label {
+  font-size: 0.65rem;
+  color: var(--text-faint);
+  text-align: right;
+  font-family: var(--font-monospace, monospace);
+}
+
 /* ─── Status bar ─────────────────────────────────────────────────────────── */
 
 .jw-timer-status {
@@ -154,20 +216,20 @@
 
 /* Teal accent — Treasures from God's Word */
 .jw-timer-section[data-section="treasures"] > .jw-timer-section-title {
-  border-left-color: #0d9488; /* teal-600 */
-  color: #0d9488;
+  border-left-color: var(--jw-treasures);
+  color: var(--jw-treasures);
 }
 
 /* Gold accent — Apply Yourself to the Ministry */
 .jw-timer-section[data-section="ministry"] > .jw-timer-section-title {
-  border-left-color: #b45309; /* amber-700 */
-  color: #b45309;
+  border-left-color: var(--jw-ministry);
+  color: var(--jw-ministry);
 }
 
 /* Maroon accent — Living as Christians */
 .jw-timer-section[data-section="living"] > .jw-timer-section-title {
-  border-left-color: #9f1239; /* rose-800 */
-  color: #9f1239;
+  border-left-color: var(--jw-living);
+  color: var(--jw-living);
 }
 
 /* ─── Cards ──────────────────────────────────────────────────────────────── */

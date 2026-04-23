@@ -101,6 +101,23 @@ function isoWeeksInYear(year: number): number {
   return Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
 }
 
+/** Returns a short, language-agnostic staleness label + severity for a fetch timestamp. */
+function formatFetchedAt(fetchedAt: number): { text: string; level: "fresh" | "stale" | "old" } {
+  const ageH = (Date.now() - fetchedAt) / 3_600_000;
+  let text: string;
+  if (ageH < 1) {
+    text = "\u21BB just now";
+  } else if (ageH < 24) {
+    const d = new Date(fetchedAt);
+    text = `\u21BB ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  } else {
+    const d = new Date(fetchedAt);
+    text = `\u21BB ${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+  }
+  const level: "fresh" | "stale" | "old" = ageH < 24 ? "fresh" : ageH < 72 ? "stale" : "old";
+  return { text, level };
+}
+
 type TimerColorState = "idle" | "ok" | "warn" | "over";
 
 function colorState(elapsedMs: number, durationSec: number, status: TimerSnapshot["status"]): TimerColorState {
@@ -138,6 +155,11 @@ export class JwTimerView extends ItemView {
   private listEl!: HTMLElement;
   /** Tracks buttons in the pending-confirm state, with their revert timeout id */
   private pendingResets = new Map<HTMLButtonElement, number>();
+  private staleEl!: HTMLElement;
+  private meetingBarContainerEl!: HTMLElement;
+  private meetingBarFillEl!: HTMLElement;
+  private meetingBarLabelEl!: HTMLElement;
+  private totalTimedMs = 0;
 
   // Pagination state — initialised to current week in onOpen
   private viewYear: number = new Date().getFullYear();
@@ -169,7 +191,9 @@ export class JwTimerView extends ItemView {
     prevBtn.addEventListener("click", () => void this.navigateWeek(-1));
     nextBtn.addEventListener("click", () => void this.navigateWeek(+1));
     this.todayBtn.addEventListener("click", () => void this.navigateToToday());
-
+    // ── Staleness indicator ──────────────────────────────────────────────
+    this.staleEl = root.createDiv({ cls: "jw-timer-stale" });
+    this.staleEl.style.display = "none";
     // ── Reset-all toolbar ────────────────────────────────────────────────────
     const toolbar = root.createDiv({ cls: "jw-timer-toolbar" });
     this.resetAllBtn = toolbar.createEl("button", {
@@ -180,6 +204,12 @@ export class JwTimerView extends ItemView {
 
     // ── Status + list ────────────────────────────────────────────────────────
     this.statusEl = root.createDiv({ cls: "jw-timer-status" });
+    // ── Meeting progress bar ───────────────────────────────────────────
+    this.meetingBarContainerEl = root.createDiv({ cls: "jw-timer-meeting-bar-container" });
+    this.meetingBarContainerEl.style.display = "none";
+    const mBarTrack = this.meetingBarContainerEl.createDiv({ cls: "jw-timer-meeting-bar" });
+    this.meetingBarFillEl = mBarTrack.createDiv({ cls: "jw-timer-meeting-bar-fill" });
+    this.meetingBarLabelEl = this.meetingBarContainerEl.createDiv({ cls: "jw-timer-meeting-bar-label" });
     this.listEl = root.createDiv({ cls: "jw-timer-list" });
 
     this.tickHandle = window.setInterval(() => this.tick(), 250);
@@ -274,8 +304,8 @@ export class JwTimerView extends ItemView {
 
   private async loadScheduleForWeek(year: number, week: number): Promise<void> {
     this.weekKey = cacheKey(year, week);
-    this.navLabelEl.setText(`${year} · W${String(week).padStart(2, "0")}`);
-
+    this.navLabelEl.setText(`${year} · W${String(week).padStart(2, "0")}`);    this.staleEl.style.display = "none";
+    this.meetingBarContainerEl.style.display = "none";
     let schedule = this.plugin.getCachedSchedule(this.weekKey);
 
     if (!schedule) {
@@ -295,7 +325,12 @@ export class JwTimerView extends ItemView {
     this.schedule = schedule;
     this.navLabelEl.setText(schedule.weekLabel);
     this.setStatus("ok", "");
+    const { text: staleText, level: staleLevel } = formatFetchedAt(schedule.fetchedAt);
+    this.staleEl.setText(staleText);
+    this.staleEl.className = `jw-timer-stale jw-timer-stale--${staleLevel}`;
+    this.staleEl.style.display = "";
     this.renderSchedule(schedule);
+    this.updateMeetingBar();
     this.updateTodayVisibility();
   }
 
@@ -311,6 +346,14 @@ export class JwTimerView extends ItemView {
     this.listEl.empty();
     this.cards.clear();
     this.adviceCards.clear();
+
+    // Compute total timed content duration (non-separator parts + advice slots)
+    this.totalTimedMs = 0;
+    for (const p of schedule.parts) {
+      if (!p.isSeparator) this.totalTimedMs += p.durationSec * 1000;
+      if (p.hasAdvice) this.totalTimedMs += 60_000;
+    }
+    this.meetingBarContainerEl.style.display = "";
 
     const startMinutes = timeToMinutes(this.plugin.settings.meetingStartTime);
     let cursor = startMinutes + this.plugin.settings.openingSongMinutes;
@@ -453,6 +496,7 @@ export class JwTimerView extends ItemView {
       this.plugin.timerEngine.start(this.weekKey, part.order);
     }
     this.updateCardByOrder(part);
+    this.updateMeetingBar();
   }
 
   private handleReset(part: MeetingPart): void {
@@ -462,6 +506,7 @@ export class JwTimerView extends ItemView {
       this.updateAdviceCard(part);
     }
     this.updateCardByOrder(part);
+    this.updateMeetingBar();
     void this.plugin.persistTimers();
   }
 
@@ -469,14 +514,32 @@ export class JwTimerView extends ItemView {
 
   private tick(): void {
     if (!this.schedule) return;
+    let anyRunning = false;
     for (const part of this.schedule.parts) {
       const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
-      if (snap.status === "running") this.updateCardByOrder(part);
+      if (snap.status === "running") { this.updateCardByOrder(part); anyRunning = true; }
       if (part.hasAdvice) {
         const aSnap = this.plugin.timerEngine.get(this.weekKey, this.adviceOrder(part.order));
-        if (aSnap.status === "running") this.updateAdviceCard(part);
+        if (aSnap.status === "running") { this.updateAdviceCard(part); anyRunning = true; }
       }
     }
+    if (anyRunning) this.updateMeetingBar();
+  }
+
+  private updateMeetingBar(): void {
+    if (!this.schedule || this.totalTimedMs === 0) return;
+    let elapsedMs = 0;
+    for (const part of this.schedule.parts) {
+      if (!part.isSeparator) {
+        elapsedMs += this.plugin.timerEngine.get(this.weekKey, part.order).elapsedMs;
+      }
+      if (part.hasAdvice) {
+        elapsedMs += this.plugin.timerEngine.get(this.weekKey, this.adviceOrder(part.order)).elapsedMs;
+      }
+    }
+    const ratio = Math.min(1, elapsedMs / this.totalTimedMs);
+    this.meetingBarFillEl.style.width = `${(ratio * 100).toFixed(1)}%`;
+    this.meetingBarLabelEl.setText(`${formatMmSs(elapsedMs)} / ${formatMmSs(this.totalTimedMs)}`);
   }
 
   private updateCardByOrder(part: MeetingPart): void {
@@ -606,11 +669,13 @@ export class JwTimerView extends ItemView {
       this.plugin.timerEngine.start(this.weekKey, aOrder);
     }
     this.updateAdviceCard(part);
+    this.updateMeetingBar();
   }
 
   private handleAdviceReset(part: MeetingPart): void {
     this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
     this.updateAdviceCard(part);
+    this.updateMeetingBar();
     void this.plugin.persistTimers();
   }
 

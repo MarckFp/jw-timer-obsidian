@@ -400,6 +400,21 @@ function colorState(elapsedMs, durationSec, status) {
   if (ratio >= WARN_THRESHOLD) return "warn";
   return "ok";
 }
+function formatFetchedAt(fetchedAt) {
+  const ageH = (Date.now() - fetchedAt) / 36e5;
+  let text;
+  if (ageH < 1) {
+    text = "\u21BB just now";
+  } else if (ageH < 24) {
+    const d = new Date(fetchedAt);
+    text = `\u21BB ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  } else {
+    const d = new Date(fetchedAt);
+    text = `\u21BB ${d.toLocaleDateString(void 0, { month: "short", day: "numeric" })}`;
+  }
+  const level = ageH < 24 ? "fresh" : ageH < 72 ? "stale" : "old";
+  return { text, level };
+}
 var JwTimerView = class extends import_obsidian3.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
@@ -410,6 +425,7 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     this.adviceCards = /* @__PURE__ */ new Map();
     this.tickHandle = null;
     this.pendingResets = /* @__PURE__ */ new Map();
+    this.totalTimedMs = 0;
     // Pagination state — initialised to current week in onOpen
     this.viewYear = (/* @__PURE__ */ new Date()).getFullYear();
     this.viewWeek = currentWeekNumber();
@@ -439,6 +455,8 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     prevBtn.addEventListener("click", () => void this.navigateWeek(-1));
     nextBtn.addEventListener("click", () => void this.navigateWeek(1));
     this.todayBtn.addEventListener("click", () => void this.navigateToToday());
+    this.staleEl = root.createDiv({ cls: "jw-timer-stale" });
+    this.staleEl.style.display = "none";
     const toolbar = root.createDiv({ cls: "jw-timer-toolbar" });
     this.resetAllBtn = toolbar.createEl("button", {
       cls: "jw-timer-btn jw-timer-btn-reset-all",
@@ -446,6 +464,11 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     });
     this.resetAllBtn.addEventListener("click", () => this.armReset(this.resetAllBtn, () => this.handleResetAll()));
     this.statusEl = root.createDiv({ cls: "jw-timer-status" });
+    this.meetingBarContainerEl = root.createDiv({ cls: "jw-timer-meeting-bar-container" });
+    this.meetingBarContainerEl.style.display = "none";
+    const mBarTrack = this.meetingBarContainerEl.createDiv({ cls: "jw-timer-meeting-bar" });
+    this.meetingBarFillEl = mBarTrack.createDiv({ cls: "jw-timer-meeting-bar-fill" });
+    this.meetingBarLabelEl = this.meetingBarContainerEl.createDiv({ cls: "jw-timer-meeting-bar-label" });
     this.listEl = root.createDiv({ cls: "jw-timer-list" });
     this.tickHandle = window.setInterval(() => this.tick(), 250);
     this.viewYear = (/* @__PURE__ */ new Date()).getFullYear();
@@ -523,6 +546,8 @@ var JwTimerView = class extends import_obsidian3.ItemView {
   async loadScheduleForWeek(year, week) {
     this.weekKey = cacheKey(year, week);
     this.navLabelEl.setText(`${year} \xB7 W${String(week).padStart(2, "0")}`);
+    this.staleEl.style.display = "none";
+    this.meetingBarContainerEl.style.display = "none";
     let schedule = this.plugin.getCachedSchedule(this.weekKey);
     if (!schedule) {
       this.setStatus("loading", "Fetching schedule from wol.jw.org\u2026");
@@ -539,7 +564,12 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     this.schedule = schedule;
     this.navLabelEl.setText(schedule.weekLabel);
     this.setStatus("ok", "");
+    const { text: staleText, level: staleLevel } = formatFetchedAt(schedule.fetchedAt);
+    this.staleEl.setText(staleText);
+    this.staleEl.className = `jw-timer-stale jw-timer-stale--${staleLevel}`;
+    this.staleEl.style.display = "";
     this.renderSchedule(schedule);
+    this.updateMeetingBar();
     this.updateTodayVisibility();
   }
   setStatus(type, text) {
@@ -552,6 +582,12 @@ var JwTimerView = class extends import_obsidian3.ItemView {
     this.listEl.empty();
     this.cards.clear();
     this.adviceCards.clear();
+    this.totalTimedMs = 0;
+    for (const p of schedule.parts) {
+      if (!p.isSeparator) this.totalTimedMs += p.durationSec * 1e3;
+      if (p.hasAdvice) this.totalTimedMs += 6e4;
+    }
+    this.meetingBarContainerEl.style.display = "";
     const startMinutes = timeToMinutes(this.plugin.settings.meetingStartTime);
     let cursor = startMinutes + this.plugin.settings.openingSongMinutes;
     const scheduledStart = /* @__PURE__ */ new Map();
@@ -630,6 +666,7 @@ var JwTimerView = class extends import_obsidian3.ItemView {
       this.plugin.timerEngine.start(this.weekKey, part.order);
     }
     this.updateCardByOrder(part);
+    this.updateMeetingBar();
   }
   handleReset(part) {
     this.plugin.timerEngine.reset(this.weekKey, part.order);
@@ -638,19 +675,37 @@ var JwTimerView = class extends import_obsidian3.ItemView {
       this.updateAdviceCard(part);
     }
     this.updateCardByOrder(part);
+    this.updateMeetingBar();
     void this.plugin.persistTimers();
   }
   // ─── Tick & display update ───────────────────────────────────────────────────
   tick() {
     if (!this.schedule) return;
+    let anyRunning = false;
     for (const part of this.schedule.parts) {
       const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
-      if (snap.status === "running") this.updateCardByOrder(part);
+      if (snap.status === "running") { this.updateCardByOrder(part); anyRunning = true; }
       if (part.hasAdvice) {
         const aSnap = this.plugin.timerEngine.get(this.weekKey, this.adviceOrder(part.order));
-        if (aSnap.status === "running") this.updateAdviceCard(part);
+        if (aSnap.status === "running") { this.updateAdviceCard(part); anyRunning = true; }
       }
     }
+    if (anyRunning) this.updateMeetingBar();
+  }
+  updateMeetingBar() {
+    if (!this.schedule || this.totalTimedMs === 0) return;
+    let elapsedMs = 0;
+    for (const part of this.schedule.parts) {
+      if (!part.isSeparator) {
+        elapsedMs += this.plugin.timerEngine.get(this.weekKey, part.order).elapsedMs;
+      }
+      if (part.hasAdvice) {
+        elapsedMs += this.plugin.timerEngine.get(this.weekKey, this.adviceOrder(part.order)).elapsedMs;
+      }
+    }
+    const ratio = Math.min(1, elapsedMs / this.totalTimedMs);
+    this.meetingBarFillEl.style.width = `${(ratio * 100).toFixed(1)}%`;
+    this.meetingBarLabelEl.setText(`${formatMmSs(elapsedMs)} / ${formatMmSs(this.totalTimedMs)}`);
   }
   updateCardByOrder(part) {
     const startMinutes = timeToMinutes(this.plugin.settings.meetingStartTime);
@@ -771,10 +826,12 @@ var JwTimerView = class extends import_obsidian3.ItemView {
       this.plugin.timerEngine.start(this.weekKey, aOrder);
     }
     this.updateAdviceCard(part);
+    this.updateMeetingBar();
   }
   handleAdviceReset(part) {
     this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
     this.updateAdviceCard(part);
+    this.updateMeetingBar();
     void this.plugin.persistTimers();
   }
   updateAdviceCard(part) {
