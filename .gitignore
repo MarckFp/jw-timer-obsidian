@@ -2,6 +2,7 @@
 node_modules/
 
 # Build and package artifacts
+main.js
 *.zip
 dist/
 

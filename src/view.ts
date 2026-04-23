@@ -164,6 +164,7 @@ interface CardRefs {
   elapsedEl: HTMLElement;
   endTimeEl: HTMLElement;
   stoppedAtEl: HTMLElement;
+  deltaEl: HTMLElement;
   playBtn: HTMLButtonElement;
   resetBtn: HTMLButtonElement;
   barFillEl: HTMLElement;
@@ -458,6 +459,8 @@ export class JwTimerView extends ItemView {
       text: `${this.getLabels().end} ${minutesToTime(endTimeMins)}`,
     });
     const stoppedAtEl = timeRow.createSpan({ cls: "jw-timer-stopped-at" });
+    const deltaEl = timeRow.createSpan({ cls: "jw-timer-delta" });
+    deltaEl.style.display = "none";
 
     // Progress bar
     const barEl = card.createDiv({ cls: "jw-timer-bar" });
@@ -481,7 +484,7 @@ export class JwTimerView extends ItemView {
     // Suppress unused-var warning — endTimeEl content is set once and never changes
     void endTimeEl;
 
-    this.cards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, playBtn, resetBtn, barFillEl });
+    this.cards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, deltaEl, playBtn, resetBtn, barFillEl });
     this.updateCard(part, scheduledStartMins);
 
     // Advice sub-card for parts with instructor feedback (Bible reading + ministry parts)
@@ -623,19 +626,29 @@ export class JwTimerView extends ItemView {
     // Play/pause button label (needed below too)
     const labels = this.getLabels();
 
-    // Stopped-at indicator (shown only when paused)
+    // Stopped-at indicator + delta badge (shown only when paused)
     const endTimeMins = scheduledStartMins + Math.ceil(part.durationSec / 60);
     if (status === "paused" && stoppedAt != null) {
       const d = new Date(stoppedAt);
       const stoppedMins = d.getHours() * 60 + d.getMinutes();
-      const late = stoppedMins > endTimeMins;
-      refs.stoppedAtEl.setText(`· ${labels.stopped} ${timestampToHHMM(stoppedAt)}`);
+      const deltaMin = stoppedMins - endTimeMins;
+      const late = deltaMin > 0;
+      refs.stoppedAtEl.setText(`\u00b7 ${labels.stopped} ${timestampToHHMM(stoppedAt)}`);
       refs.stoppedAtEl.className = late
         ? "jw-timer-stopped-at jw-timer-stopped-at--late"
         : "jw-timer-stopped-at";
+      if (deltaMin !== 0) {
+        const sign = late ? "+" : "\u2212";
+        refs.deltaEl.setText(`${sign}${Math.abs(deltaMin)}`);
+        refs.deltaEl.className = `jw-timer-delta jw-timer-delta--${late ? "late" : "early"}`;
+        refs.deltaEl.style.display = "";
+      } else {
+        refs.deltaEl.style.display = "none";
+      }
     } else {
       refs.stoppedAtEl.setText("");
       refs.stoppedAtEl.className = "jw-timer-stopped-at";
+      refs.deltaEl.style.display = "none";
     }
 
     // Card colour state + running indicator for CSS
