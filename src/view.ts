@@ -241,6 +241,8 @@ export class JwTimerView extends ItemView {
   private totalTimedMs = 0;
   /** Tracks partOrders that have already fired an overtime alert this session */
   private firedAlerts = new Set<number>();
+  /** Currently visible card overlay, if any */
+  private activeOverlay: HTMLElement | null = null;
 
   // Pagination state — initialised to current week in onOpen
   private viewYear: number = new Date().getFullYear();
@@ -299,6 +301,13 @@ export class JwTimerView extends ItemView {
     this.meetingBarFillEl = mBarTrack.createDiv({ cls: "jw-timer-meeting-bar-fill" });
     this.meetingBarLabelEl = this.meetingBarContainerEl.createDiv({ cls: "jw-timer-meeting-bar-label" });
     this.listEl = root.createDiv({ cls: "jw-timer-list" });
+    // Dismiss any open card overlay when tapping outside it
+    this.listEl.addEventListener("pointerdown", (e) => {
+      if (this.activeOverlay && !(e.target as HTMLElement).closest(".jw-timer-card-overlay")) {
+        this.activeOverlay.removeClass("jw-timer-card-overlay--visible");
+        this.activeOverlay = null;
+      }
+    });
 
     this.tickHandle = window.setInterval(() => this.tick(), 250);
 
@@ -454,7 +463,7 @@ export class JwTimerView extends ItemView {
     this.totalTimedMs = 0;
     for (const p of schedule.parts) {
       if (!p.isSeparator) this.totalTimedMs += p.durationSec * 1000;
-      if (p.hasAdvice) this.totalTimedMs += 60_000;
+      if (p.hasAdvice && this.plugin.settings.showAdvice) this.totalTimedMs += 60_000;
     }
     this.meetingBarContainerEl.style.display = "";
 
@@ -554,7 +563,7 @@ export class JwTimerView extends ItemView {
     this.updateCard(part, scheduledStartMins);
 
     // Advice sub-card for parts with instructor feedback (Bible reading + ministry parts)
-    if (part.hasAdvice) this.renderAdviceCard(parentEl, part);
+    if (part.hasAdvice && this.plugin.settings.showAdvice) this.renderAdviceCard(parentEl, part);
 
     // ─── Long-press overlay ────────────────────────────────────────────────────────
     const overlay = card.createDiv({ cls: "jw-timer-card-overlay" });
@@ -568,31 +577,54 @@ export class JwTimerView extends ItemView {
     });
 
     let longPressTimer: number | null = null;
+    let pressStartX = 0;
+    let pressStartY = 0;
     const cancelPress = () => {
       if (longPressTimer !== null) {
         window.clearTimeout(longPressTimer);
         longPressTimer = null;
+        card.style.touchAction = "";
         card.removeClass("jw-timer-card--pressing");
       }
     };
     card.addEventListener("pointerdown", (e) => {
       if ((e.target as HTMLElement).closest("button, .jw-timer-card-overlay")) return;
+      pressStartX = e.clientX;
+      pressStartY = e.clientY;
+      // Prevent browser scroll-gesture from firing pointercancel on mobile
+      card.style.touchAction = "none";
       card.addClass("jw-timer-card--pressing");
       longPressTimer = window.setTimeout(() => {
         longPressTimer = null;
+        card.style.touchAction = "";
         card.removeClass("jw-timer-card--pressing");
+        // Close any other open overlay first
+        if (this.activeOverlay && this.activeOverlay !== overlay) {
+          this.activeOverlay.removeClass("jw-timer-card-overlay--visible");
+        }
+        this.activeOverlay = overlay;
         overlay.addClass("jw-timer-card-overlay--visible");
       }, 600);
     });
     card.addEventListener("pointerup", cancelPress);
-    card.addEventListener("pointermove", cancelPress);
+    card.addEventListener("pointermove", (e) => {
+      if (longPressTimer === null) return;
+      const dx = e.clientX - pressStartX;
+      const dy = e.clientY - pressStartY;
+      // Allow up to 10 px of finger jitter before treating it as a cancel
+      if (dx * dx + dy * dy > 100) cancelPress();
+    });
     card.addEventListener("pointercancel", cancelPress);
     card.addEventListener("contextmenu", (e) => e.preventDefault());
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) overlay.removeClass("jw-timer-card-overlay--visible");
+      if (e.target === overlay) {
+        overlay.removeClass("jw-timer-card-overlay--visible");
+        if (this.activeOverlay === overlay) this.activeOverlay = null;
+      }
     });
     editBtn.addEventListener("click", () => {
       overlay.removeClass("jw-timer-card-overlay--visible");
+      if (this.activeOverlay === overlay) this.activeOverlay = null;
       new EditPartModal(this.app, part, (newLabel, newDurationSec) => {
         this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, { label: newLabel, durationSec: newDurationSec });
         void this.plugin.persistTimers();
@@ -602,6 +634,7 @@ export class JwTimerView extends ItemView {
     });
     deleteBtn.addEventListener("click", () => {
       overlay.removeClass("jw-timer-card-overlay--visible");
+      if (this.activeOverlay === overlay) this.activeOverlay = null;
       this.plugin.setPartOverride(`${this.weekKey}:${part.order}`, { deleted: true });
       void this.plugin.persistTimers();
       this.renderSchedule(this.schedule!);
@@ -719,17 +752,7 @@ export class JwTimerView extends ItemView {
     if (alertSound) this.playBeep(alertSoundSec);
     if (alertVibrate && "vibrate" in navigator) {
       try {
-        // Build a vibrate pattern: 200ms on / 100ms off repeated to fill the duration
-        const pattern: number[] = [];
-        const totalMs = alertVibrateSec * 1000;
-        let remaining = totalMs;
-        while (remaining > 0) {
-          const on = Math.min(200, remaining);
-          pattern.push(on);
-          remaining -= on;
-          if (remaining > 0) { pattern.push(100); remaining -= 100; }
-        }
-        navigator.vibrate(pattern);
+        navigator.vibrate(alertVibrateSec * 1000);
       } catch { /* unsupported */ }
     }
   }

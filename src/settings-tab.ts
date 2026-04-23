@@ -119,6 +119,21 @@ export class JwTimerSettingsTab extends PluginSettingTab {
         });
       });
 
+    containerEl.createEl("h3", { text: "Display" });
+
+    new Setting(containerEl)
+      .setName("Show advice timers")
+      .setDesc("Show the 1-minute instructor advice sub-card below applicable parts.")
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settings.showAdvice)
+          .onChange(async (value) => {
+            this.plugin.settings.showAdvice = value;
+            await this.plugin.saveSettings();
+            await this.plugin.reloadView();
+          });
+      });
+
     containerEl.createEl("h3", { text: "Alerts" });
 
     // Sound alert

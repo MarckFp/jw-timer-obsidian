@@ -275,10 +275,28 @@ body.theme-dark {
   -webkit-user-select: none;
 }
 
-/* Long-press visual feedback — border slowly fills in over 600 ms */
+/* Long-press visual feedback — accent sweep fills left→right over 600 ms */
 .jw-timer-card--pressing {
-  border-color: var(--interactive-accent) !important;
-  transition: border-color 600ms ease !important;
+  overflow: hidden;
+}
+
+.jw-timer-card--pressing::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--interactive-accent);
+  opacity: 0.22;
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: jw-longpress-fill 600ms ease forwards;
+  pointer-events: none;
+  z-index: 9;
+}
+
+@keyframes jw-longpress-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
 
 /* ─── Card edit/delete overlay ───────────────────────────────────────────── */

@@ -135,7 +135,10 @@ export default class JwTimerPlugin extends Plugin {
   async clearCacheAndRefresh(): Promise<void> {
     this.scheduleCache = {};
     await this.persistData();
-    // Reload the open view if present
+    await this.reloadView();
+  }
+
+  async reloadView(): Promise<void> {
     const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_JW_TIMER)[0];
     if (leaf?.view instanceof JwTimerView) {
       await (leaf.view as JwTimerView).reload();

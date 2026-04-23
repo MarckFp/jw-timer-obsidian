@@ -85,6 +85,8 @@ export interface PluginSettings {
   alertVibrate: boolean;
   /** Duration of the vibration alert in seconds */
   alertVibrateSec: number;
+  /** Show the 1-minute instructor advice sub-cards */
+  showAdvice: boolean;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -95,4 +97,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   alertSoundSec: 1,
   alertVibrate: false,
   alertVibrateSec: 5,
+  showAdvice: true,
 };
