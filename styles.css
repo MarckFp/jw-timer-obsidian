@@ -147,8 +147,27 @@
   letter-spacing: 0.07em;
   color: var(--text-faint);
   margin: 0.85rem 0 0.3rem;
-  padding-bottom: 0.2rem;
+  padding: 0.25rem 0 0.2rem 0.5rem;
   border-bottom: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--background-modifier-border);
+}
+
+/* Teal accent — Treasures from God's Word */
+.jw-timer-section[data-section="treasures"] > .jw-timer-section-title {
+  border-left-color: #0d9488; /* teal-600 */
+  color: #0d9488;
+}
+
+/* Gold accent — Apply Yourself to the Ministry */
+.jw-timer-section[data-section="ministry"] > .jw-timer-section-title {
+  border-left-color: #b45309; /* amber-700 */
+  color: #b45309;
+}
+
+/* Maroon accent — Living as Christians */
+.jw-timer-section[data-section="living"] > .jw-timer-section-title {
+  border-left-color: #9f1239; /* rose-800 */
+  color: #9f1239;
 }
 
 /* ─── Cards ──────────────────────────────────────────────────────────────── */
@@ -178,6 +197,12 @@
 .jw-timer-card[data-state="over"][data-running="true"] {
   background: color-mix(in srgb, var(--color-red) 16%, var(--background-secondary));
   border-color: color-mix(in srgb, var(--color-red) 40%, transparent);
+  animation: jw-overtime-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes jw-overtime-pulse {
+  0%, 100% { border-color: color-mix(in srgb, var(--color-red) 40%, transparent); }
+  50%       { border-color: color-mix(in srgb, var(--color-red) 85%, transparent); }
 }
 
 /* Paused — very faint accent tint so it reads as "touched but not running" */
@@ -385,4 +410,16 @@
 .jw-timer-card[data-running="true"] .jw-timer-btn-play:hover {
   background: var(--interactive-accent-hover);
   border-color: var(--interactive-accent-hover);
+}
+
+/* Reset button in pending-confirm state */
+.jw-timer-btn--confirm {
+  background: color-mix(in srgb, var(--color-red) 12%, var(--background-secondary)) !important;
+  border-color: var(--color-red) !important;
+  color: var(--color-red) !important;
+  font-weight: 700;
+}
+
+.jw-timer-btn--confirm:hover {
+  background: color-mix(in srgb, var(--color-red) 22%, var(--background-secondary)) !important;
 }

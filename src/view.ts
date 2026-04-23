@@ -46,6 +46,7 @@ interface UiLabels {
   pause: string;
   reset: string;
   resetAll: string;
+  confirm: string;
   today: string;
   advice: string;
   end: string;
@@ -53,20 +54,20 @@ interface UiLabels {
 }
 
 const LOCALE_UI: Record<string, UiLabels> = {
-  "lp-e":   { play: "Play",      pause: "Pause",      reset: "Reset",         resetAll: "Reset All",           today: "Today",      advice: "Advice",    end: "End",        stopped: "Stopped"   },
-  "lp-s":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar todo",      today: "Hoy",        advice: "Consejo",   end: "Fin",        stopped: "Parado"    },
-  "lp-f":   { play: "D\u00e9marrer",  pause: "Pause",      reset: "R\u00e9init.",       resetAll: "Tout r\u00e9init.",        today: "Auj.",       advice: "Conseil",   end: "Fin",        stopped: "Arrêté"   },
-  "lp-t":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar tudo",      today: "Hoje",       advice: "Conselho",  end: "Fim",        stopped: "Parado"    },
-  "lp-x":   { play: "Start",     pause: "Pause",      reset: "Zur\u00fccksetzen",  resetAll: "Alles zur\u00fccksetzen",  today: "Heute",      advice: "Rat",       end: "Ende",       stopped: "Gestoppt"  },
-  "lp-i":   { play: "Avvia",     pause: "Pausa",      reset: "Azzera",        resetAll: "Azzera tutto",        today: "Oggi",       advice: "Consiglio", end: "Fine",       stopped: "Fermato"   },
-  "lp-u":   { play: "Старт",  pause: "Пауза",  reset: "Сброс",      resetAll: "Сбросить всё",       today: "Сегодня", advice: "Совет",  end: "Кон.",  stopped: "Остановлено"     },
-  "lp-m":   { play: "Start",  pause: "Pauză",  reset: "Resetare",   resetAll: "Resetare totală",    today: "Azi",     advice: "Sfat",   end: "Sf.",   stopped: "Oprit"           },
-  "lp-bl":  { play: "Старт",  pause: "Пауза",  reset: "Нулиране",   resetAll: "Нулиране на всичко", today: "Днес",    advice: "Съвет",  end: "Край",  stopped: "Спряно"          },
-  "lp-o":   { play: "Start",  pause: "Pauze",  reset: "Reset",      resetAll: "Alles resetten",     today: "Vandaag", advice: "Advies", end: "Einde", stopped: "Gestopt"         },
-  "lp-p":   { play: "Start",     pause: "Pauza",      reset: "Resetuj",       resetAll: "Resetuj wszystko",    today: "Dzi\u015b",       advice: "Rada",       end: "Koniec",     stopped: "Zatrzymano" },
-  "lp-j":   { play: "\u30b9\u30bf\u30fc\u30c8",  pause: "\u4e00\u6642\u505c\u6b62",   reset: "\u30ea\u30bb\u30c3\u30c8",       resetAll: "\u5168\u30ea\u30bb\u30c3\u30c8",            today: "\u4eca\u65e5",       advice: "\u52a9\u8a00",      end: "終了",       stopped: "停止"      },
-  "lp-ko":  { play: "\uc2dc\uc791",      pause: "\uc77c\uc2dc\uc815\uc9c0",   reset: "\ucd08\uae30\ud654",        resetAll: "\uc804\uccb4 \ucd08\uae30\ud654",          today: "\uc624\ub298",       advice: "\uc870\uc5b8",      end: "종료",       stopped: "중지"      },
-  "lp-chs": { play: "\u5f00\u59cb",      pause: "\u6682\u505c",       reset: "\u91cd\u7f6e",          resetAll: "\u5168\u90e8\u91cd\u7f6e",               today: "\u4eca\u5929",       advice: "\u6307\u5bfc",      end: "结束",       stopped: "停止"      },
+  "lp-e":   { play: "Play",      pause: "Pause",      reset: "Reset",         resetAll: "Reset All",           confirm: "Confirm?",          today: "Today",      advice: "Advice",    end: "End",        stopped: "Stopped"   },
+  "lp-s":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar todo",      confirm: "¿Confirmar?",       today: "Hoy",        advice: "Consejo",   end: "Fin",        stopped: "Parado"    },
+  "lp-f":   { play: "D\u00e9marrer",  pause: "Pause",      reset: "R\u00e9init.",       resetAll: "Tout r\u00e9init.",        confirm: "Confirmer\u00a0?",      today: "Auj.",       advice: "Conseil",   end: "Fin",        stopped: "Arrêté"   },
+  "lp-t":   { play: "Iniciar",   pause: "Pausar",     reset: "Reiniciar",     resetAll: "Reiniciar tudo",      confirm: "Confirmar?",        today: "Hoje",       advice: "Conselho",  end: "Fim",        stopped: "Parado"    },
+  "lp-x":   { play: "Start",     pause: "Pause",      reset: "Zur\u00fccksetzen",  resetAll: "Alles zur\u00fccksetzen",  confirm: "Best\u00e4tigen?",      today: "Heute",      advice: "Rat",       end: "Ende",       stopped: "Gestoppt"  },
+  "lp-i":   { play: "Avvia",     pause: "Pausa",      reset: "Azzera",        resetAll: "Azzera tutto",        confirm: "Confermare?",       today: "Oggi",       advice: "Consiglio", end: "Fine",       stopped: "Fermato"   },
+  "lp-u":   { play: "Старт",  pause: "Пауза",  reset: "Сброс",      resetAll: "Сбросить всё",       confirm: "Подтвердить?",      today: "Сегодня", advice: "Совет",  end: "Кон.",  stopped: "Остановлено"     },
+  "lp-m":   { play: "Start",  pause: "Pauză",  reset: "Resetare",   resetAll: "Resetare totală",    confirm: "Confirmare?",       today: "Azi",     advice: "Sfat",   end: "Sf.",   stopped: "Oprit"           },
+  "lp-bl":  { play: "Старт",  pause: "Пауза",  reset: "Нулиране",   resetAll: "Нулиране на всичко", confirm: "Потвърди?",         today: "Днес",    advice: "Съвет",  end: "Край",  stopped: "Спряно"          },
+  "lp-o":   { play: "Start",  pause: "Pauze",  reset: "Reset",      resetAll: "Alles resetten",     confirm: "Bevestigen?",       today: "Vandaag", advice: "Advies", end: "Einde", stopped: "Gestopt"         },
+  "lp-p":   { play: "Start",     pause: "Pauza",      reset: "Resetuj",       resetAll: "Resetuj wszystko",    confirm: "Potwierdź?",        today: "Dzi\u015b",       advice: "Rada",       end: "Koniec",     stopped: "Zatrzymano" },
+  "lp-j":   { play: "\u30b9\u30bf\u30fc\u30c8",  pause: "\u4e00\u6642\u505c\u6b62",   reset: "\u30ea\u30bb\u30c3\u30c8",       resetAll: "\u5168\u30ea\u30bb\u30c3\u30c8",            confirm: "確認?",              today: "\u4eca\u65e5",       advice: "\u52a9\u8a00",      end: "終了",       stopped: "停止"      },
+  "lp-ko":  { play: "\uc2dc\uc791",      pause: "\uc77c\uc2dc\uc815\uc9c0",   reset: "\ucd08\uae30\ud654",        resetAll: "\uc804\uccb4 \ucd08\uae30\ud654",          confirm: "확인?",              today: "\uc624\ub298",       advice: "\uc870\uc5b8",      end: "종료",       stopped: "중지"      },
+  "lp-chs": { play: "\u5f00\u59cb",      pause: "\u6682\u505c",       reset: "\u91cd\u7f6e",          resetAll: "\u5168\u90e8\u91cd\u7f6e",               confirm: "确认?",              today: "\u4eca\u5929",       advice: "\u6307\u5bfc",      end: "结束",       stopped: "停止"      },
 };
 
 function formatMmSs(ms: number): string {
@@ -135,6 +136,8 @@ export class JwTimerView extends ItemView {
   private todayBtn!: HTMLButtonElement;
   private resetAllBtn!: HTMLButtonElement;
   private listEl!: HTMLElement;
+  /** Tracks buttons in the pending-confirm state, with their revert timeout id */
+  private pendingResets = new Map<HTMLButtonElement, number>();
 
   // Pagination state — initialised to current week in onOpen
   private viewYear: number = new Date().getFullYear();
@@ -173,7 +176,7 @@ export class JwTimerView extends ItemView {
       cls: "jw-timer-btn jw-timer-btn-reset-all",
       text: this.getLabels().resetAll,
     });
-    this.resetAllBtn.addEventListener("click", () => this.handleResetAll());
+    this.resetAllBtn.addEventListener("click", () => this.armReset(this.resetAllBtn, () => this.handleResetAll()));
 
     // ── Status + list ────────────────────────────────────────────────────────
     this.statusEl = root.createDiv({ cls: "jw-timer-status" });
@@ -344,6 +347,7 @@ export class JwTimerView extends ItemView {
       if (!parts?.length) continue;
 
       const sectionEl = this.listEl.createDiv({ cls: "jw-timer-section" });
+      sectionEl.setAttribute("data-section", sectionKey);
       sectionEl.createEl("h3", {
         cls: "jw-timer-section-title",
         text: sectionLabels[sectionKey] ?? sectionKey,
@@ -392,7 +396,7 @@ export class JwTimerView extends ItemView {
     resetBtn.setAttr("aria-label", "Reset timer");
 
     playBtn.addEventListener("click", () => this.handlePlayPause(part));
-    resetBtn.addEventListener("click", () => this.handleReset(part));
+    resetBtn.addEventListener("click", () => this.armReset(resetBtn, () => this.handleReset(part)));
 
     // Suppress unused-var warning — endTimeEl content is set once and never changes
     void endTimeEl;
@@ -402,6 +406,40 @@ export class JwTimerView extends ItemView {
 
     // Advice sub-card for parts with instructor feedback (Bible reading + ministry parts)
     if (part.hasAdvice) this.renderAdviceCard(parentEl, part);
+  }
+
+  // ─── Two-click reset guard ────────────────────────────────────────────────
+
+  /**
+   * Arms a button for a two-click confirm flow.
+   * First click: button turns into "Confirm?" with a red style; if no second click
+   * within 3 s the button reverts. Second click: executes `onConfirm`.
+   */
+  private armReset(btn: HTMLButtonElement, onConfirm: () => void): void {
+    if (this.pendingResets.has(btn)) {
+      // Second click — execute immediately
+      const tid = this.pendingResets.get(btn)!;
+      window.clearTimeout(tid);
+      this.pendingResets.delete(btn);
+      btn.removeClass("jw-timer-btn--confirm");
+      onConfirm();
+      return;
+    }
+    // First click — arm
+    const labels = this.getLabels();
+    btn.setText(labels.confirm);
+    btn.addClass("jw-timer-btn--confirm");
+    const tid = window.setTimeout(() => {
+      this.pendingResets.delete(btn);
+      btn.removeClass("jw-timer-btn--confirm");
+      // Restore original label based on whether this is reset-all or a card reset
+      if (btn === this.resetAllBtn) {
+        btn.setText(this.getLabels().resetAll);
+      } else {
+        btn.setText(this.getLabels().reset);
+      }
+    }, 3000);
+    this.pendingResets.set(btn, tid);
   }
 
   // ─── Timer controls ─────────────────────────────────────────────────────────
@@ -503,6 +541,12 @@ export class JwTimerView extends ItemView {
 
   private handleResetAll(): void {
     if (!this.schedule) return;
+    // Cancel any pending confirm states on individual reset buttons
+    for (const [btn, tid] of this.pendingResets) {
+      window.clearTimeout(tid);
+      btn.removeClass("jw-timer-btn--confirm");
+    }
+    this.pendingResets.clear();
     for (const part of this.schedule.parts) {
       this.plugin.timerEngine.reset(this.weekKey, part.order);
       if (part.hasAdvice) this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
@@ -546,7 +590,7 @@ export class JwTimerView extends ItemView {
     resetBtn.setAttr("aria-label", "Reset advice timer");
 
     playBtn.addEventListener("click", () => this.handleAdvicePlayPause(part));
-    resetBtn.addEventListener("click", () => this.handleAdviceReset(part));
+    resetBtn.addEventListener("click", () => this.armReset(resetBtn, () => this.handleAdviceReset(part)));
 
     this.adviceCards.set(part.order, { cardEl: card, elapsedEl, endTimeEl, stoppedAtEl, playBtn, resetBtn, barFillEl });
     this.updateAdviceCard(part);
