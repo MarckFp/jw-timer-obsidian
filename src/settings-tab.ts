@@ -118,5 +118,33 @@ export class JwTimerSettingsTab extends PluginSettingTab {
           window.setTimeout(() => btn.setButtonText("Refresh now"), 2000);
         });
       });
+
+    containerEl.createEl("h3", { text: "Alerts" });
+
+    // Sound alert
+    new Setting(containerEl)
+      .setName("Sound alert at overtime")
+      .setDesc("Play a short beep when a timer reaches its allotted duration.")
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settings.alertSound)
+          .onChange(async (value) => {
+            this.plugin.settings.alertSound = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    // Vibration alert
+    new Setting(containerEl)
+      .setName("Vibration alert at overtime")
+      .setDesc("Vibrate the device when a timer reaches its allotted duration. Has no effect on desktop.")
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settings.alertVibrate)
+          .onChange(async (value) => {
+            this.plugin.settings.alertVibrate = value;
+            await this.plugin.saveSettings();
+          });
+      });
   }
 }

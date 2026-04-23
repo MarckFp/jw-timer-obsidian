@@ -191,6 +191,8 @@ export class JwTimerView extends ItemView {
   private meetingBarFillEl!: HTMLElement;
   private meetingBarLabelEl!: HTMLElement;
   private totalTimedMs = 0;
+  /** Tracks partOrders that have already fired an overtime alert this session */
+  private firedAlerts = new Set<number>();
 
   // Pagination state — initialised to current week in onOpen
   private viewYear: number = new Date().getFullYear();
@@ -384,6 +386,7 @@ export class JwTimerView extends ItemView {
     this.listEl.empty();
     this.cards.clear();
     this.adviceCards.clear();
+    this.firedAlerts.clear();
 
     // Compute total timed content duration (non-separator parts + advice slots)
     this.totalTimedMs = 0;
@@ -573,13 +576,55 @@ export class JwTimerView extends ItemView {
     let anyRunning = false;
     for (const part of this.schedule.parts) {
       const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
-      if (snap.status === "running") { this.updateCardByOrder(part); anyRunning = true; }
+      if (snap.status === "running") {
+        this.updateCardByOrder(part);
+        anyRunning = true;
+        if (snap.elapsedMs >= part.durationSec * 1000) this.fireAlert(part.order);
+      }
       if (part.hasAdvice) {
         const aSnap = this.plugin.timerEngine.get(this.weekKey, this.adviceOrder(part.order));
-        if (aSnap.status === "running") { this.updateAdviceCard(part); anyRunning = true; }
+        if (aSnap.status === "running") {
+          this.updateAdviceCard(part);
+          anyRunning = true;
+          if (aSnap.elapsedMs >= 60_000) this.fireAlert(this.adviceOrder(part.order));
+        }
       }
     }
     if (anyRunning) this.updateMeetingBar();
+  }
+
+  /** Fire a one-shot overtime alert (sound and/or vibration) for the given slot. */
+  private fireAlert(slotOrder: number): void {
+    if (this.firedAlerts.has(slotOrder)) return;
+    this.firedAlerts.add(slotOrder);
+    const { alertSound, alertVibrate } = this.plugin.settings;
+    if (alertSound) this.playBeep();
+    if (alertVibrate && typeof navigator.vibrate === "function") navigator.vibrate([120, 60, 120]);
+  }
+
+  /** Synthesise a short double-beep using the Web Audio API. */
+  private playBeep(): void {
+    try {
+      const ctx = new AudioContext();
+      const beep = (startSec: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.4, startSec);
+        gain.gain.exponentialRampToValueAtTime(0.001, startSec + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startSec);
+        osc.stop(startSec + 0.18);
+      };
+      beep(ctx.currentTime);
+      beep(ctx.currentTime + 0.25);
+      // Close the context after the sounds finish to avoid resource leak
+      window.setTimeout(() => ctx.close(), 800);
+    } catch {
+      // AudioContext unavailable (e.g. desktop without audio) — silently ignore
+    }
   }
 
   private updateMeetingBar(): void {
@@ -634,9 +679,7 @@ export class JwTimerView extends ItemView {
       const deltaMin = stoppedMins - endTimeMins;
       const late = deltaMin > 0;
       refs.stoppedAtEl.setText(`\u00b7 ${labels.stopped} ${timestampToHHMM(stoppedAt)}`);
-      refs.stoppedAtEl.className = late
-        ? "jw-timer-stopped-at jw-timer-stopped-at--late"
-        : "jw-timer-stopped-at";
+      refs.stoppedAtEl.className = "jw-timer-stopped-at";
       const absMins = Math.abs(deltaMin);
       const fmtDelta = (n: number): string => {
         if (n < 60) return `${n}min`;

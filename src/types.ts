@@ -66,10 +66,16 @@ export interface PluginSettings {
   meetingStartTime: string;
   /** Minutes for opening song + prayer before first programme part */
   openingSongMinutes: number;
+  /** Play a beep sound when a timer reaches its allotted duration */
+  alertSound: boolean;
+  /** Trigger device vibration when a timer reaches its allotted duration (mobile only) */
+  alertVibrate: boolean;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   wolLocale: "r1/lp-e",
   meetingStartTime: "20:00",
   openingSongMinutes: 5,
+  alertSound: false,
+  alertVibrate: false,
 };

@@ -412,11 +412,6 @@ body.theme-dark {
   color: var(--text-muted);
 }
 
-.jw-timer-stopped-at--late {
-  color: var(--color-red);
-  font-weight: 600;
-}
-
 /* Delta badge: minutes early (green) or over (red) */
 .jw-timer-delta {
   font-size: 0.7rem;
