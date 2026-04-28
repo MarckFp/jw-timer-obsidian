@@ -159,7 +159,10 @@ export function renderCard(
     previewEl.setAttribute("aria-label", "Edit note");
     previewEl.addEventListener("click", () => activateEdit());
     previewEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activateEdit(); }
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activateEdit();
+      }
     });
 
     // Blurring textarea with content switches to preview
@@ -177,7 +180,10 @@ export function renderCard(
         noteDebounce = null;
         const val = noteEl.value.trim();
         const curr = ctx.plugin.getPartOverride(noteKey) ?? {};
-        ctx.plugin.setPartOverride(noteKey, { ...curr, note: val || undefined });
+        ctx.plugin.setPartOverride(noteKey, {
+          ...curr,
+          note: val || undefined,
+        });
         ctx.plugin.persistTimers().catch(console.error);
       }, 400);
     });
@@ -223,12 +229,6 @@ export function renderCard(
     openOverlay();
   });
 
-  // Right-click anywhere on the card except inside a textarea (keep native menu there)
-  card.addEventListener("contextmenu", (e) => {
-    if ((e.target as HTMLElement).closest("textarea")) return;
-    e.preventDefault();
-    openOverlay();
-  });
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
       overlay.removeClass("jw-timer-card-overlay--visible");

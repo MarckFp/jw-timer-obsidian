@@ -341,6 +341,10 @@ export interface SettingsLabels {
   vibrateAlertDesc: string;
   vibrateDurName: string;
   vibrateDurDesc: string;
+  // Debug section
+  clearCacheName: string;
+  clearCacheDesc: string;
+  clearCacheBtnLabel: string;
 }
 
 // prettier-ignore
@@ -371,6 +375,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Vibrate the device when a timer reaches its allotted duration. Mobile only.",
     vibrateDurName: "Vibration alert duration (seconds)",
     vibrateDurDesc: "How long the device vibrates. Mobile only. Default: 2 s.",
+    clearCacheName: "Clear schedule cache",
+    clearCacheDesc: "Remove all fetched weekly schedules. Useful for debugging. The schedule will be fetched again on next load.",
+    clearCacheBtnLabel: "Clear cache",
   },
   "lp-s": {
     pageTitle: "JW Meeting Timer — Configuración",
@@ -398,6 +405,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Vibrar el dispositivo cuando un temporizador alcanza su duración asignada. Solo para móviles.",
     vibrateDurName: "Duración de la alerta de vibración (segundos)",
     vibrateDurDesc: "Duración de la vibración. Solo para móviles. Predeterminado: 2 s.",
+    clearCacheName: "Limpiar caché de programas",
+    clearCacheDesc: "Eliminar todos los programas semanales descargados. Útil para depuración. El programa se volverá a descargar en el siguiente inicio.",
+    clearCacheBtnLabel: "Limpiar caché",
   },
   "lp-f": {
     pageTitle: "JW Meeting Timer — Paramètres",
@@ -422,8 +432,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertName: "Alerte vibration en dépassement",
     vibrateAlertDesc: "Faire vibrer l’appareil quand un chronomètre atteint sa durée allouée. Mobile uniquement.",
     vibrateDurName: "Durée de l’alerte vibration (secondes)",
-    vibrateDurDesc: "Durée de la vibration. Mobile uniquement. Défaut : 2 s.",
-  },
+    vibrateDurDesc: "Durée de la vibration. Mobile uniquement. Défaut : 2 s.",    clearCacheName: "Vider le cache des programmes",
+    clearCacheDesc: "Supprimer tous les programmes hebdomadaires récupérés. Utile pour le débogage. Le programme sera récupéré à nouveau au prochain chargement.",
+    clearCacheBtnLabel: "Vider le cache",  },
   "lp-t": {
     pageTitle: "JW Meeting Timer — Configurações",
     langName: "Idioma da reunião",
@@ -450,6 +461,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Vibrar o dispositivo quando um temporizador atinge a duração atribuída. Apenas mobile.",
     vibrateDurName: "Duração do alerta de vibração (segundos)",
     vibrateDurDesc: "Duração da vibração. Apenas mobile. Padrão: 2 s.",
+    clearCacheName: "Limpar cache de programas",
+    clearCacheDesc: "Remover todos os programas semanais obtidos. Útil para depuração. O programa será obtido novamente no próximo carregamento.",
+    clearCacheBtnLabel: "Limpar cache",
   },
   "lp-x": {
     pageTitle: "JW Meeting Timer — Einstellungen",
@@ -477,6 +491,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Gerät vibrieren lassen, wenn ein Timer die vorgesehene Dauer erreicht. Nur mobil.",
     vibrateDurName: "Vibrations-Alarm-Dauer (Sekunden)",
     vibrateDurDesc: "Dauer der Vibration. Nur mobil. Standard: 2 s.",
+    clearCacheName: "Programmcache leeren",
+    clearCacheDesc: "Alle abgerufenen Wochenprogramme löschen. Nützlich zur Fehlersuche. Das Programm wird beim nächsten Laden erneut abgerufen.",
+    clearCacheBtnLabel: "Cache leeren",
   },
   "lp-i": {
     pageTitle: "JW Meeting Timer — Impostazioni",
@@ -504,6 +521,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Far vibrare il dispositivo quando un timer raggiunge la durata assegnata. Solo mobile.",
     vibrateDurName: "Durata avviso vibrazione (secondi)",
     vibrateDurDesc: "Durata della vibrazione. Solo mobile. Predefinito: 2 s.",
+    clearCacheName: "Svuota cache dei programmi",
+    clearCacheDesc: "Rimuovi tutti i programmi settimanali scaricati. Utile per il debug. Il programma verrà scaricato di nuovo al prossimo caricamento.",
+    clearCacheBtnLabel: "Svuota cache",
   },
   "lp-u": {
     pageTitle: "JW Meeting Timer — Настройки",
@@ -531,6 +551,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Вибрировать устройство, когда таймер достигает отведённой длительности. Только мобильные.",
     vibrateDurName: "Длительность вибрационного оповещения (секунды)",
     vibrateDurDesc: "Длительность вибрации. Только мобильные. По умолчанию: 2 с.",
+    clearCacheName: "Очистить кэш расписаний",
+    clearCacheDesc: "Удалить все загруженные недельные программы. Полезно для отладки. Программа будет загружена снова при следующем открытии.",
+    clearCacheBtnLabel: "Очистить кэш",
   },
   "lp-m": {
     pageTitle: "JW Meeting Timer — Setări",
@@ -558,6 +581,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Faceți dispozitivul să vibreze când un temporizator atinge durata alocată. Numai mobil.",
     vibrateDurName: "Durata alertei vibratorii (secunde)",
     vibrateDurDesc: "Durata vibrației. Numai mobil. Implicit: 2 s.",
+    clearCacheName: "Golește memoria cache a programelor",
+    clearCacheDesc: "Șterge toate programele săptămânale descărcate. Util pentru depanare. Programul va fi descărcat din nou la următoarea deschidere.",
+    clearCacheBtnLabel: "Golește cache",
   },
   "lp-bl": {
     pageTitle: "JW Meeting Timer — Настройки",
@@ -585,6 +611,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Вибрация на устройството, когато таймер достигне определената продължителност. Само мобилни.",
     vibrateDurName: "Продължителност на вибрационния сигнал (секунди)",
     vibrateDurDesc: "Продължителност на вибрацията. Само мобилни. По подразбиране: 2 с.",
+    clearCacheName: "Изчистване на кеша за програми",
+    clearCacheDesc: "Премахване на всички изтеглени седмични програми. Полезно за отстраняване на грешки. Програмата ще бъде изтеглена отново при следващото зареждане.",
+    clearCacheBtnLabel: "Изчисти кеша",
   },
   "lp-o": {
     pageTitle: "JW Meeting Timer — Instellingen",
@@ -612,6 +641,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Het apparaat laten trillen wanneer een timer de toegewezen duur bereikt. Alleen mobiel.",
     vibrateDurName: "Duur trilwaarschuwing (seconden)",
     vibrateDurDesc: "Hoe lang het apparaat trilt. Alleen mobiel. Standaard: 2 s.",
+    clearCacheName: "Programmageheugen wissen",
+    clearCacheDesc: "Verwijder alle opgehaalde weekprogramma's. Nuttig voor foutopsporing. Het programma wordt opnieuw opgehaald bij het volgende laden.",
+    clearCacheBtnLabel: "Cache wissen",
   },
   "lp-p": {
     pageTitle: "JW Meeting Timer — Ustawienia",
@@ -639,6 +671,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Wibruje urządzenie, gdy timer osiągnie przydzielony czas. Tylko urządzenia mobilne.",
     vibrateDurName: "Czas trwania alertu wibracyjnego (sekundy)",
     vibrateDurDesc: "Jak długo wibruje urządzenie. Tylko urządzenia mobilne. Domyślnie: 2 s.",
+    clearCacheName: "Wyczyść pamięć podręczną programów",
+    clearCacheDesc: "Usuń wszystkie pobrane programy tygodniowe. Przydatne do debugowania. Program zostanie pobrany ponownie przy następnym załadowaniu.",
+    clearCacheBtnLabel: "Wyczyść cache",
   },
   "lp-j": {
     pageTitle: "JW Meeting Timer — 設定",
@@ -666,6 +701,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "タイマーが割り当て時間に達したときにデバイスを振動させます。モバイルのみ。",
     vibrateDurName: "振動アラートの長さ（秒）",
     vibrateDurDesc: "振動の長さ。モバイルのみ。デフォルト：2秒。",
+    clearCacheName: "プログラムキャッシュをクリア",
+    clearCacheDesc: "取得したすべての週のプログラムを削除します。デバッグに便利です。次回の読み込み時にプログラムが再取得されます。",
+    clearCacheBtnLabel: "キャッシュをクリア",
   },
   "lp-ko": {
     pageTitle: "JW Meeting Timer — 설정",
@@ -693,6 +731,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "타이머가 할당된 시간에 도달하면 장치를 진동시킵니다. 모바일 전용.",
     vibrateDurName: "진동 알림 지속 시간 (초)",
     vibrateDurDesc: "진동 지속 시간. 모바일 전용. 기본값: 2초.",
+    clearCacheName: "프로그램 캐시 지우기",
+    clearCacheDesc: "가져온 모든 주간 프로그램을 제거합니다. 디버깅에 유용합니다. 다음 로드 시 프로그램이 다시 가져와집니다.",
+    clearCacheBtnLabel: "캐시 지우기",
   },
   "lp-a": {
     pageTitle: "JW Meeting Timer — الإعدادات",
@@ -720,6 +761,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "اهتزاز الجهاز عندما يصل المؤقت إلى المدة المخصصة. الهاتف فقط.",
     vibrateDurName: "مدة التنبيه الاهتزازي (ثوانٍ)",
     vibrateDurDesc: "مدة الاهتزاز. الهاتف فقط. الافتراضي: 2 ثانية.",
+    clearCacheName: "مسح ذاكرة التخزين المؤقت للبرامج",
+    clearCacheDesc: "إزالة جميع البرامج الأسبوعية التي تم جلبها. مفيد لتصحيح الأخطاء. سيتم جلب البرنامج مرة أخرى عند التحميل التالي.",
+    clearCacheBtnLabel: "مسح التخزين المؤقت",
   },
   "lp-z": {
     pageTitle: "JW Meeting Timer — Inställningar",
@@ -747,6 +791,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Vibrera enheten när en timer når sin tilldelade tid. Endast mobil.",
     vibrateDurName: "Vibrations-aviseringens varaktighet (sekunder)",
     vibrateDurDesc: "Hur länge enheten vibrerar. Endast mobil. Standard: 2 s.",
+    clearCacheName: "Rensa programcache",
+    clearCacheDesc: "Ta bort alla hämtade veckoprogrammen. Användbart för felsökning. Programmet hämtas igen vid nästa laddning.",
+    clearCacheBtnLabel: "Rensa cache",
   },
   "lp-tk": {
     pageTitle: "JW Meeting Timer — Ayarlar",
@@ -774,6 +821,9 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "Zamanlayıcı tahsis edilen süreye ulaşınca cihazı titret. Yalnızca mobil.",
     vibrateDurName: "Titreşim uyarısı süresi (saniye)",
     vibrateDurDesc: "Cihazın titreşim süresi. Yalnızca mobil. Varsayılan: 2 s.",
+    clearCacheName: "Program önbelleğini temizle",
+    clearCacheDesc: "Alınan tüm haftalık programları kaldır. Hata ayıklama için kullanışlıdır. Program, bir sonraki yüklemede yeniden alınacaktır.",
+    clearCacheBtnLabel: "Önbelleği temizle",
   },
   "lp-chs": {
     pageTitle: "JW Meeting Timer — 设置",
@@ -801,5 +851,8 @@ export const LOCALE_SETTINGS: Record<string, SettingsLabels> = {
     vibrateAlertDesc: "当计时器达到分配时间时震动设备。仅限移动端。",
     vibrateDurName: "震动提醒持续时间（秒）",
     vibrateDurDesc: "震动时长。仅限移动端。默认：2秒。",
+    clearCacheName: "清除节目缓存",
+    clearCacheDesc: "删除所有已获取的每周节目。对调试有用。下次加载时将重新获取节目。",
+    clearCacheBtnLabel: "清除缓存",
   },
 };

@@ -484,7 +484,10 @@ export class JwTimerView extends ItemView implements CardController {
     this.statusEl.empty();
     this.statusEl.className = `jw-timer-status jw-timer-status--${type}`;
     if (type === "loading") {
-      this.statusEl.createSpan({ cls: "jw-timer-spinner", attr: { "aria-hidden": "true" } });
+      this.statusEl.createSpan({
+        cls: "jw-timer-spinner",
+        attr: { "aria-hidden": "true" },
+      });
     }
     if (text) {
       this.statusEl.createSpan({ text });
@@ -568,7 +571,9 @@ export class JwTimerView extends ItemView implements CardController {
       sectionEl.setAttribute("data-section", sectionKey);
       if (isCollapsed) sectionEl.setAttribute("data-collapsed", "true");
 
-      const titleEl = sectionEl.createEl("h3", { cls: "jw-timer-section-title" });
+      const titleEl = sectionEl.createEl("h3", {
+        cls: "jw-timer-section-title",
+      });
       titleEl.setAttr("role", "button");
       titleEl.setAttr("tabindex", "0");
       titleEl.setAttr("aria-expanded", isCollapsed ? "false" : "true");
@@ -576,7 +581,8 @@ export class JwTimerView extends ItemView implements CardController {
       titleEl.appendText(sectionLabels[sectionKey] ?? sectionKey);
 
       const toggleCollapse = () => {
-        const nowCollapsed = sectionEl.getAttribute("data-collapsed") === "true";
+        const nowCollapsed =
+          sectionEl.getAttribute("data-collapsed") === "true";
         if (nowCollapsed) {
           sectionEl.removeAttribute("data-collapsed");
           titleEl.setAttr("aria-expanded", "true");
@@ -589,7 +595,10 @@ export class JwTimerView extends ItemView implements CardController {
       };
       titleEl.addEventListener("click", toggleCollapse);
       titleEl.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCollapse(); }
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleCollapse();
+        }
       });
 
       for (const part of parts) {
@@ -706,6 +715,29 @@ export class JwTimerView extends ItemView implements CardController {
       this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
       this.firedAlerts.delete(this.adviceOrder(part.order));
       this.updateAdviceCard(part);
+    }
+    // Clear the part's note from storage and DOM
+    const noteKey = `${this.weekKey}:${part.order}`;
+    const curr = this.plugin.getPartOverride(noteKey);
+    if (curr?.note !== undefined) {
+      this.plugin.setPartOverride(noteKey, { ...curr, note: undefined });
+      const card = this.cards.get(part.order);
+      if (card) {
+        const textarea =
+          card.cardEl.querySelector<HTMLTextAreaElement>(".jw-timer-note");
+        const preview = card.cardEl.querySelector<HTMLElement>(
+          ".jw-timer-note-preview",
+        );
+        if (textarea) {
+          textarea.value = "";
+          textarea.style.height = "";
+          textarea.style.display = "";
+        }
+        if (preview) {
+          preview.empty();
+          preview.style.display = "none";
+        }
+      }
     }
     this.updateCardByOrder(part);
     this.updateMeetingBar();
