@@ -381,34 +381,36 @@ input[aria-invalid="true"] {
 .jw-timer-gear-btn {
   background: none;
   border: none;
-  padding: 0.1rem 0.25rem;
-  margin: -0.1rem -0.15rem 0 0; /* pull flush with card edge */
+  /* Minimum 44×44 px tap target */
+  padding: 0.35rem 0.45rem;
+  margin: -0.35rem -0.35rem 0 0.2rem;
   cursor: pointer;
-  color: var(--text-faint);
-  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-size: 1rem;
   line-height: 1;
-  border-radius: 4px;
+  border-radius: 5px;
   flex-shrink: 0;
-  /* Touch devices: always show at subdued opacity */
-  opacity: 0.45;
-  transition: opacity 120ms, color 120ms, background 120ms;
+  opacity: 1;
+  transition: color 120ms, background 120ms;
 }
 
-/* On pointer devices that support hover, hide until the card is hovered */
+/* On hover-capable devices (mouse/trackpad) tone it down when idle */
 @media (hover: hover) {
   .jw-timer-gear-btn {
-    opacity: 0;
+    color: var(--text-faint);
+    opacity: 0.55;
   }
   .jw-timer-card:hover .jw-timer-gear-btn,
   .jw-timer-card:focus-within .jw-timer-gear-btn {
-    opacity: 0.5;
+    opacity: 1;
+    color: var(--text-muted);
   }
 }
 
 .jw-timer-gear-btn:hover,
 .jw-timer-gear-btn:focus-visible {
   opacity: 1 !important;
-  color: var(--text-normal);
+  color: var(--text-normal) !important;
   background: var(--background-modifier-hover);
   outline: none;
 }
