@@ -65,6 +65,14 @@ export class JwTimerSettingsTab extends PluginSettingTab {
     }, 300);
   }
 
+  /** Cancel any pending debounced reload when the settings tab is closed/hidden. */
+  hide(): void {
+    if (this.reloadDebounceHandle !== null) {
+      window.clearTimeout(this.reloadDebounceHandle);
+      this.reloadDebounceHandle = null;
+    }
+  }
+
   private getLang(): string {
     return this.plugin.settings.wolLocale.split("/")[1] ?? "lp-e";
   }

@@ -59,7 +59,12 @@ export default class JwTimerPlugin extends Plugin {
   // ─── Lifecycle ──────────────────────────────────────────────────────────────
 
   async onload(): Promise<void> {
-    await this.loadData_();
+    try {
+      await this.loadData_();
+    } catch (err) {
+      console.error("JW Timer: failed to load saved data, starting with defaults", err);
+      this.settings = { ...DEFAULT_SETTINGS, wolLocale: detectWolLocale() };
+    }
 
     this.registerView(
       VIEW_TYPE_JW_TIMER,
@@ -107,7 +112,7 @@ export default class JwTimerPlugin extends Plugin {
       this.settings = sanitizeSettings({ ...DEFAULT_SETTINGS, ...raw.settings });
     }
     if (raw.scheduleCache && typeof raw.scheduleCache === "object") {
-      this.scheduleCache = raw.scheduleCache;
+      this.scheduleCache = this.evictStaleCache(raw.scheduleCache);
     }
     if (raw.timerStates) {
       this.timerEngine.restore(raw.timerStates);
@@ -139,7 +144,7 @@ export default class JwTimerPlugin extends Plugin {
     if (this.saveHandle !== null) window.clearTimeout(this.saveHandle);
     this.saveHandle = window.setTimeout(() => {
       this.saveHandle = null;
-      void this.persistData();
+      this.persistData().catch(console.error);
     }, 500);
   }
 
@@ -172,6 +177,21 @@ export default class JwTimerPlugin extends Plugin {
   evictCachedSchedule(key: string): void {
     delete this.scheduleCache[key];
     this.scheduleSave();
+  }
+
+  /**
+   * Removes schedule cache entries older than 30 days.
+   * Called once on startup to prevent unbounded disk growth.
+   */
+  private evictStaleCache(
+    cache: Record<string, WeeklySchedule>,
+  ): Record<string, WeeklySchedule> {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const result: Record<string, WeeklySchedule> = {};
+    for (const [k, v] of Object.entries(cache)) {
+      if (v.fetchedAt >= cutoff) result[k] = v;
+    }
+    return result;
   }
 
   // ─── Part overrides ─────────────────────────────────────────────────────

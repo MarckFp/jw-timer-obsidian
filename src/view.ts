@@ -56,6 +56,7 @@ export class JwTimerView extends ItemView implements CardController {
   activeOverlay: HTMLElement | null = null;
   private exportFooterEl!: HTMLElement;
   private exportToastEl!: HTMLElement;
+  private shareBtnEl!: HTMLButtonElement;
 
   // Pagination state — initialised to current week in onOpen
   private viewYear: number = new Date().getFullYear();
@@ -170,12 +171,12 @@ export class JwTimerView extends ItemView implements CardController {
     this.exportFooterEl = root.createDiv({ cls: "jw-timer-export-footer" });
     this.exportFooterEl.style.display = "none";
 
-    const shareBtn = this.exportFooterEl.createEl("button", {
+    this.shareBtnEl = this.exportFooterEl.createEl("button", {
       cls: "jw-timer-btn jw-timer-export-btn jw-timer-export-btn--full",
       text: this.getLabels().shareBtn,
     });
-    shareBtn.setAttr("aria-label", "Share meeting timings");
-    shareBtn.addEventListener("click", () => void this.doShare());
+    this.shareBtnEl.setAttr("aria-label", "Share meeting timings");
+    this.shareBtnEl.addEventListener("click", () => void this.doShare());
 
     this.exportToastEl = this.exportFooterEl.createDiv({
       cls: "jw-timer-toast",
@@ -195,6 +196,11 @@ export class JwTimerView extends ItemView implements CardController {
         window.clearInterval(this.tickHandle);
         this.tickHandle = null;
       }
+      for (const [btn, tid] of this.pendingResets) {
+        window.clearTimeout(tid);
+        btn.removeClass("jw-timer-btn--confirm");
+      }
+      this.pendingResets.clear();
       this.activeOverlay = null;
       if (this.audioCtx) {
         void this.audioCtx.close();
@@ -215,6 +221,7 @@ export class JwTimerView extends ItemView implements CardController {
     const labels = this.getLabels();
     this.resetAllBtn.setText(labels.resetAll);
     this.todayBtn.setText(labels.today);
+    this.shareBtnEl.setText(labels.shareBtn);
     await this.loadScheduleForWeek(this.viewYear, this.viewWeek);
   }
 

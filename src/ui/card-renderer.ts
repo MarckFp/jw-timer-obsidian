@@ -132,7 +132,7 @@ export function renderCard(
       const val = noteEl.value.trim();
       const curr = ctx.plugin.getPartOverride(noteKey) ?? {};
       ctx.plugin.setPartOverride(noteKey, { ...curr, note: val || undefined });
-      void ctx.plugin.persistTimers();
+      ctx.plugin.persistTimers().catch(console.error);
     }, 400);
   });
 
@@ -231,7 +231,7 @@ export function renderCard(
             hasAdvice: newHasAdvice,
           });
         }
-        void ctx.plugin.persistTimers();
+        ctx.plugin.persistTimers().catch(console.error);
         ctx.renderSchedule(ctx.schedule!);
         ctx.updateMeetingBar();
       },
@@ -257,7 +257,7 @@ export function renderCard(
         deleted: true,
       });
     }
-    void ctx.plugin.persistTimers();
+    ctx.plugin.persistTimers().catch(console.error);
     ctx.renderSchedule(ctx.schedule!);
     ctx.updateMeetingBar();
   });
