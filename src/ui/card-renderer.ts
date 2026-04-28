@@ -109,32 +109,34 @@ export function renderCard(
   ctx.updateCard(part, scheduledStartMins);
 
   // ─── Per-part note ───────────────────────────────────────────────────────────
-  const noteKey = `${ctx.weekKey}:${part.order}`;
-  const existingNote = ctx.plugin.getPartOverride(noteKey)?.note ?? "";
-  const noteEl = card.createEl("textarea", { cls: "jw-timer-note" });
-  noteEl.placeholder = labels.notePlaceholder;
-  noteEl.rows = 1;
-  noteEl.value = existingNote;
-  if (existingNote) {
-    // Resize to fit saved content on initial render
-    window.requestAnimationFrame(() => {
+  if (ctx.plugin.settings.showNotes) {
+    const noteKey = `${ctx.weekKey}:${part.order}`;
+    const existingNote = ctx.plugin.getPartOverride(noteKey)?.note ?? "";
+    const noteEl = card.createEl("textarea", { cls: "jw-timer-note" });
+    noteEl.placeholder = labels.notePlaceholder;
+    noteEl.rows = 1;
+    noteEl.value = existingNote;
+    if (existingNote) {
+      // Resize to fit saved content on initial render
+      window.requestAnimationFrame(() => {
+        noteEl.style.height = "auto";
+        noteEl.style.height = `${noteEl.scrollHeight}px`;
+      });
+    }
+    let noteDebounce: number | null = null;
+    noteEl.addEventListener("input", () => {
       noteEl.style.height = "auto";
       noteEl.style.height = `${noteEl.scrollHeight}px`;
+      if (noteDebounce !== null) window.clearTimeout(noteDebounce);
+      noteDebounce = window.setTimeout(() => {
+        noteDebounce = null;
+        const val = noteEl.value.trim();
+        const curr = ctx.plugin.getPartOverride(noteKey) ?? {};
+        ctx.plugin.setPartOverride(noteKey, { ...curr, note: val || undefined });
+        ctx.plugin.persistTimers().catch(console.error);
+      }, 400);
     });
   }
-  let noteDebounce: number | null = null;
-  noteEl.addEventListener("input", () => {
-    noteEl.style.height = "auto";
-    noteEl.style.height = `${noteEl.scrollHeight}px`;
-    if (noteDebounce !== null) window.clearTimeout(noteDebounce);
-    noteDebounce = window.setTimeout(() => {
-      noteDebounce = null;
-      const val = noteEl.value.trim();
-      const curr = ctx.plugin.getPartOverride(noteKey) ?? {};
-      ctx.plugin.setPartOverride(noteKey, { ...curr, note: val || undefined });
-      ctx.plugin.persistTimers().catch(console.error);
-    }, 400);
-  });
 
   // Advice sub-card for parts with instructor feedback (Bible reading + ministry parts)
   if (part.hasAdvice && ctx.plugin.settings.showAdvice)

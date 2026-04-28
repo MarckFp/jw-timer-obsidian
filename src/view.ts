@@ -52,6 +52,8 @@ export class JwTimerView extends ItemView implements CardController {
   private totalTimedMs = 0;
   /** Tracks partOrders that have already fired an overtime alert this session */
   private firedAlerts = new Set<number>();
+  /** Section keys the user has collapsed — persists for the lifetime of the view */
+  private collapsedSections = new Set<string>();
   /** Currently visible card overlay, if any */
   activeOverlay: HTMLElement | null = null;
   private exportFooterEl!: HTMLElement;
@@ -549,11 +551,33 @@ export class JwTimerView extends ItemView implements CardController {
       const parts = bySection.get(sectionKey);
       if (!parts?.length) continue;
 
+      const isCollapsed = this.collapsedSections.has(sectionKey);
       const sectionEl = this.listEl.createDiv({ cls: "jw-timer-section" });
       sectionEl.setAttribute("data-section", sectionKey);
-      sectionEl.createEl("h3", {
-        cls: "jw-timer-section-title",
-        text: sectionLabels[sectionKey] ?? sectionKey,
+      if (isCollapsed) sectionEl.setAttribute("data-collapsed", "true");
+
+      const titleEl = sectionEl.createEl("h3", { cls: "jw-timer-section-title" });
+      titleEl.setAttr("role", "button");
+      titleEl.setAttr("tabindex", "0");
+      titleEl.setAttr("aria-expanded", isCollapsed ? "false" : "true");
+      titleEl.createSpan({ cls: "jw-timer-section-chevron", text: "\u25bc" });
+      titleEl.appendText(sectionLabels[sectionKey] ?? sectionKey);
+
+      const toggleCollapse = () => {
+        const nowCollapsed = sectionEl.getAttribute("data-collapsed") === "true";
+        if (nowCollapsed) {
+          sectionEl.removeAttribute("data-collapsed");
+          titleEl.setAttr("aria-expanded", "true");
+          this.collapsedSections.delete(sectionKey);
+        } else {
+          sectionEl.setAttribute("data-collapsed", "true");
+          titleEl.setAttr("aria-expanded", "false");
+          this.collapsedSections.add(sectionKey);
+        }
+      };
+      titleEl.addEventListener("click", toggleCollapse);
+      titleEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCollapse(); }
       });
 
       for (const part of parts) {

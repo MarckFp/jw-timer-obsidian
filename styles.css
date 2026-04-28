@@ -261,9 +261,44 @@ body.theme-dark {
   letter-spacing: 0.07em;
   color: var(--text-faint);
   margin: 0.85rem 0 0.3rem;
-  padding: 0.25rem 0 0.2rem 0.5rem;
+  padding: 0.25rem 0.4rem 0.2rem 0.5rem;
   border-bottom: 1px solid var(--background-modifier-border);
   border-left: 3px solid var(--background-modifier-border);
+  /* Collapse toggle */
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  border-radius: 0 3px 3px 0;
+  transition: background 100ms;
+}
+
+.jw-timer-section-title:hover {
+  background: var(--background-modifier-hover);
+}
+
+.jw-timer-section-title:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+.jw-timer-section-chevron {
+  flex-shrink: 0;
+  font-size: 0.5rem;
+  opacity: 0.6;
+  line-height: 1;
+  transition: transform 150ms ease;
+}
+
+.jw-timer-section[data-collapsed="true"] .jw-timer-section-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Hide all cards (including advice sub-cards) when section is collapsed */
+.jw-timer-section[data-collapsed="true"] .jw-timer-card {
+  display: none;
 }
 
 /* Teal accent — Treasures from God's Word */

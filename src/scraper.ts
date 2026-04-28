@@ -70,16 +70,18 @@ async function fetchWithRetry(
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        window.setTimeout(
+      let timeoutHandle: number | null = null;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutHandle = window.setTimeout(
           () => reject(new Error("Request timed out")),
           FETCH_TIMEOUT_MS,
-        ),
-      );
+        );
+      });
       const resp = await Promise.race([
         requestUrl({ url, headers }),
         timeoutPromise,
       ]);
+      window.clearTimeout(timeoutHandle!);
 
       if (resp.status === 304) return { status: 304, text: "" };
       if (resp.status >= 200 && resp.status < 300)
