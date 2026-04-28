@@ -47,13 +47,17 @@ export function renderCard(
   card.setAttribute("data-state", "idle");
   card.setAttribute("data-running", "false");
 
-  // Title + allotted minutes
+  // Title + allotted minutes + gear (context) button
   const header = card.createDiv({ cls: "jw-timer-card-header" });
   header.createDiv({ cls: "jw-timer-card-title", text: part.label });
   header.createDiv({
     cls: "jw-timer-card-allotted",
     text: `${Math.round(part.durationSec / 60)} min`,
   });
+  const gearBtn = header.createEl("button", { cls: "jw-timer-gear-btn" });
+  gearBtn.setText("⚙︎"); // gear symbol, text variant (no colour emoji)
+  gearBtn.setAttr("aria-label", "Edit, move or delete this part");
+  gearBtn.setAttr("tabindex", "0");
 
   // Scheduled end time + actual stopped-at time
   const endTimeMins = scheduledStartMins + Math.ceil(part.durationSec / 60);
@@ -205,48 +209,26 @@ export function renderCard(
     text: labels.deleteOverlay,
   });
 
-  let longPressTimer: number | null = null;
-  let pressStartX = 0;
-  let pressStartY = 0;
-  const cancelPress = () => {
-    if (longPressTimer !== null) {
-      window.clearTimeout(longPressTimer);
-      longPressTimer = null;
-      card.style.touchAction = "";
-      card.removeClass("jw-timer-card--pressing");
+  // ─── Open overlay (gear button tap/click + right-click on desktop) ────────────────
+  const openOverlay = () => {
+    if (ctx.activeOverlay && ctx.activeOverlay !== overlay) {
+      ctx.activeOverlay.removeClass("jw-timer-card-overlay--visible");
     }
+    ctx.activeOverlay = overlay;
+    overlay.addClass("jw-timer-card-overlay--visible");
   };
-  card.addEventListener("pointerdown", (e) => {
-    if (
-      (e.target as HTMLElement).closest(
-        "button, .jw-timer-card-overlay, textarea",
-      )
-    )
-      return;
-    pressStartX = e.clientX;
-    pressStartY = e.clientY;
-    card.style.touchAction = "none";
-    card.addClass("jw-timer-card--pressing");
-    longPressTimer = window.setTimeout(() => {
-      longPressTimer = null;
-      card.style.touchAction = "";
-      card.removeClass("jw-timer-card--pressing");
-      if (ctx.activeOverlay && ctx.activeOverlay !== overlay) {
-        ctx.activeOverlay.removeClass("jw-timer-card-overlay--visible");
-      }
-      ctx.activeOverlay = overlay;
-      overlay.addClass("jw-timer-card-overlay--visible");
-    }, 1000);
+
+  gearBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openOverlay();
   });
-  card.addEventListener("pointerup", cancelPress);
-  card.addEventListener("pointermove", (e) => {
-    if (longPressTimer === null) return;
-    const dx = e.clientX - pressStartX;
-    const dy = e.clientY - pressStartY;
-    if (dx * dx + dy * dy > 100) cancelPress();
+
+  // Right-click anywhere on the card except inside a textarea (keep native menu there)
+  card.addEventListener("contextmenu", (e) => {
+    if ((e.target as HTMLElement).closest("textarea")) return;
+    e.preventDefault();
+    openOverlay();
   });
-  card.addEventListener("pointercancel", cancelPress);
-  card.addEventListener("contextmenu", (e) => e.preventDefault());
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
       overlay.removeClass("jw-timer-card-overlay--visible");

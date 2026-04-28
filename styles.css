@@ -25,6 +25,7 @@ body.theme-dark {
   overflow-y: auto;
   font-size: 0.9rem;
   color: var(--text-normal);
+  position: relative;
 }
 
 /* ─── Week navigation ────────────────────────────────────────────────────── */
@@ -233,21 +234,30 @@ body.theme-dark {
 }
 
 .jw-timer-status--loading {
-  color: var(--text-muted);
+  /* Overlay the list area, centered */
+  position: absolute;
+  inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
+  justify-content: center;
+  gap: 0.9rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  background: var(--background-primary);
+  z-index: 10;
+  padding: 0;
 }
 
 .jw-timer-spinner {
-  display: inline-block;
-  flex-shrink: 0;
-  width: 0.75rem;
-  height: 0.75rem;
-  border: 2px solid var(--background-modifier-border);
-  border-top-color: var(--text-muted);
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--background-modifier-border);
+  border-top-color: var(--interactive-accent);
   border-radius: 50%;
   animation: jw-spin 0.7s linear infinite;
+  flex-shrink: 0;
 }
 
 @keyframes jw-spin {
@@ -362,36 +372,45 @@ input[aria-invalid="true"] {
   transition:
     background 200ms ease,
     border-color 200ms ease;
-  user-select: none; /* prevent text selection during long-press */
+  user-select: none;
   -webkit-user-select: none;
 }
 
-/* Long-press visual feedback — accent sweep fills left→right over 600 ms */
-.jw-timer-card--pressing {
-  overflow: hidden;
+/* ─── Gear (context) button ──────────────────────────────────────────────── */
+
+.jw-timer-gear-btn {
+  background: none;
+  border: none;
+  padding: 0.1rem 0.25rem;
+  margin: -0.1rem -0.15rem 0 0; /* pull flush with card edge */
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  line-height: 1;
+  border-radius: 4px;
+  flex-shrink: 0;
+  /* Touch devices: always show at subdued opacity */
+  opacity: 0.45;
+  transition: opacity 120ms, color 120ms, background 120ms;
 }
 
-.jw-timer-card--pressing::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--interactive-accent);
-  opacity: 0.22;
-  transform: scaleX(0);
-  transform-origin: left center;
-  animation: jw-longpress-fill 1000ms ease forwards;
-  pointer-events: none;
-  z-index: 9;
+/* On pointer devices that support hover, hide until the card is hovered */
+@media (hover: hover) {
+  .jw-timer-gear-btn {
+    opacity: 0;
+  }
+  .jw-timer-card:hover .jw-timer-gear-btn,
+  .jw-timer-card:focus-within .jw-timer-gear-btn {
+    opacity: 0.5;
+  }
 }
 
-@keyframes jw-longpress-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+.jw-timer-gear-btn:hover,
+.jw-timer-gear-btn:focus-visible {
+  opacity: 1 !important;
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+  outline: none;
 }
 
 /* ─── Card edit/delete overlay ───────────────────────────────────────────── */
