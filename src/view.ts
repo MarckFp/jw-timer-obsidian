@@ -34,6 +34,9 @@ export class JwTimerView extends ItemView implements CardController {
   cards = new Map<number, CardRefs>();
   adviceCards = new Map<number, CardRefs>();
   private tickHandle: number | null = null;
+  /** Incremented on each loadScheduleForWeek call; stale responses are discarded. */
+  private loadRequestId = 0;
+  private audioCtx: AudioContext | null = null;
   private statusEl!: HTMLElement;
   private navLabelEl!: HTMLElement;
   private todayBtn!: HTMLButtonElement;
@@ -177,6 +180,8 @@ export class JwTimerView extends ItemView implements CardController {
     this.exportToastEl = this.exportFooterEl.createDiv({
       cls: "jw-timer-toast",
     });
+    this.exportToastEl.setAttr("role", "status");
+    this.exportToastEl.setAttr("aria-live", "polite");
 
     this.tickHandle = window.setInterval(() => this.tick(), 250);
     this.viewYear = new Date().getFullYear();
@@ -185,11 +190,19 @@ export class JwTimerView extends ItemView implements CardController {
   }
 
   async onClose(): Promise<void> {
-    if (this.tickHandle !== null) {
-      window.clearInterval(this.tickHandle);
-      this.tickHandle = null;
+    try {
+      if (this.tickHandle !== null) {
+        window.clearInterval(this.tickHandle);
+        this.tickHandle = null;
+      }
+      this.activeOverlay = null;
+      if (this.audioCtx) {
+        void this.audioCtx.close();
+        this.audioCtx = null;
+      }
+    } finally {
+      await this.plugin.persistTimers().catch(console.error);
     }
-    await this.plugin.persistTimers();
   }
 
   // ─── Public: called when settings change ─────────────────────────────────────────────────────────────
@@ -238,6 +251,7 @@ export class JwTimerView extends ItemView implements CardController {
   }
 
   private async navigateToToday(): Promise<void> {
+    if (this.isCurrentWeek()) return;
     this.viewYear = new Date().getFullYear();
     this.viewWeek = currentWeekNumber();
     this.schedule = null;
@@ -348,7 +362,7 @@ export class JwTimerView extends ItemView implements CardController {
       `${this.weekKey}:${sectionParts[swapIdx].order}`,
       { rank: idx * 10 },
     );
-    void this.plugin.persistTimers();
+    this.plugin.persistTimers().catch(console.error);
     this.renderSchedule(this.schedule!);
     this.updateMeetingBar();
   }
@@ -388,7 +402,7 @@ export class JwTimerView extends ItemView implements CardController {
           hasAdvice: hasAdvice || undefined,
           isCustom: true,
         });
-        void this.plugin.persistTimers();
+        this.plugin.persistTimers().catch(console.error);
         this.renderSchedule(this.schedule!);
         this.updateMeetingBar();
       },
@@ -398,6 +412,7 @@ export class JwTimerView extends ItemView implements CardController {
   // ─── Schedule loading ──────────────────────────────────────────────────────────────────────────
 
   private async loadScheduleForWeek(year: number, week: number): Promise<void> {
+    const requestId = ++this.loadRequestId;
     this.weekKey = cacheKey(year, week);
     this.navLabelEl.setText(`${year} · W${String(week).padStart(2, "0")}`);
     this.staleEl.style.display = "none";
@@ -406,12 +421,21 @@ export class JwTimerView extends ItemView implements CardController {
 
     if (!schedule) {
       this.setStatus("loading", "Fetching schedule from wol.jw.org…");
-      schedule = await fetchWeekSchedule(
+      const staleVersion = this.plugin.getStaleCachedSchedule(this.weekKey);
+      const fetchResult = await fetchWeekSchedule(
         this.plugin.settings.wolLocale,
         year,
         week,
+        staleVersion?.fetchedAt,
       );
-      if (schedule) {
+      // Discard if a newer navigation happened while this request was in-flight
+      if (requestId !== this.loadRequestId) return;
+      if (fetchResult === "not-modified" && staleVersion) {
+        // Server confirmed no change — refresh the cache TTL and reuse stale data
+        schedule = { ...staleVersion, fetchedAt: Date.now() };
+        this.plugin.cacheSchedule(this.weekKey, schedule);
+      } else if (fetchResult !== null && fetchResult !== "not-modified") {
+        schedule = fetchResult;
         this.plugin.cacheSchedule(this.weekKey, schedule);
         await this.plugin.saveSettings();
       }
@@ -587,7 +611,7 @@ export class JwTimerView extends ItemView implements CardController {
     const snap = this.plugin.timerEngine.get(this.weekKey, part.order);
     if (snap.status === "running") {
       this.plugin.timerEngine.pause(this.weekKey, part.order);
-      void this.plugin.persistTimers();
+      this.plugin.persistTimers().catch(console.error);
       if (this.plugin.settings.autoNextPart) {
         // If the part has an advice timer that hasn't started yet, start it first.
         if (
@@ -642,12 +666,13 @@ export class JwTimerView extends ItemView implements CardController {
     }
     this.updateCardByOrder(part);
     this.updateMeetingBar();
-    void this.plugin.persistTimers();
+    this.plugin.persistTimers().catch(console.error);
   }
 
   // ─── Tick & display update ───────────────────────────────────────────────────────────────────
 
   private tick(): void {
+    if (document.hidden) return;
     if (!this.schedule) return;
     // Fast path: skip all DOM work when no timer is running.
     if (!this.plugin.timerEngine.hasAnyRunning()) return;
@@ -713,7 +738,10 @@ export class JwTimerView extends ItemView implements CardController {
   /** Synthesise a repeating beep using the Web Audio API for the given duration. */
   private playBeep(durationSec: number): void {
     try {
-      const ctx = new AudioContext();
+      if (!this.audioCtx || this.audioCtx.state === "closed") {
+        this.audioCtx = new AudioContext();
+      }
+      const ctx = this.audioCtx;
       // Each beep cycle: 0.18s tone + 0.07s silence = 0.25s per cycle
       const cycleLen = 0.25;
       const toneLen = 0.18;
@@ -731,7 +759,6 @@ export class JwTimerView extends ItemView implements CardController {
         osc.start(startSec);
         osc.stop(startSec + toneLen);
       }
-      window.setTimeout(() => ctx.close(), durationSec * 1000 + 300);
     } catch {
       // AudioContext unavailable — silently ignore
     }
@@ -877,7 +904,7 @@ export class JwTimerView extends ItemView implements CardController {
     }
     this.renderSchedule(this.schedule);
     this.updateMeetingBar();
-    void this.plugin.persistTimers();
+    this.plugin.persistTimers().catch(console.error);
   }
 
   // ─── Export ───────────────────────────────────────────────────────────────────────────────────
@@ -950,7 +977,7 @@ export class JwTimerView extends ItemView implements CardController {
     const snap = this.plugin.timerEngine.get(this.weekKey, aOrder);
     if (snap.status === "running") {
       this.plugin.timerEngine.pause(this.weekKey, aOrder);
-      void this.plugin.persistTimers();
+      this.plugin.persistTimers().catch(console.error);
       if (this.plugin.settings.autoNextPart) this.autoStartNextInSection(part);
     } else {
       this.plugin.timerEngine.start(this.weekKey, aOrder);
@@ -963,7 +990,7 @@ export class JwTimerView extends ItemView implements CardController {
     this.plugin.timerEngine.reset(this.weekKey, this.adviceOrder(part.order));
     this.updateAdviceCard(part);
     this.updateMeetingBar();
-    void this.plugin.persistTimers();
+    this.plugin.persistTimers().catch(console.error);
   }
 
   updateAdviceCard(part: MeetingPart): void {

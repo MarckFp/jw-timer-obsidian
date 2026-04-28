@@ -50,28 +50,83 @@ function parseDuration(text: string): number | null {
   return m ? parseInt(m[1], 10) * 60 : null;
 }
 
+// ─── Fetch helpers ────────────────────────────────────────────────────────────
+
+const FETCH_TIMEOUT_MS = 10_000;
+const MAX_RETRIES = 2;
+
+/**
+ * Wraps requestUrl with a 10-second timeout and up to 2 automatic retries on
+ * network/server errors. Returns { status, text } on success, null on permanent failure.
+ */
+async function fetchWithRetry(
+  url: string,
+  extraHeaders: Record<string, string> = {},
+): Promise<{ status: number; text: string } | null> {
+  const headers: Record<string, string> = {
+    "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)",
+    ...extraHeaders,
+  };
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        window.setTimeout(
+          () => reject(new Error("Request timed out")),
+          FETCH_TIMEOUT_MS,
+        ),
+      );
+      const resp = await Promise.race([
+        requestUrl({ url, headers }),
+        timeoutPromise,
+      ]);
+
+      if (resp.status === 304) return { status: 304, text: "" };
+      if (resp.status >= 200 && resp.status < 300)
+        return { status: resp.status, text: resp.text };
+      // 4xx — not retryable
+      if (resp.status >= 400 && resp.status < 500) return null;
+      // 5xx — fall through to retry
+    } catch {
+      // timeout or network error — fall through to retry
+    }
+
+    if (attempt < MAX_RETRIES) {
+      await new Promise<void>((r) =>
+        window.setTimeout(r, 1_000 * (attempt + 1)),
+      );
+    }
+  }
+  return null;
+}
+
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 
+/**
+ * Fetch the weekly schedule from wol.jw.org.
+ * Returns the parsed schedule, "not-modified" (when the server confirms no change via 304),
+ * or null on error.
+ *
+ * @param cachedAt  Optional ms-since-epoch timestamp of a previously fetched version.
+ *                  When provided, an If-Modified-Since header is sent so the server can
+ *                  respond with 304 and save bandwidth.
+ */
 export async function fetchWeekSchedule(
   locale: string,
   year: number,
   week: number,
-): Promise<WeeklySchedule | null> {
+  cachedAt?: number,
+): Promise<WeeklySchedule | null | "not-modified"> {
+  const conditionalHeaders: Record<string, string> = cachedAt
+    ? { "If-Modified-Since": new Date(cachedAt).toUTCString() }
+    : {};
+
   // Step 1: fetch the meetings index page to find the MWB doc link
   const meetingsUrl = buildWolUrl(locale, year, week);
-  let meetingsHtml: string;
-  try {
-    const resp = await requestUrl({
-      url: meetingsUrl,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)",
-      },
-    });
-    if (resp.status < 200 || resp.status >= 300) return null;
-    meetingsHtml = resp.text;
-  } catch {
-    return null;
-  }
+  const meetingsResp = await fetchWithRetry(meetingsUrl, conditionalHeaders);
+  if (!meetingsResp) return null;
+  if (meetingsResp.status === 304) return "not-modified";
+  const meetingsHtml = meetingsResp.text;
 
   // MWB doc IDs are 9+ digits
   const docLinkRe = /href="(\/[^"]+\/wol\/d\/[^"#?]+)"/g;
@@ -82,23 +137,12 @@ export async function fetchWeekSchedule(
   }
   if (docLinks.length === 0) return null;
 
-  // Step 2: fetch the MWB article page
+  // Step 2: fetch the MWB article page (no conditional header — always want full content)
   const docUrl = `https://wol.jw.org${docLinks[0]}`;
-  let docHtml: string;
-  try {
-    const resp = await requestUrl({
-      url: docUrl,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)",
-      },
-    });
-    if (resp.status < 200 || resp.status >= 300) return null;
-    docHtml = resp.text;
-  } catch {
-    return null;
-  }
+  const docResp = await fetchWithRetry(docUrl);
+  if (!docResp || docResp.status === 304) return null;
 
-  return parseDocPage(docHtml, year, week);
+  return parseDocPage(docResp.text, year, week);
 }
 
 // ─── HTML utilities ───────────────────────────────────────────────────────────

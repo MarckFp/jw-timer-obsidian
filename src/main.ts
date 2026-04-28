@@ -12,6 +12,42 @@ import { TimerEngine } from "./timer-engine";
 import { JwTimerSettingsTab, detectWolLocale } from "./settings-tab";
 import { JwTimerView, VIEW_TYPE_JW_TIMER } from "./view";
 
+// ─── Settings sanitization ───────────────────────────────────────────────────
+
+/**
+ * Ensures all settings fields have valid types and values after loading from
+ * disk. Guards against schema mismatches that can arise when upgrading between
+ * plugin versions.
+ */
+function sanitizeSettings(s: PluginSettings): PluginSettings {
+  const isValidTime = (v: unknown): v is string =>
+    typeof v === "string" && /^\d{1,2}:\d{2}$/.test(v);
+  const clampInt = (v: unknown, min: number, max: number, def: number): number => {
+    const n = Number(v);
+    return Number.isInteger(n) && n >= min && n <= max ? n : def;
+  };
+  const bool = (v: unknown, def: boolean): boolean =>
+    typeof v === "boolean" ? v : def;
+
+  return {
+    wolLocale:
+      typeof s.wolLocale === "string" && s.wolLocale.length > 0
+        ? s.wolLocale
+        : DEFAULT_SETTINGS.wolLocale,
+    meetingStartTime: isValidTime(s.meetingStartTime)
+      ? s.meetingStartTime
+      : DEFAULT_SETTINGS.meetingStartTime,
+    openingSongMinutes: clampInt(s.openingSongMinutes, 1, 15, DEFAULT_SETTINGS.openingSongMinutes),
+    alertSound: bool(s.alertSound, DEFAULT_SETTINGS.alertSound),
+    alertSoundSec: clampInt(s.alertSoundSec, 1, 10, DEFAULT_SETTINGS.alertSoundSec),
+    alertVibrate: bool(s.alertVibrate, DEFAULT_SETTINGS.alertVibrate),
+    alertVibrateSec: clampInt(s.alertVibrateSec, 1, 30, DEFAULT_SETTINGS.alertVibrateSec),
+    showAdvice: bool(s.showAdvice, DEFAULT_SETTINGS.showAdvice),
+    autoNextPart: bool(s.autoNextPart, DEFAULT_SETTINGS.autoNextPart),
+    showNotes: bool(s.showNotes, DEFAULT_SETTINGS.showNotes),
+  };
+}
+
 export default class JwTimerPlugin extends Plugin {
   settings: PluginSettings = { ...DEFAULT_SETTINGS };
   timerEngine = new TimerEngine();
@@ -50,7 +86,7 @@ export default class JwTimerPlugin extends Plugin {
       window.clearTimeout(this.saveHandle);
       this.saveHandle = null;
     }
-    void this.persistTimers();
+    this.persistTimers().catch(console.error);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_JW_TIMER);
   }
 
@@ -68,18 +104,18 @@ export default class JwTimerPlugin extends Plugin {
       return;
     }
     if (raw.settings) {
-      this.settings = { ...DEFAULT_SETTINGS, ...raw.settings };
+      this.settings = sanitizeSettings({ ...DEFAULT_SETTINGS, ...raw.settings });
     }
-    if (raw.scheduleCache) {
+    if (raw.scheduleCache && typeof raw.scheduleCache === "object") {
       this.scheduleCache = raw.scheduleCache;
     }
     if (raw.timerStates) {
       this.timerEngine.restore(raw.timerStates);
     }
-    if (raw.partOverrides) {
+    if (raw.partOverrides && typeof raw.partOverrides === "object") {
       this.partOverrides = raw.partOverrides;
     }
-    if (raw.customParts) {
+    if (raw.customParts && typeof raw.customParts === "object") {
       this.customParts = raw.customParts;
     }
   }
@@ -114,6 +150,11 @@ export default class JwTimerPlugin extends Plugin {
   }
 
   // ─── Schedule cache ──────────────────────────────────────────────────────────
+
+  /** Returns the cached schedule regardless of staleness. Used to supply If-Modified-Since. */
+  getStaleCachedSchedule(key: string): WeeklySchedule | null {
+    return this.scheduleCache[key] ?? null;
+  }
 
   getCachedSchedule(key: string): WeeklySchedule | null {
     const cached = this.scheduleCache[key];
@@ -203,7 +244,7 @@ export default class JwTimerPlugin extends Plugin {
   async reloadView(): Promise<void> {
     const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_JW_TIMER)[0];
     if (leaf?.view instanceof JwTimerView) {
-      await (leaf.view as JwTimerView).reload();
+      await leaf.view.reload();
     }
   }
 

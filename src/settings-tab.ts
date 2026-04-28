@@ -133,7 +133,14 @@ export class JwTimerSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.meetingStartTime)
           .onChange(async (value) => {
             const trimmed = value.trim();
-            if (/^\d{1,2}:\d{2}$/.test(trimmed)) {
+            const [hStr, mStr] = trimmed.split(":");
+            const h = Number(hStr);
+            const m = Number(mStr);
+            if (
+              /^\d{1,2}:\d{2}$/.test(trimmed) &&
+              h >= 0 && h <= 23 &&
+              m >= 0 && m <= 59
+            ) {
               this.plugin.settings.meetingStartTime = trimmed;
               await this.plugin.saveSettings();
               this.scheduleReload();
