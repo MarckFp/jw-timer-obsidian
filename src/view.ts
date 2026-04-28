@@ -786,24 +786,26 @@ export class JwTimerView extends ItemView implements CardController {
     if (alertSound) this.playBeep(alertSoundSec);
     if (alertVibrate && "vibrate" in navigator) {
       try {
-        // Double-pulse "ba-dum" pattern — more attention-grabbing than single pulses.
-        // Uses recursive setTimeout since Android WebView ignores pattern arrays.
-        const pulse1 = 300;
-        const gap = 120;
-        const pulse2 = 300;
-        const beatMs = pulse1 + gap + pulse2 + 280; // ~1 000 ms per beat
-        const totalBeats = Math.max(
-          1,
-          Math.round((alertVibrateSec * 1000) / beatMs),
-        );
-        let beat = 0;
-        const doBeat = () => {
-          navigator.vibrate(pulse1);
-          window.setTimeout(() => navigator.vibrate(pulse2), pulse1 + gap);
-          beat++;
-          if (beat < totalBeats) window.setTimeout(doBeat, beatMs);
-        };
-        doBeat();
+        // Phone-call ring pattern: 800 ms vibrate, 200 ms pause, 800 ms vibrate,
+        // 1 200 ms silence (= one ring cycle of 3 000 ms).
+        // We repeat the ring cycle to fill the configured duration, then pass
+        // the full pattern to vibrate() in a single call so the browser handles
+        // the timing natively.
+        const ON1 = 800,
+          OFF1 = 200,
+          ON2 = 800,
+          SILENCE = 1200;
+        const cycleMs = ON1 + OFF1 + ON2 + SILENCE; // 3 000 ms
+        const totalMs = alertVibrateSec * 1000;
+        const fullCycles = Math.max(1, Math.floor(totalMs / cycleMs));
+        // Build a flat [on, off, on, off, …] array for the full duration.
+        const cycle: number[] = [ON1, OFF1, ON2, SILENCE];
+        const pattern: number[] = [];
+        for (let i = 0; i < fullCycles; i++) pattern.push(...cycle);
+        // Remove the trailing silence on the last cycle so the phone doesn't
+        // "vibrate" with nothing at the very end.
+        if (pattern.length > 0) pattern[pattern.length - 1] = 0;
+        navigator.vibrate(pattern);
       } catch {
         /* unsupported */
       }

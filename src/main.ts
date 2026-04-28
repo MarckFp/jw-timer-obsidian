@@ -22,7 +22,12 @@ import { JwTimerView, VIEW_TYPE_JW_TIMER } from "./view";
 function sanitizeSettings(s: PluginSettings): PluginSettings {
   const isValidTime = (v: unknown): v is string =>
     typeof v === "string" && /^\d{1,2}:\d{2}$/.test(v);
-  const clampInt = (v: unknown, min: number, max: number, def: number): number => {
+  const clampInt = (
+    v: unknown,
+    min: number,
+    max: number,
+    def: number,
+  ): number => {
     const n = Number(v);
     return Number.isInteger(n) && n >= min && n <= max ? n : def;
   };
@@ -37,11 +42,26 @@ function sanitizeSettings(s: PluginSettings): PluginSettings {
     meetingStartTime: isValidTime(s.meetingStartTime)
       ? s.meetingStartTime
       : DEFAULT_SETTINGS.meetingStartTime,
-    openingSongMinutes: clampInt(s.openingSongMinutes, 1, 15, DEFAULT_SETTINGS.openingSongMinutes),
+    openingSongMinutes: clampInt(
+      s.openingSongMinutes,
+      1,
+      15,
+      DEFAULT_SETTINGS.openingSongMinutes,
+    ),
     alertSound: bool(s.alertSound, DEFAULT_SETTINGS.alertSound),
-    alertSoundSec: clampInt(s.alertSoundSec, 1, 10, DEFAULT_SETTINGS.alertSoundSec),
+    alertSoundSec: clampInt(
+      s.alertSoundSec,
+      1,
+      5,
+      DEFAULT_SETTINGS.alertSoundSec,
+    ),
     alertVibrate: bool(s.alertVibrate, DEFAULT_SETTINGS.alertVibrate),
-    alertVibrateSec: clampInt(s.alertVibrateSec, 1, 30, DEFAULT_SETTINGS.alertVibrateSec),
+    alertVibrateSec: clampInt(
+      s.alertVibrateSec,
+      1,
+      5,
+      DEFAULT_SETTINGS.alertVibrateSec,
+    ),
     showAdvice: bool(s.showAdvice, DEFAULT_SETTINGS.showAdvice),
     autoNextPart: bool(s.autoNextPart, DEFAULT_SETTINGS.autoNextPart),
     showNotes: bool(s.showNotes, DEFAULT_SETTINGS.showNotes),
@@ -78,7 +98,10 @@ export default class JwTimerPlugin extends Plugin {
     try {
       await this.loadData_();
     } catch (err) {
-      console.error("JW Timer: failed to load saved data, starting with defaults", err);
+      console.error(
+        "JW Timer: failed to load saved data, starting with defaults",
+        err,
+      );
       this.settings = { ...DEFAULT_SETTINGS, wolLocale: detectWolLocale() };
     }
 
@@ -125,7 +148,10 @@ export default class JwTimerPlugin extends Plugin {
       return;
     }
     if (raw.settings) {
-      this.settings = sanitizeSettings({ ...DEFAULT_SETTINGS, ...raw.settings });
+      this.settings = sanitizeSettings({
+        ...DEFAULT_SETTINGS,
+        ...raw.settings,
+      });
     }
     if (raw.scheduleCache && typeof raw.scheduleCache === "object") {
       this.scheduleCache = this.evictStaleCache(raw.scheduleCache);
@@ -208,8 +234,8 @@ export default class JwTimerPlugin extends Plugin {
     cache: Record<string, WeeklySchedule>,
   ): Record<string, WeeklySchedule> {
     const now = Date.now();
-    const WEEK_GRACE_MS = 7 * 24 * 60 * 60 * 1000;   // 7 days after week end
-    const FUTURE_TTL_MS = 30 * 24 * 60 * 60 * 1000;  // 30 days from fetch
+    const WEEK_GRACE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days after week end
+    const FUTURE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days from fetch
 
     const result: Record<string, WeeklySchedule> = {};
     for (const [k, v] of Object.entries(cache)) {
