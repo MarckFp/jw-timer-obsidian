@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf } from "obsidian";
+import { ItemView, MarkdownRenderer, WorkspaceLeaf } from "obsidian";
 import type JwTimerPlugin from "./main";
 import type { WeeklySchedule, MeetingPart, MeetingSection } from "./types";
 import { cacheKey, currentWeekNumber, fetchWeekSchedule } from "./scraper";
@@ -141,6 +141,9 @@ export class JwTimerView extends ItemView implements CardController {
 
     // ── Status + list ────────────────────────────────────────────────────────────────────
     this.statusEl = root.createDiv({ cls: "jw-timer-status" });
+    this.statusEl.setAttribute("role", "status");
+    this.statusEl.setAttribute("aria-live", "polite");
+    this.statusEl.setAttribute("aria-atomic", "true");
 
     // ── Meeting progress bar ───────────────────────────────────────────────────────────────
     this.meetingBarContainerEl = root.createDiv({
@@ -278,6 +281,10 @@ export class JwTimerView extends ItemView implements CardController {
 
   getLabels(): UiLabels {
     return LOCALE_UI[this.getLang()] ?? LOCALE_UI["lp-e"];
+  }
+
+  renderMarkdown(text: string, el: HTMLElement): void {
+    MarkdownRenderer.render(this.app, text, el, "", this).catch(console.error);
   }
 
   // ─── Part helpers ───────────────────────────────────────────────────────────────────────────────
@@ -476,7 +483,12 @@ export class JwTimerView extends ItemView implements CardController {
   private setStatus(type: "ok" | "loading" | "error", text: string): void {
     this.statusEl.empty();
     this.statusEl.className = `jw-timer-status jw-timer-status--${type}`;
-    this.statusEl.setText(text);
+    if (type === "loading") {
+      this.statusEl.createSpan({ cls: "jw-timer-spinner", attr: { "aria-hidden": "true" } });
+    }
+    if (text) {
+      this.statusEl.createSpan({ text });
+    }
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────────────────────────

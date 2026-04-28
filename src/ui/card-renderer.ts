@@ -31,6 +31,8 @@ export interface CardController {
   movePartInSection(part: MeetingPart, delta: -1 | 1): void;
   renderSchedule(schedule: WeeklySchedule): void;
   updateMeetingBar(): void;
+  /** Render `text` as Markdown into `el`, replacing its current content. */
+  renderMarkdown(text: string, el: HTMLElement): void;
 }
 
 /** Build the DOM for one programme-part timer card and register it in ctx.cards. */
@@ -112,17 +114,56 @@ export function renderCard(
   if (ctx.plugin.settings.showNotes) {
     const noteKey = `${ctx.weekKey}:${part.order}`;
     const existingNote = ctx.plugin.getPartOverride(noteKey)?.note ?? "";
-    const noteEl = card.createEl("textarea", { cls: "jw-timer-note" });
+
+    const noteWrap = card.createDiv({ cls: "jw-timer-note-wrap" });
+    const noteEl = noteWrap.createEl("textarea", { cls: "jw-timer-note" });
+    const previewEl = noteWrap.createDiv({ cls: "jw-timer-note-preview" });
+
     noteEl.placeholder = labels.notePlaceholder;
     noteEl.rows = 1;
     noteEl.value = existingNote;
-    if (existingNote) {
-      // Resize to fit saved content on initial render
+
+    // Render markdown preview and hide the textarea
+    const activatePreview = (text: string) => {
+      previewEl.empty();
+      ctx.renderMarkdown(text, previewEl);
+      previewEl.style.display = "";
+      noteEl.style.display = "none";
+    };
+
+    // Show textarea and hide the preview
+    const activateEdit = () => {
+      previewEl.style.display = "none";
+      noteEl.style.display = "";
       window.requestAnimationFrame(() => {
         noteEl.style.height = "auto";
         noteEl.style.height = `${noteEl.scrollHeight}px`;
+        noteEl.focus();
       });
+    };
+
+    // Initial state: show preview if there is saved content, else textarea
+    if (existingNote) {
+      activatePreview(existingNote);
+    } else {
+      previewEl.style.display = "none";
     }
+
+    // Clicking the preview switches to edit
+    previewEl.setAttribute("role", "button");
+    previewEl.setAttribute("tabindex", "0");
+    previewEl.setAttribute("aria-label", "Edit note");
+    previewEl.addEventListener("click", () => activateEdit());
+    previewEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activateEdit(); }
+    });
+
+    // Blurring textarea with content switches to preview
+    noteEl.addEventListener("blur", () => {
+      const val = noteEl.value.trim();
+      if (val) activatePreview(val);
+    });
+
     let noteDebounce: number | null = null;
     noteEl.addEventListener("input", () => {
       noteEl.style.height = "auto";

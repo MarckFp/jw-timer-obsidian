@@ -48,6 +48,22 @@ function sanitizeSettings(s: PluginSettings): PluginSettings {
   };
 }
 
+/**
+ * Returns the ms timestamp for the end of the Sunday that closes ISO week `week`
+ * of `year` (23:59:59.999 UTC).
+ */
+function isoWeekEndMs(year: number, week: number): number {
+  // Jan 4 is always in ISO week 1
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const dayOfWeek = jan4.getUTCDay() || 7; // Mon=1 … Sun=7
+  // Monday of week 1
+  const week1Monday = Date.UTC(year, 0, 4 - (dayOfWeek - 1));
+  // Sunday of target week = Monday of week 1 + (week-1)*7 + 6 days
+  const sunday = new Date(week1Monday + ((week - 1) * 7 + 6) * 86_400_000);
+  sunday.setUTCHours(23, 59, 59, 999);
+  return sunday.getTime();
+}
+
 export default class JwTimerPlugin extends Plugin {
   settings: PluginSettings = { ...DEFAULT_SETTINGS };
   timerEngine = new TimerEngine();
@@ -180,16 +196,35 @@ export default class JwTimerPlugin extends Plugin {
   }
 
   /**
-   * Removes schedule cache entries older than 30 days.
+   * Removes schedule cache entries that are no longer needed.
+   *
+   * - Past weeks (their Sunday has passed): kept for 7 days after week end,
+   *   then evicted. There is no reason to keep old schedules long-term.
+   * - Current or future weeks: kept for 30 days from when they were fetched.
+   *
    * Called once on startup to prevent unbounded disk growth.
    */
   private evictStaleCache(
     cache: Record<string, WeeklySchedule>,
   ): Record<string, WeeklySchedule> {
-    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const WEEK_GRACE_MS = 7 * 24 * 60 * 60 * 1000;   // 7 days after week end
+    const FUTURE_TTL_MS = 30 * 24 * 60 * 60 * 1000;  // 30 days from fetch
+
     const result: Record<string, WeeklySchedule> = {};
     for (const [k, v] of Object.entries(cache)) {
-      if (v.fetchedAt >= cutoff) result[k] = v;
+      const match = /^(\d{4})-(\d{2})$/.exec(k);
+      if (!match) continue; // malformed key — drop it
+      const year = parseInt(match[1], 10);
+      const week = parseInt(match[2], 10);
+      const weekEndMs = isoWeekEndMs(year, week);
+      if (weekEndMs < now) {
+        // Past week — keep for 7 days after it ended
+        if (now - weekEndMs <= WEEK_GRACE_MS) result[k] = v;
+      } else {
+        // Current or future week — keep for 30 days from fetch
+        if (now - v.fetchedAt <= FUTURE_TTL_MS) result[k] = v;
+      }
     }
     return result;
   }

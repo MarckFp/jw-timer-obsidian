@@ -5,6 +5,8 @@ import type { UiLabels } from "./locale";
 // ─── Edit-part modal ───────────────────────────────────────────────────────────
 
 export class EditPartModal extends Modal {
+  private focusHandle: number | null = null;
+
   constructor(
     app: App,
     private readonly part: MeetingPart,
@@ -49,6 +51,18 @@ export class EditPartModal extends Modal {
     durInput.max = "60";
     durInput.value = String(Math.round(this.part.durationSec / 60));
 
+    const durErrorEl = durRow.createEl("div", { cls: "jw-setting-error" });
+    durErrorEl.textContent = "Must be between 1 and 60 minutes.";
+    durErrorEl.style.display = "none";
+    durInput.addEventListener("input", () => {
+      const n = parseInt(durInput.value, 10);
+      const valid = !isNaN(n) && n >= 1 && n <= 60;
+      const nonEmpty = durInput.value.trim().length > 0;
+      durErrorEl.style.display = !valid && nonEmpty ? "" : "none";
+      if (!valid && nonEmpty) durInput.setAttribute("aria-invalid", "true");
+      else durInput.removeAttribute("aria-invalid");
+    });
+
     const adviceRow = form.createDiv({
       cls: "jw-timer-edit-row jw-timer-edit-row--checkbox",
     });
@@ -71,11 +85,14 @@ export class EditPartModal extends Modal {
     });
     saveBtn.addEventListener("click", () => {
       const newLabel = labelInput.value.trim() || this.part.label;
-      const newMins = Math.max(
-        1,
-        parseInt(durInput.value, 10) || Math.round(this.part.durationSec / 60),
-      );
-      this.onSave(newLabel, newMins * 60, adviceInput.checked);
+      const n = parseInt(durInput.value, 10);
+      if (isNaN(n) || n < 1 || n > 60) {
+        durErrorEl.style.display = "";
+        durInput.setAttribute("aria-invalid", "true");
+        durInput.focus();
+        return;
+      }
+      this.onSave(newLabel, n * 60, adviceInput.checked);
       this.close();
     });
     [labelInput, durInput].forEach((el) =>
@@ -83,10 +100,14 @@ export class EditPartModal extends Modal {
         if (e.key === "Enter") saveBtn.click();
       }),
     );
-    window.setTimeout(() => labelInput.focus(), 50);
+    this.focusHandle = window.setTimeout(() => labelInput.focus(), 50);
   }
 
   onClose(): void {
+    if (this.focusHandle !== null) {
+      window.clearTimeout(this.focusHandle);
+      this.focusHandle = null;
+    }
     this.contentEl.empty();
   }
 }
@@ -94,6 +115,8 @@ export class EditPartModal extends Modal {
 // ─── Add-part modal ────────────────────────────────────────────────────────────
 
 export class AddPartModal extends Modal {
+  private focusHandle: number | null = null;
+
   constructor(
     app: App,
     private readonly sectionLabels: Record<string, string>,
@@ -128,6 +151,16 @@ export class AddPartModal extends Modal {
     labelInput.type = "text";
     labelInput.placeholder = this.labels.placeholder;
 
+    const labelErrorEl = labelRow.createEl("div", { cls: "jw-setting-error" });
+    labelErrorEl.textContent = "Title is required.";
+    labelErrorEl.style.display = "none";
+    labelInput.addEventListener("input", () => {
+      if (labelInput.value.trim()) {
+        labelErrorEl.style.display = "none";
+        labelInput.removeAttribute("aria-invalid");
+      }
+    });
+
     const durRow = form.createDiv({ cls: "jw-timer-edit-row" });
     durRow.createEl("label", {
       cls: "jw-timer-edit-label",
@@ -138,6 +171,18 @@ export class AddPartModal extends Modal {
     durInput.min = "1";
     durInput.max = "60";
     durInput.value = "5";
+
+    const durErrorEl = durRow.createEl("div", { cls: "jw-setting-error" });
+    durErrorEl.textContent = "Must be between 1 and 60 minutes.";
+    durErrorEl.style.display = "none";
+    durInput.addEventListener("input", () => {
+      const n = parseInt(durInput.value, 10);
+      const valid = !isNaN(n) && n >= 1 && n <= 60;
+      const nonEmpty = durInput.value.trim().length > 0;
+      durErrorEl.style.display = !valid && nonEmpty ? "" : "none";
+      if (!valid && nonEmpty) durInput.setAttribute("aria-invalid", "true");
+      else durInput.removeAttribute("aria-invalid");
+    });
 
     const sectionRow = form.createDiv({ cls: "jw-timer-edit-row" });
     sectionRow.createEl("label", {
@@ -183,13 +228,21 @@ export class AddPartModal extends Modal {
     saveBtn.addEventListener("click", () => {
       const newLabel = labelInput.value.trim();
       if (!newLabel) {
+        labelErrorEl.style.display = "";
+        labelInput.setAttribute("aria-invalid", "true");
         labelInput.focus();
         return;
       }
-      const newMins = Math.max(1, parseInt(durInput.value, 10) || 5);
+      const n = parseInt(durInput.value, 10);
+      if (isNaN(n) || n < 1 || n > 60) {
+        durErrorEl.style.display = "";
+        durInput.setAttribute("aria-invalid", "true");
+        durInput.focus();
+        return;
+      }
       this.onSave(
         newLabel,
-        newMins * 60,
+        n * 60,
         sectionSelect.value as MeetingSection,
         adviceInput.checked,
       );
@@ -198,10 +251,14 @@ export class AddPartModal extends Modal {
     labelInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") saveBtn.click();
     });
-    window.setTimeout(() => labelInput.focus(), 50);
+    this.focusHandle = window.setTimeout(() => labelInput.focus(), 50);
   }
 
   onClose(): void {
+    if (this.focusHandle !== null) {
+      window.clearTimeout(this.focusHandle);
+      this.focusHandle = null;
+    }
     this.contentEl.empty();
   }
 }

@@ -234,10 +234,41 @@ body.theme-dark {
 
 .jw-timer-status--loading {
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.jw-timer-spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid var(--background-modifier-border);
+  border-top-color: var(--text-muted);
+  border-radius: 50%;
+  animation: jw-spin 0.7s linear infinite;
+}
+
+@keyframes jw-spin {
+  to { transform: rotate(360deg); }
 }
 
 .jw-timer-status--error {
   color: var(--color-red);
+}
+
+/* ─── Settings validation hints ─────────────────────────────────────────── */
+
+.jw-setting-error {
+  color: var(--color-red);
+  font-size: 0.76rem;
+  margin-top: 0.2rem;
+}
+
+input[aria-invalid="true"] {
+  outline: 2px solid var(--color-red);
+  outline-offset: 1px;
 }
 
 /* ─── Scrollable list ────────────────────────────────────────────────────── */
@@ -838,7 +869,12 @@ body.theme-dark {
   flex-shrink: 0;
 }
 
-/* ─── Per-part note textarea ─────────────────────────────────────────────── */
+/* ─── Per-part note textarea + markdown preview ──────────────────────────── */
+
+.jw-timer-note-wrap {
+  margin-top: 0.5rem;
+  border-top: 1px dashed var(--background-modifier-border);
+}
 
 .jw-timer-note {
   display: block;
@@ -848,12 +884,10 @@ body.theme-dark {
   overflow: hidden;
   min-height: 1.7rem;
   padding: 0.25rem 0.5rem;
-  margin-top: 0.5rem;
   font-size: 0.78rem;
   font-family: inherit;
   background: transparent;
   border: none;
-  border-top: 1px dashed var(--background-modifier-border);
   color: var(--text-muted);
   transition:
     border-color 120ms,
@@ -865,12 +899,50 @@ body.theme-dark {
 .jw-timer-note:focus {
   outline: none;
   color: var(--text-normal);
-  border-top-color: var(--color-accent);
 }
 
 .jw-timer-note::placeholder {
   color: var(--text-faint);
   font-style: italic;
+}
+
+/* Rendered markdown preview — click to edit */
+.jw-timer-note-preview {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 100ms;
+}
+
+.jw-timer-note-preview:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.jw-timer-note-preview:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+/* Tighten up rendered markdown spacing inside the tiny preview area */
+.jw-timer-note-preview p {
+  margin: 0;
+}
+
+.jw-timer-note-preview p + p {
+  margin-top: 0.3em;
+}
+
+.jw-timer-note-preview ul,
+.jw-timer-note-preview ol {
+  margin: 0.2em 0;
+  padding-left: 1.2em;
+}
+
+.jw-timer-note-preview code {
+  font-size: 0.75em;
 }
 
 /* ─── Export footer ──────────────────────────────────────────────────────── */

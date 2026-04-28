@@ -136,6 +136,11 @@ export class JwTimerSettingsTab extends PluginSettingTab {
       .setName(L.startTimeName)
       .setDesc(L.startTimeDesc)
       .addText((text) => {
+        const errorEl = document.createElement("div");
+        errorEl.className = "jw-setting-error";
+        errorEl.textContent = "Invalid time — use HH:MM (e.g. 20:00). Hours 0–23, minutes 0–59.";
+        errorEl.style.display = "none";
+        text.inputEl.insertAdjacentElement("afterend", errorEl);
         text
           .setPlaceholder("20:00")
           .setValue(this.plugin.settings.meetingStartTime)
@@ -144,14 +149,22 @@ export class JwTimerSettingsTab extends PluginSettingTab {
             const [hStr, mStr] = trimmed.split(":");
             const h = Number(hStr);
             const m = Number(mStr);
-            if (
+            const valid =
               /^\d{1,2}:\d{2}$/.test(trimmed) &&
               h >= 0 && h <= 23 &&
-              m >= 0 && m <= 59
-            ) {
+              m >= 0 && m <= 59;
+            if (valid) {
+              errorEl.style.display = "none";
+              text.inputEl.removeAttribute("aria-invalid");
               this.plugin.settings.meetingStartTime = trimmed;
               await this.plugin.saveSettings();
               this.scheduleReload();
+            } else if (trimmed) {
+              errorEl.style.display = "";
+              text.inputEl.setAttribute("aria-invalid", "true");
+            } else {
+              errorEl.style.display = "none";
+              text.inputEl.removeAttribute("aria-invalid");
             }
           });
       });
@@ -165,14 +178,27 @@ export class JwTimerSettingsTab extends PluginSettingTab {
         text.inputEl.min = "1";
         text.inputEl.max = "15";
         text.inputEl.style.width = "4.5rem";
+        const errorEl = document.createElement("div");
+        errorEl.className = "jw-setting-error";
+        errorEl.textContent = "Must be between 1 and 15 minutes.";
+        errorEl.style.display = "none";
+        text.inputEl.insertAdjacentElement("afterend", errorEl);
         text
           .setValue(String(this.plugin.settings.openingSongMinutes))
           .onChange(async (value) => {
             const n = parseInt(value, 10);
             if (!isNaN(n) && n >= 1 && n <= 15) {
+              errorEl.style.display = "none";
+              text.inputEl.removeAttribute("aria-invalid");
               this.plugin.settings.openingSongMinutes = n;
               await this.plugin.saveSettings();
               this.scheduleReload();
+            } else if (value.trim()) {
+              errorEl.style.display = "";
+              text.inputEl.setAttribute("aria-invalid", "true");
+            } else {
+              errorEl.style.display = "none";
+              text.inputEl.removeAttribute("aria-invalid");
             }
           });
       });
@@ -241,13 +267,26 @@ export class JwTimerSettingsTab extends PluginSettingTab {
         text.inputEl.min = "1";
         text.inputEl.max = "10";
         text.inputEl.style.width = "4.5rem";
+        const errorEl = document.createElement("div");
+        errorEl.className = "jw-setting-error";
+        errorEl.textContent = "Must be between 1 and 10 seconds.";
+        errorEl.style.display = "none";
+        text.inputEl.insertAdjacentElement("afterend", errorEl);
         text
           .setValue(String(this.plugin.settings.alertSoundSec))
           .onChange(async (value) => {
             const n = parseInt(value, 10);
             if (!isNaN(n) && n >= 1 && n <= 10) {
+              errorEl.style.display = "none";
+              text.inputEl.removeAttribute("aria-invalid");
               this.plugin.settings.alertSoundSec = n;
               await this.plugin.saveSettings();
+            } else if (value.trim()) {
+              errorEl.style.display = "";
+              text.inputEl.setAttribute("aria-invalid", "true");
+            } else {
+              errorEl.style.display = "none";
+              text.inputEl.removeAttribute("aria-invalid");
             }
           });
       });
@@ -272,13 +311,26 @@ export class JwTimerSettingsTab extends PluginSettingTab {
         text.inputEl.min = "1";
         text.inputEl.max = "30";
         text.inputEl.style.width = "4.5rem";
+        const errorEl = document.createElement("div");
+        errorEl.className = "jw-setting-error";
+        errorEl.textContent = "Must be between 1 and 30 seconds.";
+        errorEl.style.display = "none";
+        text.inputEl.insertAdjacentElement("afterend", errorEl);
         text
           .setValue(String(this.plugin.settings.alertVibrateSec))
           .onChange(async (value) => {
             const n = parseInt(value, 10);
             if (!isNaN(n) && n >= 1 && n <= 30) {
+              errorEl.style.display = "none";
+              text.inputEl.removeAttribute("aria-invalid");
               this.plugin.settings.alertVibrateSec = n;
               await this.plugin.saveSettings();
+            } else if (value.trim()) {
+              errorEl.style.display = "";
+              text.inputEl.setAttribute("aria-invalid", "true");
+            } else {
+              errorEl.style.display = "none";
+              text.inputEl.removeAttribute("aria-invalid");
             }
           });
       });
