@@ -786,26 +786,24 @@ export class JwTimerView extends ItemView implements CardController {
     if (alertSound) this.playBeep(alertSoundSec);
     if (alertVibrate && "vibrate" in navigator) {
       try {
-        // Phone-call ring pattern: 800 ms vibrate, 200 ms pause, 800 ms vibrate,
-        // 1 200 ms silence (= one ring cycle of 3 000 ms).
-        // We repeat the ring cycle to fill the configured duration, then pass
-        // the full pattern to vibrate() in a single call so the browser handles
-        // the timing natively.
-        const ON1 = 800,
-          OFF1 = 200,
-          ON2 = 800,
-          SILENCE = 1200;
-        const cycleMs = ON1 + OFF1 + ON2 + SILENCE; // 3 000 ms
-        const totalMs = alertVibrateSec * 1000;
-        const fullCycles = Math.max(1, Math.floor(totalMs / cycleMs));
-        // Build a flat [on, off, on, off, …] array for the full duration.
-        const cycle: number[] = [ON1, OFF1, ON2, SILENCE];
-        const pattern: number[] = [];
-        for (let i = 0; i < fullCycles; i++) pattern.push(...cycle);
-        // Remove the trailing silence on the last cycle so the phone doesn't
-        // "vibrate" with nothing at the very end.
-        if (pattern.length > 0) pattern[pattern.length - 1] = 0;
-        navigator.vibrate(pattern);
+        // Phone-ring pattern: two short bursts per second, repeated for
+        // alertVibrateSec seconds.  Each 1 000 ms cycle = 250 ms buzz +
+        // 100 ms pause + 250 ms buzz + 400 ms silence.
+        // Single-number vibrate() calls are used instead of a pattern array
+        // because Android WebView only reliably honours the first element of
+        // a pattern array passed to navigator.vibrate().
+        const BUZZ = 250;
+        const PAUSE = 100;
+        const CYCLE = 1000; // total cycle length in ms
+        const rings = Math.max(1, alertVibrateSec); // 1 ring per second
+        let ring = 0;
+        const doRing = () => {
+          navigator.vibrate(BUZZ);
+          window.setTimeout(() => navigator.vibrate(BUZZ), BUZZ + PAUSE);
+          ring++;
+          if (ring < rings) window.setTimeout(doRing, CYCLE);
+        };
+        doRing();
       } catch {
         /* unsupported */
       }
