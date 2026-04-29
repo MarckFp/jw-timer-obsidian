@@ -8,6 +8,7 @@ To release: run `npm run release` — it seals `[Unreleased]`, commits, tags, an
 
 ## [Unreleased]
 
+- Added a script to automate the release process, including sealing the changelog and pushing the release to GitHub.
 - Added a script to automate changelog updates and version bumps based on git commits.
 
 ## [4.7.0] - 2026-04-29
