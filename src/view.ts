@@ -57,7 +57,7 @@ export class JwTimerView extends ItemView implements CardController {
   /** Currently visible card overlay, if any */
   activeOverlay: HTMLElement | null = null;
   private exportFooterEl!: HTMLElement;
-  private exportToastEl!: HTMLElement;
+  private shareCopyHandle: number | null = null;
   private shareBtnEl!: HTMLButtonElement;
 
   // Pagination state — initialised to current week in onOpen
@@ -182,12 +182,6 @@ export class JwTimerView extends ItemView implements CardController {
     });
     this.shareBtnEl.setAttr("aria-label", "Share meeting timings");
     this.shareBtnEl.addEventListener("click", () => void this.doShare());
-
-    this.exportToastEl = this.exportFooterEl.createDiv({
-      cls: "jw-timer-toast",
-    });
-    this.exportToastEl.setAttr("role", "status");
-    this.exportToastEl.setAttr("aria-live", "polite");
 
     this.tickHandle = window.setInterval(() => this.tick(), 250);
     this.viewYear = new Date().getFullYear();
@@ -1041,7 +1035,16 @@ export class JwTimerView extends ItemView implements CardController {
     const data = this.buildExportData();
     const text = buildExportText(data);
     const labels = this.getLabels();
-    await shareText(text, labels.copyOk, this.exportToastEl);
+    await shareText(text, () => {
+      // Flash the button label to "Copied!" then revert.
+      if (this.shareCopyHandle !== null)
+        window.clearTimeout(this.shareCopyHandle);
+      this.shareBtnEl.setText(labels.copyOk);
+      this.shareCopyHandle = window.setTimeout(() => {
+        this.shareCopyHandle = null;
+        this.shareBtnEl.setText(this.getLabels().shareBtn);
+      }, 2500);
+    });
   }
 
   // ─── Advice card ─────────────────────────────────────────────────────────────────────────────

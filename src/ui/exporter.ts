@@ -73,14 +73,15 @@ export function buildExportText(data: ExportData): string {
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 /**
- * Share text via the Web Share API (mobile).
- * Falls back to clipboard on desktop. Shows a brief toast on success.
+ * Share text via the Web Share API on mobile, clipboard on desktop.
+ * On desktop copy success, `onCopied` is called so the caller can flash
+ * its own UI (e.g. change the button label temporarily).
  */
 export async function shareText(
   text: string,
-  copyOk: string,
-  toastEl: HTMLElement,
+  onCopied: () => void,
 ): Promise<void> {
+  // Mobile: prefer the native share sheet.
   if (navigator.share) {
     try {
       await navigator.share({ text });
@@ -89,9 +90,10 @@ export async function shareText(
       // User cancelled or API failed — fall through to clipboard
     }
   }
+  // Desktop: copy to clipboard.
   try {
     await navigator.clipboard.writeText(text);
-    showToast(toastEl, copyOk);
+    onCopied();
   } catch {
     // Last resort: select a textarea
     const ta = document.createElement("textarea");
@@ -103,12 +105,6 @@ export async function shareText(
     ta.select();
     document.execCommand("copy");
     document.body.removeChild(ta);
-    showToast(toastEl, copyOk);
+    onCopied();
   }
-}
-
-function showToast(el: HTMLElement, message: string): void {
-  el.setText(message);
-  el.addClass("jw-timer-toast--visible");
-  window.setTimeout(() => el.removeClass("jw-timer-toast--visible"), 2500);
 }
