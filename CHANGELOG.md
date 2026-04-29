@@ -1,12 +1,14 @@
 # Changelog
 
 All notable changes to **JW Meeting Timer** are listed here.
-New entries are written by AI at the end of each development session.
-To release: rename `[Unreleased]` to `[x.y.z] – YYYY-MM-DD`, push the matching tag.
+New entries and version bumps are written automatically by AI on every commit.
+To release: run `npm run release` — it seals `[Unreleased]`, commits, tags, and pushes.
 
 ---
 
 ## [Unreleased]
+
+- Added a script to automate changelog updates and version bumps based on git commits.
 
 ## [4.7.0] - 2026-04-29
 
