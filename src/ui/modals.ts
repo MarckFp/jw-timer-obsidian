@@ -262,3 +262,63 @@ export class AddPartModal extends Modal {
     this.contentEl.empty();
   }
 }
+
+// ─── Share modal (mobile fallback) ────────────────────────────────────────────
+
+/**
+ * Shown on mobile when navigator.share is unavailable.
+ * Displays the export text in a full-height textarea with a copy button.
+ * The user can also tap "Select All" → "Share" to send via any app.
+ */
+export class ShareModal extends Modal {
+  constructor(
+    app: App,
+    private readonly text: string,
+    private readonly labels: UiLabels,
+    private readonly onCopied: () => void,
+  ) {
+    super(app);
+  }
+
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("jw-share-modal");
+
+    contentEl.createEl("h3", {
+      cls: "jw-share-modal-title",
+      text: this.labels.shareBtn,
+    });
+
+    contentEl.createEl("p", {
+      cls: "jw-share-modal-hint",
+      text: 'Tap and hold → "Select All" → "Share" to send via any app.',
+    });
+
+    const ta = contentEl.createEl("textarea", { cls: "jw-share-modal-text" });
+    ta.value = this.text;
+    ta.readOnly = true;
+    ta.rows = 12;
+
+    const footer = contentEl.createDiv({ cls: "jw-share-modal-footer" });
+    const copyBtn = footer.createEl("button", {
+      cls: "mod-cta",
+      text: this.labels.copyOk,
+    });
+    copyBtn.addEventListener("click", () => {
+      void navigator.clipboard.writeText(this.text).catch(() => {
+        ta.select();
+        document.execCommand("copy");
+      });
+      this.onCopied();
+      this.close();
+    });
+
+    // Auto-select all text so the OS share handle appears immediately
+    window.requestAnimationFrame(() => ta.select());
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+  }
+}

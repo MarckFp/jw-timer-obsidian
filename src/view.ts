@@ -1,10 +1,4 @@
-import {
-  ItemView,
-  MarkdownRenderer,
-  Notice,
-  Platform,
-  WorkspaceLeaf,
-} from "obsidian";
+import { ItemView, MarkdownRenderer, Platform, WorkspaceLeaf } from "obsidian";
 import type JwTimerPlugin from "./main";
 import type { WeeklySchedule, MeetingPart, MeetingSection } from "./types";
 import { cacheKey, currentWeekNumber, fetchWeekSchedule } from "./scraper";
@@ -24,7 +18,7 @@ import {
   timestampToHHMM,
   isoWeeksInYear,
 } from "./ui/helpers";
-import { AddPartModal } from "./ui/modals";
+import { AddPartModal, ShareModal } from "./ui/modals";
 import { renderCard } from "./ui/card-renderer";
 import type { CardController } from "./ui/card-renderer";
 import { buildExportText, copyToClipboard } from "./ui/exporter";
@@ -202,26 +196,12 @@ export class JwTimerView extends ItemView implements CardController {
           this.shareBtnEl.setText(this.getLabels().shareBtn);
         }, 2500);
       };
-      if (Platform.isMobile && typeof navigator.share === "function") {
-        // On mobile, call share() directly here (no await before this line)
-        // to preserve the browser's user-activation token.
-        navigator
-          .share({ title: "JW Meeting Timer", text })
-          .catch((e: unknown) => {
-            new Notice(
-              `Share failed (${e instanceof Error ? e.message : String(e)}) — copying instead`,
-              5000,
-            );
-            void copyToClipboard(text, onCopied);
-          });
+      if (Platform.isMobile) {
+        // navigator.share is not available in Obsidian's WebView.
+        // Open a modal with the text pre-selected so the user can tap
+        // “Select All” → “Share…” from the OS text-selection popup.
+        new ShareModal(this.app, text, this.getLabels(), onCopied).open();
       } else {
-        // Diagnostic: tell us what prevented share from being attempted.
-        if (Platform.isMobile) {
-          new Notice(
-            `navigator.share not available (isSecureCtx=${window.isSecureContext}) — copying`,
-            5000,
-          );
-        }
         void copyToClipboard(text, onCopied);
       }
     });

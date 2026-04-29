@@ -261,7 +261,9 @@ body.theme-dark {
 }
 
 @keyframes jw-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .jw-timer-status--error {
@@ -391,7 +393,9 @@ input[aria-invalid="true"] {
   border-radius: 5px;
   flex-shrink: 0;
   opacity: 1;
-  transition: color 120ms, background 120ms;
+  transition:
+    color 120ms,
+    background 120ms;
 }
 
 /* On hover-capable devices (mouse/trackpad) tone it down when idle */
@@ -505,6 +509,37 @@ input[aria-invalid="true"] {
 .jw-timer-edit-footer {
   display: flex;
   justify-content: flex-end;
+}
+
+/* ── Share modal (mobile) ──────────────────────────────────────────── */
+.jw-share-modal-title {
+  margin: 0 0 0.4rem;
+}
+
+.jw-share-modal-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0 0 0.7rem;
+}
+
+.jw-share-modal-text {
+  width: 100%;
+  min-height: 12rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: 0.82rem;
+  font-family: var(--font-monospace);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.jw-share-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
 }
 
 /* Running — on time */
