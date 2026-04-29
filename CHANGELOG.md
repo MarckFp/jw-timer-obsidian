@@ -8,6 +8,8 @@ To release: rename `[Unreleased]` to `[x.y.z] – YYYY-MM-DD`, push the matching
 
 ## [Unreleased]
 
+## [4.7.0] - 2026-04-29
+
 - Added **Clear cache** button in Settings to wipe all fetched weekly schedules — useful when a schedule looks wrong or stale.
 - Removed right-click context menu on cards. The gear button (⚙) is now the only way to open card options on all platforms.
 - Alert duration range (sound and vibration) tightened to **1–5 seconds** maximum.
