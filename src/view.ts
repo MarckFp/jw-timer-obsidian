@@ -1,4 +1,4 @@
-import { ItemView, MarkdownRenderer, WorkspaceLeaf } from "obsidian";
+import { ItemView, MarkdownRenderer, Platform, WorkspaceLeaf } from "obsidian";
 import type JwTimerPlugin from "./main";
 import type { WeeklySchedule, MeetingPart, MeetingSection } from "./types";
 import { cacheKey, currentWeekNumber, fetchWeekSchedule } from "./scraper";
@@ -196,10 +196,12 @@ export class JwTimerView extends ItemView implements CardController {
           this.shareBtnEl.setText(this.getLabels().shareBtn);
         }, 2500);
       };
-      if (typeof navigator.share === "function") {
-        // Call share() directly here — do NOT await before this line.
+      if (Platform.isMobile && typeof navigator.share === "function") {
+        // On mobile, call share() directly here (no await before this line)
+        // to preserve the browser's user-activation token.
+        // Include a title so Android share targets don't reject the payload.
         navigator
-          .share({ text })
+          .share({ title: "JW Meeting Timer", text })
           .catch(() => void copyToClipboard(text, onCopied));
       } else {
         void copyToClipboard(text, onCopied);
