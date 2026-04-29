@@ -51,6 +51,31 @@ jobs:
       - name: Build plugin
         run: npm run build
 
+      - name: Extract changelog notes for this version
+        id: changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"   # strip leading "v" if present
+          node -e "
+            const fs = require('fs');
+            if (!fs.existsSync('CHANGELOG.md')) { process.stdout.write(''); process.exit(0); }
+            const txt = fs.readFileSync('CHANGELOG.md', 'utf8');
+            const lines = txt.split('\n');
+            let capture = false;
+            const out = [];
+            for (const line of lines) {
+              if (line.startsWith('## [' + '$VERSION' + ']')) { capture = true; continue; }
+              if (capture && line.startsWith('## [')) break;
+              if (capture) out.push(line);
+            }
+            process.stdout.write(out.join('\n').trim());
+          " > /tmp/release_notes.md
+          # Fallback if the version wasn't found in CHANGELOG.md
+          if [ ! -s /tmp/release_notes.md ]; then
+            echo "Release ${GITHUB_REF_NAME}" > /tmp/release_notes.md
+          fi
+
       - name: Package release assets
         id: package
         shell: bash
@@ -84,7 +109,7 @@ jobs:
           echo "zip_name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
           echo "style_file=$STYLE_FILE" >> "$GITHUB_OUTPUT"
 
-      - name: Ensure release exists for tag
+      - name: Create or update release with changelog notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -92,11 +117,13 @@ jobs:
           TAG="${GITHUB_REF_NAME}"
 
           if gh release view "$TAG" > /dev/null 2>&1; then
-            echo "Release for $TAG already exists"
+            gh release edit "$TAG" \
+              --title "$TAG" \
+              --notes-file /tmp/release_notes.md
           else
             gh release create "$TAG" \
               --title "$TAG" \
-              --notes "Release $TAG"
+              --notes-file /tmp/release_notes.md
           fi
 
       - name: Upload assets to tag release
