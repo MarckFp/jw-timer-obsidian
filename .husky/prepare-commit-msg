@@ -1,1 +1,1 @@
-node scripts/update-changelog.mjs
+npx tsx scripts/update-changelog.ts

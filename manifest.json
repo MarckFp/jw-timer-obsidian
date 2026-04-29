@@ -1,7 +1,7 @@
 {
   "id": "jw-timer-sidebar",
   "name": "JW Meeting Timer",
-  "version": "2.0.0",
+  "version": "4.7.1",
   "minAppVersion": "1.5.0",
   "description": "Fetches the weekly Life and Ministry meeting programme from wol.jw.org and provides per-assignment countdown timers with visual states in a sidebar.",
   "author": "marcos",
