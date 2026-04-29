@@ -182,6 +182,9 @@ ${diffSnippet}`;
 
   // ── 5. Update CHANGELOG.md ────────────────────────────────────────────────────
 
+  const nextVersion = bumpVersion(lastTag, bump);
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
   if (changelog.includes("## [Unreleased]")) {
     const markerIdx = changelog.indexOf("## [Unreleased]");
     const afterHeader = changelog.indexOf("\n", markerIdx) + 1;
@@ -189,19 +192,28 @@ ${diffSnippet}`;
     while (insertAt < changelog.length && changelog[insertAt] === "\n")
       insertAt++;
 
-    const updated =
+    // Add new bullets, then seal [Unreleased] → [x.y.z] and prepend a fresh empty [Unreleased]
+    const withBullets =
       changelog.slice(0, afterHeader) +
       "\n" +
       bullets.join("\n") +
       "\n" +
       changelog.slice(insertAt);
 
+    const sealed = withBullets.replace(
+      "## [Unreleased]",
+      `## [${nextVersion}] – ${today}`,
+    );
+
+    // Insert a fresh [Unreleased] section before the newly sealed version
+    const sealedIdx = sealed.indexOf(`## [${nextVersion}]`);
+    const updated =
+      sealed.slice(0, sealedIdx) +
+      "## [Unreleased]\n\n" +
+      sealed.slice(sealedIdx);
+
     writeFileSync(CHANGELOG, updated, "utf8");
   }
-
-  // ── 6. Bump version in package.json + manifest.json ──────────────────────────
-
-  const nextVersion = bumpVersion(lastTag, bump);
 
   if (existsSync(PKG_JSON)) {
     const pkg = JSON.parse(readFileSync(PKG_JSON, "utf8")) as Record<

@@ -8,6 +8,10 @@ To release: run `npm run release` — it seals `[Unreleased]`, commits, tags, an
 
 ## [Unreleased]
 
+## [4.8.0] – 2026-04-29
+
+- Changed the release script to only tag and push the current commit, simplifying the release process.
+- Updated the changelog update script to automatically add new bullets and seal the changelog with the current date and version.
 - Changed the gear button icon to a vertical ellipsis for better visual representation.
 - Updated CSS styles for the gear button to improve layout and responsiveness.
 - Added a script to automate the release process, including sealing the changelog and pushing the release to GitHub.
