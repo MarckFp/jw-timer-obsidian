@@ -1,4 +1,4 @@
-import { App } from "obsidian";
+import { App, setIcon } from "obsidian";
 import type JwTimerPlugin from "../main";
 import type { MeetingPart, WeeklySchedule } from "../types";
 import type { UiLabels } from "./locale";
@@ -55,7 +55,7 @@ export function renderCard(
     text: `${Math.round(part.durationSec / 60)} min`,
   });
   const gearBtn = header.createEl("button", { cls: "jw-timer-gear-btn" });
-  gearBtn.setText("⚙︎"); // gear symbol, text variant (no colour emoji)
+  setIcon(gearBtn, "ellipsis-vertical");
   gearBtn.setAttr("aria-label", "Edit, move or delete this part");
   gearBtn.setAttr("tabindex", "0");
 

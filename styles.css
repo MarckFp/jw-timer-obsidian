@@ -384,18 +384,23 @@ input[aria-invalid="true"] {
   background: none;
   border: none;
   /* Minimum 44×44 px tap target */
-  padding: 0.35rem 0.45rem;
-  margin: -0.35rem -0.35rem 0 0.2rem;
+  padding: 0.35rem;
+  margin: -0.35rem -0.3rem 0 0.15rem;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: 1rem;
-  line-height: 1;
+  line-height: 0;
   border-radius: 5px;
   flex-shrink: 0;
   opacity: 1;
   transition:
     color 120ms,
     background 120ms;
+}
+
+.jw-timer-gear-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 /* On hover-capable devices (mouse/trackpad) tone it down when idle */
