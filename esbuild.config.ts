@@ -23,7 +23,6 @@ void (async () => {
     treeShaking: true,
     outfile: "main.js",
   });
-
   if (watch) {
     await context.watch();
     console.log("Watching for changes…");
