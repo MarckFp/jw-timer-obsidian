@@ -21,7 +21,7 @@ import {
 import { AddPartModal } from "./ui/modals";
 import { renderCard } from "./ui/card-renderer";
 import type { CardController } from "./ui/card-renderer";
-import { buildExportText, shareText } from "./ui/exporter";
+import { buildExportText, copyToClipboard } from "./ui/exporter";
 import type { ExportData } from "./ui/exporter";
 
 export const VIEW_TYPE_JW_TIMER = "jw-timer-sidebar";
@@ -181,7 +181,30 @@ export class JwTimerView extends ItemView implements CardController {
       text: this.getLabels().shareBtn,
     });
     this.shareBtnEl.setAttr("aria-label", "Share meeting timings");
-    this.shareBtnEl.addEventListener("click", () => void this.doShare());
+    this.shareBtnEl.addEventListener("click", () => {
+      // Build the text synchronously so navigator.share() can be called
+      // immediately within the click handler — Web Share API requires the
+      // call to happen in the same user-activation tick.
+      const text = buildExportText(this.buildExportData());
+      const onCopied = () => {
+        const labels = this.getLabels();
+        if (this.shareCopyHandle !== null)
+          window.clearTimeout(this.shareCopyHandle);
+        this.shareBtnEl.setText(labels.copyOk);
+        this.shareCopyHandle = window.setTimeout(() => {
+          this.shareCopyHandle = null;
+          this.shareBtnEl.setText(this.getLabels().shareBtn);
+        }, 2500);
+      };
+      if (typeof navigator.share === "function") {
+        // Call share() directly here — do NOT await before this line.
+        navigator
+          .share({ text })
+          .catch(() => void copyToClipboard(text, onCopied));
+      } else {
+        void copyToClipboard(text, onCopied);
+      }
+    });
 
     this.tickHandle = window.setInterval(() => this.tick(), 250);
     this.viewYear = new Date().getFullYear();
@@ -1029,22 +1052,6 @@ export class JwTimerView extends ItemView implements CardController {
       meetingStartTime: this.plugin.settings.meetingStartTime,
       sections,
     };
-  }
-
-  private async doShare(): Promise<void> {
-    const data = this.buildExportData();
-    const text = buildExportText(data);
-    const labels = this.getLabels();
-    await shareText(text, () => {
-      // Flash the button label to "Copied!" then revert.
-      if (this.shareCopyHandle !== null)
-        window.clearTimeout(this.shareCopyHandle);
-      this.shareBtnEl.setText(labels.copyOk);
-      this.shareCopyHandle = window.setTimeout(() => {
-        this.shareCopyHandle = null;
-        this.shareBtnEl.setText(this.getLabels().shareBtn);
-      }, 2500);
-    });
   }
 
   // ─── Advice card ─────────────────────────────────────────────────────────────────────────────

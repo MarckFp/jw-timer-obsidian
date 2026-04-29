@@ -73,24 +73,14 @@ export function buildExportText(data: ExportData): string {
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 /**
- * Share text via the Web Share API on mobile, clipboard on desktop.
- * On desktop copy success, `onCopied` is called so the caller can flash
- * its own UI (e.g. change the button label temporarily).
+ * Copy `text` to the clipboard and call `onCopied` on success.
+ * Used as the desktop/fallback path when the Web Share API is unavailable
+ * or the share was cancelled.
  */
-export async function shareText(
+export async function copyToClipboard(
   text: string,
   onCopied: () => void,
 ): Promise<void> {
-  // Mobile: prefer the native share sheet.
-  if (navigator.share) {
-    try {
-      await navigator.share({ text });
-      return;
-    } catch {
-      // User cancelled or API failed — fall through to clipboard
-    }
-  }
-  // Desktop: copy to clipboard.
   try {
     await navigator.clipboard.writeText(text);
     onCopied();
