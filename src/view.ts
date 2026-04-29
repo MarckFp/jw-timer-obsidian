@@ -1,4 +1,4 @@
-import { ItemView, MarkdownRenderer, Platform, WorkspaceLeaf } from "obsidian";
+import { ItemView, MarkdownRenderer, WorkspaceLeaf } from "obsidian";
 import type JwTimerPlugin from "./main";
 import type { WeeklySchedule, MeetingPart, MeetingSection } from "./types";
 import { cacheKey, currentWeekNumber, fetchWeekSchedule } from "./scraper";
@@ -18,7 +18,7 @@ import {
   timestampToHHMM,
   isoWeeksInYear,
 } from "./ui/helpers";
-import { AddPartModal, ShareModal } from "./ui/modals";
+import { AddPartModal } from "./ui/modals";
 import { renderCard } from "./ui/card-renderer";
 import type { CardController } from "./ui/card-renderer";
 import { buildExportText, copyToClipboard } from "./ui/exporter";
@@ -182,9 +182,6 @@ export class JwTimerView extends ItemView implements CardController {
     });
     this.shareBtnEl.setAttr("aria-label", "Share meeting timings");
     this.shareBtnEl.addEventListener("click", () => {
-      // Build the text synchronously so navigator.share() can be called
-      // immediately within the click handler — Web Share API requires the
-      // call to happen in the same user-activation tick.
       const text = buildExportText(this.buildExportData());
       const onCopied = () => {
         const labels = this.getLabels();
@@ -196,14 +193,7 @@ export class JwTimerView extends ItemView implements CardController {
           this.shareBtnEl.setText(this.getLabels().shareBtn);
         }, 2500);
       };
-      if (Platform.isMobile) {
-        // navigator.share is not available in Obsidian's WebView.
-        // Open a modal with the text pre-selected so the user can tap
-        // “Select All” → “Share…” from the OS text-selection popup.
-        new ShareModal(this.app, text, this.getLabels(), onCopied).open();
-      } else {
-        void copyToClipboard(text, onCopied);
-      }
+      void copyToClipboard(text, onCopied);
     });
 
     this.tickHandle = window.setInterval(() => this.tick(), 250);
