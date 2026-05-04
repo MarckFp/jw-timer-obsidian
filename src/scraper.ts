@@ -52,8 +52,8 @@ function parseDuration(text: string): number | null {
 
 // ─── Fetch helpers ────────────────────────────────────────────────────────────
 
-const FETCH_TIMEOUT_MS = 10_000;
-const MAX_RETRIES = 2;
+const FETCH_TIMEOUT_MS = 15_000;
+const MAX_RETRIES = 1;
 
 /**
  * Wraps requestUrl with a 10-second timeout and up to 2 automatic retries on
@@ -64,7 +64,10 @@ async function fetchWithRetry(
   extraHeaders: Record<string, string> = {},
 ): Promise<{ status: number; text: string } | null> {
   const headers: Record<string, string> = {
-    "User-Agent": "Mozilla/5.0 (compatible; JWTimerObsidian/2.0)",
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
     ...extraHeaders,
   };
 
@@ -113,12 +116,14 @@ async function fetchWithRetry(
  *                  When provided, an If-Modified-Since header is sent so the server can
  *                  respond with 304 and save bandwidth.
  */
+export type FetchError = "network" | "not-published" | "parse";
+
 export async function fetchWeekSchedule(
   locale: string,
   year: number,
   week: number,
   cachedAt?: number,
-): Promise<WeeklySchedule | null | "not-modified"> {
+): Promise<WeeklySchedule | "not-modified" | FetchError> {
   const conditionalHeaders: Record<string, string> = cachedAt
     ? { "If-Modified-Since": new Date(cachedAt).toUTCString() }
     : {};
@@ -126,7 +131,7 @@ export async function fetchWeekSchedule(
   // Step 1: fetch the meetings index page to find the MWB doc link
   const meetingsUrl = buildWolUrl(locale, year, week);
   const meetingsResp = await fetchWithRetry(meetingsUrl, conditionalHeaders);
-  if (!meetingsResp) return null;
+  if (!meetingsResp) return "network";
   if (meetingsResp.status === 304) return "not-modified";
   const meetingsHtml = meetingsResp.text;
 
@@ -137,14 +142,16 @@ export async function fetchWeekSchedule(
   while ((m = docLinkRe.exec(meetingsHtml)) !== null) {
     if (/\/\d{9,}$/.test(m[1])) docLinks.push(m[1]);
   }
-  if (docLinks.length === 0) return null;
+  if (docLinks.length === 0) return "not-published";
 
   // Step 2: fetch the MWB article page (no conditional header — always want full content)
   const docUrl = `https://wol.jw.org${docLinks[0]}`;
   const docResp = await fetchWithRetry(docUrl);
-  if (!docResp || docResp.status === 304) return null;
+  if (!docResp) return "network";
+  if (docResp.status === 304) return "network";
 
-  return parseDocPage(docResp.text, year, week);
+  const schedule = parseDocPage(docResp.text, year, week);
+  return schedule ?? "parse";
 }
 
 // ─── HTML utilities ───────────────────────────────────────────────────────────

@@ -457,10 +457,29 @@ export class JwTimerView extends ItemView implements CardController {
         // Server confirmed no change — refresh the cache TTL and reuse stale data
         schedule = { ...staleVersion, fetchedAt: Date.now() };
         this.plugin.cacheSchedule(this.weekKey, schedule);
-      } else if (fetchResult !== null && fetchResult !== "not-modified") {
+      } else if (
+        fetchResult !== "not-modified" &&
+        fetchResult !== "network" &&
+        fetchResult !== "not-published" &&
+        fetchResult !== "parse"
+      ) {
         schedule = fetchResult;
         this.plugin.cacheSchedule(this.weekKey, schedule);
         await this.plugin.saveSettings();
+      } else if (
+        fetchResult === "network" ||
+        fetchResult === "parse" ||
+        fetchResult === "not-published"
+      ) {
+        if (requestId !== this.loadRequestId) return;
+        const msg =
+          fetchResult === "network"
+            ? "Connection failed. Check your network and try again."
+            : fetchResult === "not-published"
+              ? "Schedule not published yet for this week. Try again later."
+              : "Could not read the schedule page. The site layout may have changed.";
+        this.setStatus("error", msg);
+        return;
       }
     }
 

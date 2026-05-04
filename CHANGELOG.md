@@ -8,6 +8,13 @@ To release: run `npm run release` — it seals `[Unreleased]`, commits, tags, an
 
 ## [Unreleased]
 
+## [4.9.0] – 2026-05-04
+
+- Changed fetch timeout from 10 seconds to 15 seconds
+- Changed maximum retries from 2 to 1
+- Added detailed error handling for network issues, unpublished schedules, and parsing errors
+- Updated User-Agent string for fetch requests
+- Changed return type of fetchWeekSchedule to include error states
 ## [4.8.0] – 2026-04-29
 
 - Changed the release script to only tag and push the current commit, simplifying the release process.
