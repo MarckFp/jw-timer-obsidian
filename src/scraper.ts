@@ -52,8 +52,8 @@ function parseDuration(text: string): number | null {
 
 // ─── Fetch helpers ────────────────────────────────────────────────────────────
 
-const FETCH_TIMEOUT_MS = 15_000;
-const MAX_RETRIES = 1;
+const FETCH_TIMEOUT_MS = 10_000;
+const MAX_RETRIES = 0;
 
 /**
  * Wraps requestUrl with a 10-second timeout and up to 2 automatic retries on
@@ -63,9 +63,10 @@ async function fetchWithRetry(
   url: string,
   extraHeaders: Record<string, string> = {},
 ): Promise<{ status: number; text: string } | null> {
+  // No custom User-Agent: Obsidian's native HTTP client (OkHttp on Android,
+  // NSURLSession on iOS) sends its own UA whose TLS fingerprint matches.
+  // Overriding with a desktop UA causes JA3 mismatch → CDN bot detection.
   const headers: Record<string, string> = {
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
     ...extraHeaders,

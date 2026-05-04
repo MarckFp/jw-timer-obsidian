@@ -8,6 +8,11 @@ To release: run `npm run release` — it seals `[Unreleased]`, commits, tags, an
 
 ## [Unreleased]
 
+## [4.9.1] – 2026-05-04
+
+- Changed fetch timeout from 15 seconds to 10 seconds
+- Changed maximum retries from 1 to 0
+- Removed custom User-Agent header to prevent CDN bot detection issues
 ## [4.9.0] – 2026-05-04
 
 - Changed fetch timeout from 10 seconds to 15 seconds
