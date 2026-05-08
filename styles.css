@@ -471,6 +471,24 @@ input[aria-invalid="true"] {
   color: #fff;
 }
 
+@media (max-width: 480px) {
+  .jw-timer-card-overlay {
+    gap: 0.45rem;
+    padding: 0.45rem;
+  }
+
+  .jw-timer-overlay-btn {
+    min-height: 2.5rem;
+    font-size: 0.8rem;
+  }
+
+  .jw-timer-overlay-btn--move {
+    min-height: 1.25rem;
+    min-width: 2rem;
+    font-size: 0.8rem;
+  }
+}
+
 /* ─── Edit-part modal form ───────────────────────────────────────────────── */
 
 .jw-timer-edit-title {
