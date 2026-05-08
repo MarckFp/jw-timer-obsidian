@@ -485,7 +485,7 @@ input[aria-invalid="true"] {
   .jw-timer-overlay-btn--move {
     min-height: 1.25rem;
     min-width: 2rem;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
   }
 }
 
