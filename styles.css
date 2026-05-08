@@ -479,13 +479,13 @@ input[aria-invalid="true"] {
 
   .jw-timer-overlay-btn {
     min-height: 2.5rem;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
   }
 
   .jw-timer-overlay-btn--move {
-    min-height: 1.35rem;
-    min-width: 2.2rem;
-    font-size: 0.9rem;
+    min-height: 1.25rem;
+    min-width: 2rem;
+    font-size: 0.875rem;
   }
 }
 
