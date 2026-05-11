@@ -56,7 +56,7 @@ export function renderCard(
   });
   const gearBtn = header.createEl("button", { cls: "jw-timer-gear-btn" });
   setIcon(gearBtn, "ellipsis-vertical");
-  gearBtn.setAttr("aria-label", "Edit, move or delete this part");
+  gearBtn.setAttr("aria-label", labels.menuBtnLabel);
   gearBtn.setAttr("tabindex", "0");
 
   // Scheduled end time + actual stopped-at time
@@ -87,12 +87,12 @@ export function renderCard(
     cls: "jw-timer-btn jw-timer-btn-play",
     text: labels.play,
   });
-  playBtn.setAttr("aria-label", "Start timer");
+  playBtn.setAttr("aria-label", labels.play);
   const resetBtn = controls.createEl("button", {
     cls: "jw-timer-btn jw-timer-btn-reset",
     text: labels.reset,
   });
-  resetBtn.setAttr("aria-label", "Reset timer");
+  resetBtn.setAttr("aria-label", labels.reset);
 
   playBtn.addEventListener("click", () => ctx.handlePlayPause(part));
   resetBtn.addEventListener("click", () =>
@@ -156,7 +156,7 @@ export function renderCard(
     // Clicking the preview switches to edit
     previewEl.setAttribute("role", "button");
     previewEl.setAttribute("tabindex", "0");
-    previewEl.setAttribute("aria-label", "Edit note");
+    previewEl.setAttribute("aria-label", labels.editNote);
     previewEl.addEventListener("click", () => activateEdit());
     previewEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -204,12 +204,12 @@ export function renderCard(
     cls: "jw-timer-overlay-btn jw-timer-overlay-btn--move",
     text: "↑",
   });
-  moveUpBtn.setAttr("aria-label", "Move part up");
+  moveUpBtn.setAttr("aria-label", labels.moveUp);
   const moveDownBtn = moveRow.createEl("button", {
     cls: "jw-timer-overlay-btn jw-timer-overlay-btn--move",
     text: "↓",
   });
-  moveDownBtn.setAttr("aria-label", "Move part down");
+  moveDownBtn.setAttr("aria-label", labels.moveDown);
   const deleteBtn = overlay.createEl("button", {
     cls: "jw-timer-overlay-btn jw-timer-overlay-btn--delete",
     text: labels.deleteOverlay,
@@ -332,12 +332,12 @@ export function renderAdviceCard(
     cls: "jw-timer-btn jw-timer-btn-play",
     text: labels.play,
   });
-  playBtn.setAttr("aria-label", "Start advice timer");
+  playBtn.setAttr("aria-label", labels.play);
   const resetBtn = controls.createEl("button", {
     cls: "jw-timer-btn jw-timer-btn-reset",
     text: labels.reset,
   });
-  resetBtn.setAttr("aria-label", "Reset advice timer");
+  resetBtn.setAttr("aria-label", labels.reset);
 
   playBtn.addEventListener("click", () => ctx.handleAdvicePlayPause(part));
   resetBtn.addEventListener("click", () =>

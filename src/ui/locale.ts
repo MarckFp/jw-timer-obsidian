@@ -30,6 +30,16 @@ export interface UiLabels {
   shareBtn: string;
   copyOk: string;
   notePlaceholder: string;
+  // Navigation & icon-button tooltips
+  menuBtnLabel: string;
+  moveUp: string;
+  moveDown: string;
+  editNote: string;
+  prevWeek: string;
+  nextWeek: string;
+  jumpToday: string;
+  refresh: string;
+  addStopwatch: string;
 }
 
 // prettier-ignore
@@ -44,6 +54,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Section",      fieldAdvice: "Advice timer (1 min)",
     placeholder: "Part name…",
     shareBtn: "Share",  copyOk: "Copied!",  notePlaceholder: "Note…",
+    menuBtnLabel: "Options", moveUp: "Move up", moveDown: "Move down", editNote: "Edit note",
+    prevWeek: "Previous week", nextWeek: "Next week", jumpToday: "Go to today", refresh: "Refresh", addStopwatch: "Add stopwatch",
   },
   "lp-s": {
     play: "Iniciar",        pause: "Pausar",      reset: "Reiniciar",       resetAll: "Reiniciar todo",
@@ -55,6 +67,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Sección",            fieldAdvice: "Tiempo de consejo (1 min)",
     placeholder: "Nombre de la parte…",
     shareBtn: "Compartir",  copyOk: "¡Copiado!",  notePlaceholder: "Nota…",
+    menuBtnLabel: "Opciones", moveUp: "Subir", moveDown: "Bajar", editNote: "Editar nota",
+    prevWeek: "Semana anterior", nextWeek: "Semana siguiente", jumpToday: "Ir a hoy", refresh: "Actualizar", addStopwatch: "Añadir cronómetro",
   },
   "lp-f": {
     play: "Démarrer",       pause: "Pause",        reset: "Réinit.",         resetAll: "Tout réinit.",
@@ -65,8 +79,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldTitle: "Titre",                fieldDuration: "Durée (min)",
     fieldSection: "Section",            fieldAdvice: "Chrono conseil (1 min)",
     placeholder: "Nom de la partie…",
-    shareBtn: "Partager",  copyOk: "Copié !",  notePlaceholder: "Note…",
-  },
+    shareBtn: "Partager",  copyOk: "Copié !",  notePlaceholder: "Note…",    menuBtnLabel: "Options", moveUp: "Monter", moveDown: "Descendre", editNote: "Modifier la note",
+    prevWeek: "Semaine précédente", nextWeek: "Semaine suivante", jumpToday: "Aller à aujourd'hui", refresh: "Actualiser", addStopwatch: "Ajouter un chrono",  },
   "lp-t": {
     play: "Iniciar",        pause: "Pausar",       reset: "Reiniciar",       resetAll: "Reiniciar tudo",
     confirm: "Confirmar?",  today: "Hoje",         advice: "Conselho",       end: "Fim",              stopped: "Parado",
@@ -77,6 +91,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Seção",              fieldAdvice: "Tempo de conselho (1 min)",
     placeholder: "Nome da parte…",
     shareBtn: "Partilhar",  copyOk: "Copiado!",  notePlaceholder: "Nota…",
+    menuBtnLabel: "Opções", moveUp: "Mover para cima", moveDown: "Mover para baixo", editNote: "Editar nota",
+    prevWeek: "Semana anterior", nextWeek: "Próxima semana", jumpToday: "Ir para hoje", refresh: "Atualizar", addStopwatch: "Adicionar cronómetro",
   },
   "lp-x": {
     play: "Start",          pause: "Pause",        reset: "Zurücksetzen",    resetAll: "Alles zurücksetzen",
@@ -88,6 +104,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Abschnitt",          fieldAdvice: "Ratgeber-Timer (1 min)",
     placeholder: "Teilname…",
     shareBtn: "Teilen",  copyOk: "Kopiert!",  notePlaceholder: "Notiz…",
+    menuBtnLabel: "Optionen", moveUp: "Nach oben", moveDown: "Nach unten", editNote: "Notiz bearbeiten",
+    prevWeek: "Vorherige Woche", nextWeek: "Nächste Woche", jumpToday: "Zu heute", refresh: "Aktualisieren", addStopwatch: "Stoppuhr hinzufügen",
   },
   "lp-i": {
     play: "Avvia",          pause: "Pausa",        reset: "Azzera",          resetAll: "Azzera tutto",
@@ -99,6 +117,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Sezione",            fieldAdvice: "Timer consiglio (1 min)",
     placeholder: "Nome parte…",
     shareBtn: "Condividi",  copyOk: "Copiato!",  notePlaceholder: "Nota…",
+    menuBtnLabel: "Opzioni", moveUp: "Su", moveDown: "Giù", editNote: "Modifica nota",
+    prevWeek: "Settimana precedente", nextWeek: "Settimana successiva", jumpToday: "Vai a oggi", refresh: "Aggiorna", addStopwatch: "Aggiungi cronometro",
   },
   "lp-u": {
     play: "Старт",          pause: "Пауза",        reset: "Сброс",           resetAll: "Сбросить всё",
@@ -110,6 +130,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Раздел",             fieldAdvice: "Таймер совета (1 мин)",
     placeholder: "Название части…",
     shareBtn: "Поделиться",  copyOk: "Скопировано!",  notePlaceholder: "Заметка…",
+    menuBtnLabel: "Параметры", moveUp: "Вверх", moveDown: "Вниз", editNote: "Редактировать заметку",
+    prevWeek: "Предыдущая неделя", nextWeek: "Следующая неделя", jumpToday: "К сегодняшнему", refresh: "Обновить", addStopwatch: "Добавить секундомер",
   },
   "lp-m": {
     play: "Start",          pause: "Pauză",        reset: "Resetare",        resetAll: "Resetare totală",
@@ -121,6 +143,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Secțiune",           fieldAdvice: "Temporizator sfat (1 min)",
     placeholder: "Numele părții…",
     shareBtn: "Distribuie",  copyOk: "Copiat!",  notePlaceholder: "Notă…",
+    menuBtnLabel: "Opțiuni", moveUp: "Sus", moveDown: "Jos", editNote: "Editare notă",
+    prevWeek: "Săptămâna anterioară", nextWeek: "Săptămâna următoare", jumpToday: "Mergi la azi", refresh: "Actualizare", addStopwatch: "Adaugă cronometru",
   },
   "lp-bl": {
     play: "Старт",          pause: "Пауза",        reset: "Нулиране",        resetAll: "Нулиране на всичко",
@@ -132,6 +156,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Раздел",             fieldAdvice: "Таймер съвет (1 мин)",
     placeholder: "Наименование…",
     shareBtn: "Сподели се",  copyOk: "Копирано!",  notePlaceholder: "Бележка…",
+    menuBtnLabel: "Опции", moveUp: "Нагоре", moveDown: "Надолу", editNote: "Редактиране на бележка",
+    prevWeek: "Предишна седмица", nextWeek: "Следваща седмица", jumpToday: "Към днес", refresh: "Обновяване", addStopwatch: "Добавяне на хронометър",
   },
   "lp-o": {
     play: "Start",          pause: "Pauze",        reset: "Reset",           resetAll: "Alles resetten",
@@ -143,6 +169,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Sectie",             fieldAdvice: "Advies-timer (1 min)",
     placeholder: "Naam onderdeel…",
     shareBtn: "Delen",  copyOk: "Gekopieerd!",  notePlaceholder: "Notitie…",
+    menuBtnLabel: "Opties", moveUp: "Omhoog", moveDown: "Omlaag", editNote: "Notitie bewerken",
+    prevWeek: "Vorige week", nextWeek: "Volgende week", jumpToday: "Naar vandaag", refresh: "Vernieuwen", addStopwatch: "Stopwatch toevoegen",
   },
   "lp-p": {
     play: "Start",          pause: "Pauza",        reset: "Resetuj",         resetAll: "Resetuj wszystko",
@@ -154,6 +182,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Sekcja",             fieldAdvice: "Timer porady (1 min)",
     placeholder: "Nazwa części…",
     shareBtn: "Udostępnij",  copyOk: "Skopiowano!",  notePlaceholder: "Notatka…",
+    menuBtnLabel: "Opcje", moveUp: "Do góry", moveDown: "Do dołu", editNote: "Edytuj notatkę",
+    prevWeek: "Poprzedni tydzień", nextWeek: "Następny tydzień", jumpToday: "Przejdź do dziś", refresh: "Odśwież", addStopwatch: "Dodaj stoper",
   },
   "lp-j": {
     play: "スタート",        pause: "一時停止",      reset: "リセット",         resetAll: "全リセット",
@@ -165,6 +195,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "セクション",          fieldAdvice: "アドバイスタイマー（1分）",
     placeholder: "部分の名前…",
     shareBtn: "共有",  copyOk: "コピーしました",  notePlaceholder: "メモ…",
+    menuBtnLabel: "オプション", moveUp: "上へ", moveDown: "下へ", editNote: "メモを編集",
+    prevWeek: "前の週", nextWeek: "次の週", jumpToday: "今日へ", refresh: "更新", addStopwatch: "ストップウォッチを追加",
   },
   "lp-ko": {
     play: "시작",           pause: "일시정지",       reset: "초기화",          resetAll: "전체 초기화",
@@ -176,6 +208,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "섹션",                fieldAdvice: "조언 타이머 (1분)",
     placeholder: "부분 이름…",
     shareBtn: "공유",  copyOk: "복사됨!",  notePlaceholder: "메모…",
+    menuBtnLabel: "옵션", moveUp: "위로", moveDown: "아래로", editNote: "메모 편집",
+    prevWeek: "이전 주", nextWeek: "다음 주", jumpToday: "오늘로 이동", refresh: "새로 고침", addStopwatch: "스톱워치 추가",
   },
   "lp-chs": {
     play: "开始",           pause: "暂停",          reset: "重置",            resetAll: "全部重置",
@@ -187,6 +221,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "部分",                fieldAdvice: "指导计时（1分钟）",
     placeholder: "部分名称…",
     shareBtn: "分享",  copyOk: "已复制!",  notePlaceholder: "备注…",
+    menuBtnLabel: "选项", moveUp: "上移", moveDown: "下移", editNote: "编辑备注",
+    prevWeek: "上一周", nextWeek: "下一周", jumpToday: "转到今天", refresh: "刷新", addStopwatch: "添加秒表",
   },
   "lp-a": {
     play: "تشغيل",      pause: "إيقاف مؤقت",  reset: "إعادة تعيين",    resetAll: "إعادة تعيين الكل",
@@ -198,6 +234,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "القسم",              fieldAdvice: "مؤقت النصيحة (دقيقة)",
     placeholder: "اسم الجزء…",
     shareBtn: "مشاركة",  copyOk: "تم النسخ!",  notePlaceholder: "ملاحظة…",
+    menuBtnLabel: "خيارات", moveUp: "للأعلى", moveDown: "للأسفل", editNote: "تعديل الملاحظة",
+    prevWeek: "الأسبوع السابق", nextWeek: "الأسبوع التالي", jumpToday: "انتقل إلى اليوم", refresh: "تحديث", addStopwatch: "إضافة ساعة إيقاف",
   },
   "lp-z": {
     play: "Starta",         pause: "Paus",          reset: "Nollställ",      resetAll: "Nollställ alla",
@@ -209,6 +247,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Avsnitt",            fieldAdvice: "Råd-timer (1 min)",
     placeholder: "Delens namn…",
     shareBtn: "Dela",  copyOk: "Kopierat!",  notePlaceholder: "Anteckning…",
+    menuBtnLabel: "Alternativ", moveUp: "Flytta upp", moveDown: "Flytta ned", editNote: "Redigera anteckning",
+    prevWeek: "Föregående vecka", nextWeek: "Nästa vecka", jumpToday: "Gå till idag", refresh: "Uppdatera", addStopwatch: "Lägg till tidtagare",
   },
   "lp-tk": {
     play: "Başlat",       pause: "Duraklat",    reset: "Sıfırla",    resetAll: "Tümünü sıfırla",
@@ -220,6 +260,8 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     fieldSection: "Bölüm",             fieldAdvice: "Tavsiye zamanlayıcı (1 dk)",
     placeholder: "Bölüm adı…",
     shareBtn: "Paylaş",  copyOk: "Kopyalıktı!",  notePlaceholder: "Not…",
+    menuBtnLabel: "Seçenekler", moveUp: "Yukarı taşı", moveDown: "Aşağı taşı", editNote: "Notu düzenle",
+    prevWeek: "Önceki hafta", nextWeek: "Sonraki hafta", jumpToday: "Bugüne git", refresh: "Yenile", addStopwatch: "Kronometre ekle",
   },
 };
 

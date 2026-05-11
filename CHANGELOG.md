@@ -8,6 +8,11 @@ To release: run `npm run release` — it seals `[Unreleased]`, commits, tags, an
 
 ## [Unreleased]
 
+## [4.10.0] – 2026-05-11
+
+- Added new localization labels for menu button and navigation actions
+- Updated aria-labels for buttons to use localized labels
+- Improved accessibility by enhancing button descriptions
 ## [4.9.1] – 2026-05-04
 
 - Changed fetch timeout from 15 seconds to 10 seconds

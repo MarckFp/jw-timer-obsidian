@@ -92,18 +92,18 @@ export class JwTimerView extends ItemView implements CardController {
       cls: "jw-timer-nav-btn",
       text: "◀",
     });
-    prevBtn.setAttr("aria-label", "Previous week");
+    prevBtn.setAttr("aria-label", this.getLabels().prevWeek);
     this.navLabelEl = navEl.createDiv({ cls: "jw-timer-nav-label" });
     const nextBtn = navEl.createEl("button", {
       cls: "jw-timer-nav-btn",
       text: "▶",
     });
-    nextBtn.setAttr("aria-label", "Next week");
+    nextBtn.setAttr("aria-label", this.getLabels().nextWeek);
     this.todayBtn = navEl.createEl("button", {
       cls: "jw-timer-nav-today",
       text: this.getLabels().today,
     });
-    this.todayBtn.setAttr("aria-label", "Jump to current week");
+    this.todayBtn.setAttr("aria-label", this.getLabels().jumpToday);
     this.todayBtn.style.display = "none";
     prevBtn.addEventListener("click", () => void this.navigateWeek(-1));
     nextBtn.addEventListener("click", () => void this.navigateWeek(+1));
@@ -115,7 +115,7 @@ export class JwTimerView extends ItemView implements CardController {
       cls: "jw-timer-stale-refresh",
       text: "↻",
     });
-    staleRefreshBtn.setAttr("aria-label", "Re-fetch schedule from wol.jw.org");
+    staleRefreshBtn.setAttr("aria-label", this.getLabels().refresh);
     staleRefreshBtn.addEventListener(
       "click",
       () => void this.refetchSchedule(),
@@ -136,7 +136,7 @@ export class JwTimerView extends ItemView implements CardController {
       cls: "jw-timer-btn jw-timer-btn-add",
       text: "+",
     });
-    addPartBtn.setAttr("aria-label", "Add new stopwatch");
+    addPartBtn.setAttr("aria-label", this.getLabels().addStopwatch);
     addPartBtn.addEventListener("click", () => this.handleAddPart());
 
     // ── Status + list ────────────────────────────────────────────────────────────────────
@@ -180,7 +180,7 @@ export class JwTimerView extends ItemView implements CardController {
       cls: "jw-timer-btn jw-timer-export-btn jw-timer-export-btn--full",
       text: this.getLabels().shareBtn,
     });
-    this.shareBtnEl.setAttr("aria-label", "Share meeting timings");
+    this.shareBtnEl.setAttr("aria-label", this.getLabels().shareBtn);
     this.shareBtnEl.addEventListener("click", () => {
       const text = buildExportText(this.buildExportData());
       const onCopied = () => {
@@ -973,13 +973,10 @@ export class JwTimerView extends ItemView implements CardController {
     // Play/pause button label
     if (status === "running") {
       refs.playBtn.setText(labels.pause);
-      refs.playBtn.setAttr("aria-label", "Pause timer");
+      refs.playBtn.setAttr("aria-label", labels.pause);
     } else {
       refs.playBtn.setText(labels.play);
-      refs.playBtn.setAttr(
-        "aria-label",
-        status === "paused" ? "Resume timer" : "Start timer",
-      );
+      refs.playBtn.setAttr("aria-label", labels.play);
     }
   }
 

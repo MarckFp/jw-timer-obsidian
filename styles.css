@@ -398,8 +398,8 @@ input[aria-invalid="true"] {
 }
 
 .jw-timer-gear-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   display: block;
 }
 
@@ -448,10 +448,10 @@ input[aria-invalid="true"] {
 
 .jw-timer-overlay-btn {
   flex: 1;
-  min-height: 3.5rem;
+  min-height: 2.5rem;
   border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   transition: filter 100ms;
@@ -936,6 +936,7 @@ input[aria-invalid="true"] {
   font-family: inherit;
   background: transparent;
   border: none;
+  border-radius: 2px;
   color: var(--text-muted);
   transition:
     border-color 120ms,
@@ -960,7 +961,7 @@ input[aria-invalid="true"] {
   font-size: 0.78rem;
   color: var(--text-muted);
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 2px;
   transition: background 100ms;
 }
 
