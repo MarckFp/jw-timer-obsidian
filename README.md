@@ -50,7 +50,7 @@ A timer sidebar will open automatically. A settings panel appears under **Settin
 
 ## Manual installation (advanced)
 
-1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/YOUR_USERNAME/jw-timer-obsidian/releases).
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/MarckFp/jw-timer-obsidian/releases).
 2. In your vault, navigate to `.obsidian/plugins/` and create a folder named `jw-timer-sidebar`.
 3. Copy the three files into that folder.
 4. Restart Obsidian, then enable the plugin under **Settings** → **Community plugins**.

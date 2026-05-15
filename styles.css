@@ -18,9 +18,7 @@ body.theme-dark {
 
 /* ─── Utility ────────────────────────────────────────────────────────────── */
 
-.is-hidden {
-  display: none !important;
-}
+/* defined at end of file — wins by cascade order without !important */
 
 /* ─── Root ───────────────────────────────────────────────────────────────── */
 
@@ -420,12 +418,20 @@ input[aria-invalid="true"] {
     opacity: 1;
     color: var(--text-muted);
   }
+  /* Boost specificity to 0,3,0 so direct hover wins over card:hover rule */
+  .jw-timer-card .jw-timer-gear-btn:hover,
+  .jw-timer-card .jw-timer-gear-btn:focus-visible {
+    opacity: 1;
+    color: var(--text-normal);
+    background: var(--background-modifier-hover);
+    outline: none;
+  }
 }
 
-.jw-timer-gear-btn:hover,
+/* Touch/keyboard focus on non-hover devices */
 .jw-timer-gear-btn:focus-visible {
-  opacity: 1 !important;
-  color: var(--text-normal) !important;
+  opacity: 1;
+  color: var(--text-normal);
   background: var(--background-modifier-hover);
   outline: none;
 }
@@ -474,7 +480,7 @@ input[aria-invalid="true"] {
 
 .jw-timer-overlay-btn--delete {
   background: var(--color-red);
-  color: #fff;
+  color: #ffffff;
 }
 
 @media (max-width: 480px) {
@@ -636,6 +642,7 @@ input[aria-invalid="true"] {
   );
   border-left-color: color-mix(in srgb, var(--color-red) 70%, transparent);
 }
+/* Paused/stopped advice card keeps yellow tint, overrides any broad paused-state rules */
 .jw-timer-card--advice[data-running="false"][data-state="ok"],
 .jw-timer-card--advice[data-running="false"][data-state="warn"],
 .jw-timer-card--advice[data-running="false"][data-state="over"] {
@@ -644,13 +651,6 @@ input[aria-invalid="true"] {
     var(--color-yellow) 12%,
     var(--background-secondary)
   );
-  border-left-color: color-mix(in srgb, var(--color-yellow) 55%, transparent);
-}
-
-/* Override the broad paused selector so advice card keeps its yellow tint, not blue */
-.jw-timer-card--advice[data-running="false"][data-state="ok"],
-.jw-timer-card--advice[data-running="false"][data-state="warn"],
-.jw-timer-card--advice[data-running="false"][data-state="over"] {
   border-color: unset;
   border-left: 3px solid
     color-mix(in srgb, var(--color-yellow) 55%, transparent);
@@ -833,24 +833,26 @@ input[aria-invalid="true"] {
   border-color: var(--interactive-accent-hover);
 }
 
-/* Reset button in pending-confirm state */
-.jw-timer-btn--confirm {
+/* Reset button in pending-confirm state — use higher specificity to avoid !important */
+.jw-timer-btn.jw-timer-btn--confirm:not(:disabled),
+.jw-timer-btn-reset-all.jw-timer-btn--confirm:not(:disabled) {
   background: color-mix(
     in srgb,
     var(--color-red) 12%,
     var(--background-secondary)
-  ) !important;
-  border-color: var(--color-red) !important;
-  color: var(--color-red) !important;
+  );
+  border-color: var(--color-red);
+  color: var(--color-red);
   font-weight: 700;
 }
 
-.jw-timer-btn--confirm:hover {
+.jw-timer-btn.jw-timer-btn--confirm:hover:not(:disabled),
+.jw-timer-btn-reset-all.jw-timer-btn--confirm:hover:not(:disabled) {
   background: color-mix(
     in srgb,
     var(--color-red) 22%,
     var(--background-secondary)
-  ) !important;
+  );
 }
 
 /* ─── Add-part toolbar button ────────────────────────────────────────────── */
@@ -1045,4 +1047,10 @@ input[aria-invalid="true"] {
 
 .jw-timer-toast--visible {
   opacity: 1;
+}
+
+/* ─── Utility (last so cascade order wins without !important) ───────── */
+
+.is-hidden {
+  display: none;
 }

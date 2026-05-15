@@ -8,6 +8,13 @@ To release: run `npm run release` — it seals `[Unreleased]`, commits, tags, an
 
 ## [Unreleased]
 
+## [4.11.2] – 2026-05-15
+
+- Changed CSS specificity for timer gear button hover and focus states
+- Removed unnecessary !important declarations from various button styles
+- Added utility class for hiding elements without using !important
+- Updated delete button text color to use a hex value
+- Modified advice card styles to maintain yellow tint when paused or stopped
 ## [4.11.1] – 2026-05-15
 
 - Formatted code for better readability in esbuild.config.ts
