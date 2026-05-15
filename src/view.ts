@@ -1015,10 +1015,10 @@ export class JwTimerView extends ItemView implements CardController {
       "closing",
     ];
     const langKey = this.getLang();
-    const [openingLabel, closingLabel] = (LOCALE_OPENING_CLOSING[langKey] ?? [
+    const [openingLabel, closingLabel] = LOCALE_OPENING_CLOSING[langKey] ?? [
       "Opening",
       "Closing",
-    ]);
+    ];
     const sectionLabels: Record<string, string> = {
       ...SECTION_FALLBACK,
       ...(this.schedule?.sectionLabels ?? {}),

@@ -8,6 +8,10 @@ To release: run `npm run release` — it seals `[Unreleased]`, commits, tags, an
 
 ## [Unreleased]
 
+## [4.11.1] – 2026-05-15
+
+- Formatted code for better readability in esbuild.config.ts
+- Updated destructuring assignment in view.ts for improved clarity
 ## [4.11.0] – 2026-05-15
 
 - Added exclusion for Node.js built-in modules from the bundle

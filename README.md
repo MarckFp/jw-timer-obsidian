@@ -151,9 +151,3 @@ src/
     ├── card-renderer.ts  renderCard / renderAdviceCard (CardController pattern)
     └── exporter.ts    Export-to-text (share / clipboard) logic
 ```
-
----
-
-## License
-
-MIT
