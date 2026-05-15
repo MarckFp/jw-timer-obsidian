@@ -59,9 +59,9 @@ export class JwTimerSettingsTab extends PluginSettingTab {
   private scheduleReload(): void {
     if (this.reloadDebounceHandle !== null)
       window.clearTimeout(this.reloadDebounceHandle);
-    this.reloadDebounceHandle = window.setTimeout(async () => {
+    this.reloadDebounceHandle = window.setTimeout(() => {
       this.reloadDebounceHandle = null;
-      await this.plugin.reloadView();
+      void this.plugin.reloadView();
     }, 300);
   }
 
@@ -86,7 +86,7 @@ export class JwTimerSettingsTab extends PluginSettingTab {
     containerEl.empty();
     const L = this.getLabels();
 
-    containerEl.createEl("h2", { text: L.pageTitle });
+    new Setting(containerEl).setName(L.pageTitle).setHeading();
 
     // ── Language / locale ────────────────────────────────────────────────────
     const knownValues = WOL_LOCALES.map(([, v]) => v);
@@ -136,11 +136,11 @@ export class JwTimerSettingsTab extends PluginSettingTab {
       .setName(L.startTimeName)
       .setDesc(L.startTimeDesc)
       .addText((text) => {
-        const errorEl = document.createElement("div");
+        const errorEl = activeDocument.createElement("div");
         errorEl.className = "jw-setting-error";
         errorEl.textContent =
           "Invalid time — use HH:MM (e.g. 20:00). Hours 0–23, minutes 0–59.";
-        errorEl.style.display = "none";
+        errorEl.addClass("is-hidden");
         text.inputEl.insertAdjacentElement("afterend", errorEl);
         text
           .setPlaceholder("20:00")
@@ -157,16 +157,17 @@ export class JwTimerSettingsTab extends PluginSettingTab {
               m >= 0 &&
               m <= 59;
             if (valid) {
-              errorEl.style.display = "none";
+              errorEl.removeClass("is-hidden");
+              errorEl.addClass("is-hidden");
               text.inputEl.removeAttribute("aria-invalid");
               this.plugin.settings.meetingStartTime = trimmed;
               await this.plugin.saveSettings();
               this.scheduleReload();
             } else if (trimmed) {
-              errorEl.style.display = "";
+              errorEl.removeClass("is-hidden");
               text.inputEl.setAttribute("aria-invalid", "true");
             } else {
-              errorEl.style.display = "none";
+              errorEl.addClass("is-hidden");
               text.inputEl.removeAttribute("aria-invalid");
             }
           });
@@ -180,27 +181,27 @@ export class JwTimerSettingsTab extends PluginSettingTab {
         text.inputEl.type = "number";
         text.inputEl.min = "1";
         text.inputEl.max = "15";
-        text.inputEl.style.width = "4.5rem";
-        const errorEl = document.createElement("div");
+        text.inputEl.setCssProps({ width: "4.5rem" });
+        const errorEl = activeDocument.createElement("div");
         errorEl.className = "jw-setting-error";
         errorEl.textContent = "Must be between 1 and 15 minutes.";
-        errorEl.style.display = "none";
+        errorEl.addClass("is-hidden");
         text.inputEl.insertAdjacentElement("afterend", errorEl);
         text
           .setValue(String(this.plugin.settings.openingSongMinutes))
           .onChange(async (value) => {
             const n = parseInt(value, 10);
             if (!isNaN(n) && n >= 1 && n <= 15) {
-              errorEl.style.display = "none";
+              errorEl.addClass("is-hidden");
               text.inputEl.removeAttribute("aria-invalid");
               this.plugin.settings.openingSongMinutes = n;
               await this.plugin.saveSettings();
               this.scheduleReload();
             } else if (value.trim()) {
-              errorEl.style.display = "";
+              errorEl.removeClass("is-hidden");
               text.inputEl.setAttribute("aria-invalid", "true");
             } else {
-              errorEl.style.display = "none";
+              errorEl.addClass("is-hidden");
               text.inputEl.removeAttribute("aria-invalid");
             }
           });
@@ -218,7 +219,7 @@ export class JwTimerSettingsTab extends PluginSettingTab {
       });
 
     // ── Display ──────────────────────────────────────────────────────────────
-    containerEl.createEl("h3", { text: L.displayHeading });
+    new Setting(containerEl).setName(L.displayHeading).setHeading();
 
     new Setting(containerEl)
       .setName(L.showAdviceName)
@@ -259,7 +260,7 @@ export class JwTimerSettingsTab extends PluginSettingTab {
       });
 
     // ── Alerts ───────────────────────────────────────────────────────────────
-    containerEl.createEl("h3", { text: L.alertsHeading });
+    new Setting(containerEl).setName(L.alertsHeading).setHeading();
 
     new Setting(containerEl)
       .setName(L.soundAlertName)
@@ -280,26 +281,26 @@ export class JwTimerSettingsTab extends PluginSettingTab {
         text.inputEl.type = "number";
         text.inputEl.min = "1";
         text.inputEl.max = "5";
-        text.inputEl.style.width = "4.5rem";
-        const errorEl = document.createElement("div");
+        text.inputEl.setCssProps({ width: "4.5rem" });
+        const errorEl = activeDocument.createElement("div");
         errorEl.className = "jw-setting-error";
         errorEl.textContent = "Must be between 1 and 5 seconds.";
-        errorEl.style.display = "none";
+        errorEl.addClass("is-hidden");
         text.inputEl.insertAdjacentElement("afterend", errorEl);
         text
           .setValue(String(this.plugin.settings.alertSoundSec))
           .onChange(async (value) => {
             const n = parseInt(value, 10);
             if (!isNaN(n) && n >= 1 && n <= 5) {
-              errorEl.style.display = "none";
+              errorEl.addClass("is-hidden");
               text.inputEl.removeAttribute("aria-invalid");
               this.plugin.settings.alertSoundSec = n;
               await this.plugin.saveSettings();
             } else if (value.trim()) {
-              errorEl.style.display = "";
+              errorEl.removeClass("is-hidden");
               text.inputEl.setAttribute("aria-invalid", "true");
             } else {
-              errorEl.style.display = "none";
+              errorEl.addClass("is-hidden");
               text.inputEl.removeAttribute("aria-invalid");
             }
           });
@@ -324,26 +325,26 @@ export class JwTimerSettingsTab extends PluginSettingTab {
         text.inputEl.type = "number";
         text.inputEl.min = "1";
         text.inputEl.max = "5";
-        text.inputEl.style.width = "4.5rem";
-        const errorEl = document.createElement("div");
+        text.inputEl.setCssProps({ width: "4.5rem" });
+        const errorEl = activeDocument.createElement("div");
         errorEl.className = "jw-setting-error";
         errorEl.textContent = "Must be between 1 and 5 seconds.";
-        errorEl.style.display = "none";
+        errorEl.addClass("is-hidden");
         text.inputEl.insertAdjacentElement("afterend", errorEl);
         text
           .setValue(String(this.plugin.settings.alertVibrateSec))
           .onChange(async (value) => {
             const n = parseInt(value, 10);
             if (!isNaN(n) && n >= 1 && n <= 5) {
-              errorEl.style.display = "none";
+              errorEl.addClass("is-hidden");
               text.inputEl.removeAttribute("aria-invalid");
               this.plugin.settings.alertVibrateSec = n;
               await this.plugin.saveSettings();
             } else if (value.trim()) {
-              errorEl.style.display = "";
+              errorEl.removeClass("is-hidden");
               text.inputEl.setAttribute("aria-invalid", "true");
             } else {
-              errorEl.style.display = "none";
+              errorEl.addClass("is-hidden");
               text.inputEl.removeAttribute("aria-invalid");
             }
           });

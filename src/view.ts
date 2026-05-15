@@ -14,7 +14,6 @@ import {
   colorState,
   formatMmSs,
   timeToMinutes,
-  minutesToTime,
   timestampToHHMM,
   isoWeeksInYear,
 } from "./ui/helpers";
@@ -104,7 +103,7 @@ export class JwTimerView extends ItemView implements CardController {
       text: this.getLabels().today,
     });
     this.todayBtn.setAttr("aria-label", this.getLabels().jumpToday);
-    this.todayBtn.style.display = "none";
+    this.todayBtn.addClass("is-hidden");
     prevBtn.addEventListener("click", () => void this.navigateWeek(-1));
     nextBtn.addEventListener("click", () => void this.navigateWeek(+1));
     this.todayBtn.addEventListener("click", () => void this.navigateToToday());
@@ -121,7 +120,7 @@ export class JwTimerView extends ItemView implements CardController {
       () => void this.refetchSchedule(),
     );
     this.staleTextEl = this.staleEl.createSpan();
-    this.staleEl.style.display = "none";
+    this.staleEl.addClass("is-hidden");
 
     // ── Reset-all toolbar ───────────────────────────────────────────────────────────────
     const toolbar = root.createDiv({ cls: "jw-timer-toolbar" });
@@ -149,7 +148,7 @@ export class JwTimerView extends ItemView implements CardController {
     this.meetingBarContainerEl = root.createDiv({
       cls: "jw-timer-meeting-bar-container",
     });
-    this.meetingBarContainerEl.style.display = "none";
+    this.meetingBarContainerEl.addClass("is-hidden");
     const mBarTrack = this.meetingBarContainerEl.createDiv({
       cls: "jw-timer-meeting-bar",
     });
@@ -174,7 +173,7 @@ export class JwTimerView extends ItemView implements CardController {
 
     // ── Export footer ────────────────────────────────────────────────────────────────────────────
     this.exportFooterEl = root.createDiv({ cls: "jw-timer-export-footer" });
-    this.exportFooterEl.style.display = "none";
+    this.exportFooterEl.addClass("is-hidden");
 
     this.shareBtnEl = this.exportFooterEl.createEl("button", {
       cls: "jw-timer-btn jw-timer-export-btn jw-timer-export-btn--full",
@@ -266,7 +265,7 @@ export class JwTimerView extends ItemView implements CardController {
   }
 
   private updateTodayVisibility(): void {
-    this.todayBtn.style.display = this.isCurrentWeek() ? "none" : "";
+    this.todayBtn.toggleClass("is-hidden", this.isCurrentWeek());
   }
 
   private async navigateToToday(): Promise<void> {
@@ -438,8 +437,8 @@ export class JwTimerView extends ItemView implements CardController {
     const requestId = ++this.loadRequestId;
     this.weekKey = cacheKey(year, week);
     this.navLabelEl.setText(`${year} · W${String(week).padStart(2, "0")}`);
-    this.staleEl.style.display = "none";
-    this.meetingBarContainerEl.style.display = "none";
+    this.staleEl.addClass("is-hidden");
+    this.meetingBarContainerEl.addClass("is-hidden");
     let schedule = this.plugin.getCachedSchedule(this.weekKey);
 
     if (!schedule) {
@@ -500,7 +499,7 @@ export class JwTimerView extends ItemView implements CardController {
     );
     this.staleTextEl.setText(staleText);
     this.staleEl.className = `jw-timer-stale jw-timer-stale--${staleLevel}`;
-    this.staleEl.style.display = "";
+    this.staleEl.removeClass("is-hidden");
     this.renderSchedule(schedule);
     this.updateMeetingBar();
     this.updateTodayVisibility();
@@ -539,8 +538,8 @@ export class JwTimerView extends ItemView implements CardController {
       if (ep.hasAdvice && this.plugin.settings.showAdvice)
         this.totalTimedMs += 60_000;
     }
-    this.meetingBarContainerEl.style.display = "";
-    this.exportFooterEl.style.display = "";
+    this.meetingBarContainerEl.removeClass("is-hidden");
+    this.exportFooterEl.removeClass("is-hidden");
 
     const startMinutes = timeToMinutes(this.plugin.settings.meetingStartTime);
     let cursor = startMinutes + this.plugin.settings.openingSongMinutes;
@@ -643,8 +642,8 @@ export class JwTimerView extends ItemView implements CardController {
   private async refetchSchedule(): Promise<void> {
     this.plugin.evictCachedSchedule(this.weekKey);
     this.plugin.clearPartOverrides(this.weekKey);
-    this.staleEl.style.display = "none";
-    this.meetingBarContainerEl.style.display = "none";
+    this.staleEl.addClass("is-hidden");
+    this.meetingBarContainerEl.addClass("is-hidden");
     this.schedule = null;
     this.cards.clear();
     this.adviceCards.clear();
@@ -756,12 +755,12 @@ export class JwTimerView extends ItemView implements CardController {
         );
         if (textarea) {
           textarea.value = "";
-          textarea.style.height = "";
-          textarea.style.display = "";
+          textarea.setCssProps({ height: "" });
+          textarea.removeClass("is-hidden");
         }
         if (preview) {
           preview.empty();
-          preview.style.display = "none";
+          preview.addClass("is-hidden");
         }
       }
     }
@@ -773,7 +772,7 @@ export class JwTimerView extends ItemView implements CardController {
   // ─── Tick & display update ───────────────────────────────────────────────────────────────────
 
   private tick(): void {
-    if (document.hidden) return;
+    if (activeDocument.hidden) return;
     if (!this.schedule) return;
     // Fast path: skip all DOM work when no timer is running.
     if (!this.plugin.timerEngine.hasAnyRunning()) return;
@@ -944,22 +943,22 @@ export class JwTimerView extends ItemView implements CardController {
         if (n < 60) return `${n}min`;
         const h = Math.floor(n / 60);
         const m = n % 60;
-        return m === 0 ? `${h}h` : `${h}h ${m}min`;
+        return m === 0 ? `${h}h` : `${h}h ${m}min`;
       };
       if (deltaMin === 0) {
         refs.deltaEl.setText("✔");
         refs.deltaEl.className = "jw-timer-delta jw-timer-delta--early";
-        refs.deltaEl.style.display = "";
+        refs.deltaEl.removeClass("is-hidden");
       } else {
         const sign = late ? "+" : "−";
         refs.deltaEl.setText(`${sign}${fmtDelta(absMins)}`);
         refs.deltaEl.className = `jw-timer-delta jw-timer-delta--${late ? "late" : "early"}`;
-        refs.deltaEl.style.display = "";
+        refs.deltaEl.removeClass("is-hidden");
       }
     } else {
       refs.stoppedAtEl.setText("");
       refs.stoppedAtEl.className = "jw-timer-stopped-at";
-      refs.deltaEl.style.display = "none";
+      refs.deltaEl.addClass("is-hidden");
     }
 
     // Card colour state + running indicator for CSS
@@ -1019,7 +1018,7 @@ export class JwTimerView extends ItemView implements CardController {
     const [openingLabel, closingLabel] = (LOCALE_OPENING_CLOSING[langKey] ?? [
       "Opening",
       "Closing",
-    ]) as [string, string];
+    ]);
     const sectionLabels: Record<string, string> = {
       ...SECTION_FALLBACK,
       ...(this.schedule?.sectionLabels ?? {}),

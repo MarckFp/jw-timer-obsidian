@@ -1,6 +1,13 @@
 import esbuild from "esbuild";
-import process from "node:process";
-import builtinModules from "builtin-modules";
+
+// Node.js built-in modules to exclude from the bundle
+const NODE_BUILTINS = [
+  "assert", "buffer", "child_process", "cluster", "console", "constants",
+  "crypto", "dgram", "dns", "domain", "events", "fs", "http", "https",
+  "module", "net", "os", "path", "punycode", "querystring", "readline",
+  "repl", "stream", "string_decoder", "sys", "timers", "tls", "tty",
+  "url", "util", "v8", "vm", "zlib",
+];
 
 const prod = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
@@ -14,7 +21,7 @@ void (async () => {
       "electron",
       "@codemirror/state",
       "@codemirror/view",
-      ...builtinModules,
+      ...NODE_BUILTINS,
     ],
     format: "cjs",
     target: "es2020",

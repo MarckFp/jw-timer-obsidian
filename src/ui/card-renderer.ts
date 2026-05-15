@@ -68,7 +68,7 @@ export function renderCard(
   });
   const stoppedAtEl = timeRow.createSpan({ cls: "jw-timer-stopped-at" });
   const deltaEl = timeRow.createSpan({ cls: "jw-timer-delta" });
-  deltaEl.style.display = "none";
+  deltaEl.addClass("is-hidden");
 
   // Progress bar
   const barEl = card.createDiv({ cls: "jw-timer-bar" });
@@ -131,17 +131,17 @@ export function renderCard(
     const activatePreview = (text: string) => {
       previewEl.empty();
       ctx.renderMarkdown(text, previewEl);
-      previewEl.style.display = "";
-      noteEl.style.display = "none";
+      previewEl.removeClass("is-hidden");
+      noteEl.addClass("is-hidden");
     };
 
     // Show textarea and hide the preview
     const activateEdit = () => {
-      previewEl.style.display = "none";
-      noteEl.style.display = "";
+      previewEl.addClass("is-hidden");
+      noteEl.removeClass("is-hidden");
       window.requestAnimationFrame(() => {
-        noteEl.style.height = "auto";
-        noteEl.style.height = `${noteEl.scrollHeight}px`;
+        noteEl.setCssProps({ height: "auto" });
+        noteEl.setCssProps({ height: `${noteEl.scrollHeight}px` });
         noteEl.focus();
       });
     };
@@ -150,7 +150,7 @@ export function renderCard(
     if (existingNote) {
       activatePreview(existingNote);
     } else {
-      previewEl.style.display = "none";
+      previewEl.addClass("is-hidden");
     }
 
     // Clicking the preview switches to edit
@@ -173,8 +173,8 @@ export function renderCard(
 
     let noteDebounce: number | null = null;
     noteEl.addEventListener("input", () => {
-      noteEl.style.height = "auto";
-      noteEl.style.height = `${noteEl.scrollHeight}px`;
+      noteEl.setCssProps({ height: "auto" });
+      noteEl.setCssProps({ height: `${noteEl.scrollHeight}px` });
       if (noteDebounce !== null) window.clearTimeout(noteDebounce);
       noteDebounce = window.setTimeout(() => {
         noteDebounce = null;
@@ -345,7 +345,7 @@ export function renderAdviceCard(
   );
 
   const deltaEl = card.createDiv({ cls: "jw-timer-delta" });
-  deltaEl.style.display = "none";
+  deltaEl.addClass("is-hidden");
 
   ctx.adviceCards.set(part.order, {
     cardEl: card,

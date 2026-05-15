@@ -8,6 +8,13 @@ To release: run `npm run release` — it seals `[Unreleased]`, commits, tags, an
 
 ## [Unreleased]
 
+## [4.11.0] – 2026-05-15
+
+- Added exclusion for Node.js built-in modules from the bundle
+- Changed command name from 'Open JW Meeting Timer sidebar' to 'Open sidebar'
+- Changed method to set active leaf in workspace for better focus handling
+- Updated error message handling in settings to use class manipulation instead of style display
+- Improved input field styling for better user experience
 ## [4.10.0] – 2026-05-11
 
 - Added new localization labels for menu button and navigation actions

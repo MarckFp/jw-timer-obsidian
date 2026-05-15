@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -51,6 +53,13 @@ jobs:
       - name: Build plugin
         run: npm run build
 
+      - name: Generate artifact attestations
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            styles.css
+
       - name: Extract changelog notes for this version
         id: changelog
         shell: bash
@@ -76,15 +85,11 @@ jobs:
             echo "Release ${GITHUB_REF_NAME}" > /tmp/release_notes.md
           fi
 
-      - name: Package release assets
+      - name: Detect optional style file
         id: package
         shell: bash
         run: |
           set -euo pipefail
-
-          PLUGIN_ID="$(node -p "require('./manifest.json').id")"
-          PLUGIN_VERSION="$(node -p "require('./manifest.json').version")"
-          ZIP_NAME="${PLUGIN_ID}-${PLUGIN_VERSION}.zip"
 
           STYLE_FILE=""
           if [ -f "styles.css" ]; then
@@ -93,20 +98,6 @@ jobs:
             STYLE_FILE="style.css"
           fi
 
-          FILES=(manifest.json main.js versions.json)
-          if [ -n "$STYLE_FILE" ]; then
-            FILES+=("$STYLE_FILE")
-          fi
-
-          mkdir -p dist
-          cp "${FILES[@]}" dist/
-
-          (
-            cd dist
-            zip -r "../$ZIP_NAME" .
-          )
-
-          echo "zip_name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
           echo "style_file=$STYLE_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Create or update release with changelog notes
@@ -133,10 +124,9 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
-          ZIP_NAME="${{ steps.package.outputs.zip_name }}"
           STYLE_FILE="${{ steps.package.outputs.style_file }}"
 
-          ASSETS=(manifest.json main.js versions.json "$ZIP_NAME")
+          ASSETS=(manifest.json main.js)
           if [ -n "$STYLE_FILE" ]; then
             ASSETS+=("$STYLE_FILE")
           fi

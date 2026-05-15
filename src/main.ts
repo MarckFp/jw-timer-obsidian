@@ -118,7 +118,7 @@ export default class JwTimerPlugin extends Plugin {
 
     this.addCommand({
       id: "open-jw-timer",
-      name: "Open JW Meeting Timer sidebar",
+      name: "Open sidebar",
       callback: () => void this.activateView(),
     });
 
@@ -131,7 +131,6 @@ export default class JwTimerPlugin extends Plugin {
       this.saveHandle = null;
     }
     this.persistTimers().catch(console.error);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_JW_TIMER);
   }
 
   // ─── Settings persistence ───────────────────────────────────────────────────
@@ -334,12 +333,12 @@ export default class JwTimerPlugin extends Plugin {
   private async activateView(): Promise<void> {
     const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_JW_TIMER);
     if (existing.length) {
-      await this.app.workspace.revealLeaf(existing[0]);
+      this.app.workspace.setActiveLeaf(existing[0], { focus: true });
       return;
     }
     const leaf = this.app.workspace.getRightLeaf(false);
     if (!leaf) return;
     await leaf.setViewState({ type: VIEW_TYPE_JW_TIMER, active: true });
-    await this.app.workspace.revealLeaf(leaf);
+    this.app.workspace.setActiveLeaf(leaf, { focus: true });
   }
 }

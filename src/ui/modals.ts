@@ -53,12 +53,12 @@ export class EditPartModal extends Modal {
 
     const durErrorEl = durRow.createEl("div", { cls: "jw-setting-error" });
     durErrorEl.textContent = "Must be between 1 and 60 minutes.";
-    durErrorEl.style.display = "none";
+    durErrorEl.addClass("is-hidden");
     durInput.addEventListener("input", () => {
       const n = parseInt(durInput.value, 10);
       const valid = !isNaN(n) && n >= 1 && n <= 60;
       const nonEmpty = durInput.value.trim().length > 0;
-      durErrorEl.style.display = !valid && nonEmpty ? "" : "none";
+      durErrorEl.toggleClass("is-hidden", !(!valid && nonEmpty));
       if (!valid && nonEmpty) durInput.setAttribute("aria-invalid", "true");
       else durInput.removeAttribute("aria-invalid");
     });
@@ -87,7 +87,7 @@ export class EditPartModal extends Modal {
       const newLabel = labelInput.value.trim() || this.part.label;
       const n = parseInt(durInput.value, 10);
       if (isNaN(n) || n < 1 || n > 60) {
-        durErrorEl.style.display = "";
+        durErrorEl.removeClass("is-hidden");
         durInput.setAttribute("aria-invalid", "true");
         durInput.focus();
         return;
@@ -153,10 +153,10 @@ export class AddPartModal extends Modal {
 
     const labelErrorEl = labelRow.createEl("div", { cls: "jw-setting-error" });
     labelErrorEl.textContent = "Title is required.";
-    labelErrorEl.style.display = "none";
+    labelErrorEl.addClass("is-hidden");
     labelInput.addEventListener("input", () => {
       if (labelInput.value.trim()) {
-        labelErrorEl.style.display = "none";
+        labelErrorEl.addClass("is-hidden");
         labelInput.removeAttribute("aria-invalid");
       }
     });
@@ -174,12 +174,12 @@ export class AddPartModal extends Modal {
 
     const durErrorEl = durRow.createEl("div", { cls: "jw-setting-error" });
     durErrorEl.textContent = "Must be between 1 and 60 minutes.";
-    durErrorEl.style.display = "none";
+    durErrorEl.addClass("is-hidden");
     durInput.addEventListener("input", () => {
       const n = parseInt(durInput.value, 10);
       const valid = !isNaN(n) && n >= 1 && n <= 60;
       const nonEmpty = durInput.value.trim().length > 0;
-      durErrorEl.style.display = !valid && nonEmpty ? "" : "none";
+      durErrorEl.toggleClass("is-hidden", !(!valid && nonEmpty));
       if (!valid && nonEmpty) durInput.setAttribute("aria-invalid", "true");
       else durInput.removeAttribute("aria-invalid");
     });
@@ -228,14 +228,14 @@ export class AddPartModal extends Modal {
     saveBtn.addEventListener("click", () => {
       const newLabel = labelInput.value.trim();
       if (!newLabel) {
-        labelErrorEl.style.display = "";
+        labelErrorEl.removeClass("is-hidden");
         labelInput.setAttribute("aria-invalid", "true");
         labelInput.focus();
         return;
       }
       const n = parseInt(durInput.value, 10);
       if (isNaN(n) || n < 1 || n > 60) {
-        durErrorEl.style.display = "";
+        durErrorEl.removeClass("is-hidden");
         durInput.setAttribute("aria-invalid", "true");
         durInput.focus();
         return;

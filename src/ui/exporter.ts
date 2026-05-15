@@ -85,16 +85,20 @@ export async function copyToClipboard(
     await navigator.clipboard.writeText(text);
     onCopied();
   } catch {
-    // Last resort: select a textarea
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
-    onCopied();
+    // Last resort: select a hidden textarea and copy via clipboard API on the
+    // active document's window (handles Obsidian popout windows).
+    try {
+      const ta = activeDocument.createElement("textarea");
+      ta.value = text;
+      ta.setCssProps({ position: "fixed", opacity: "0" });
+      activeDocument.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      await activeDocument.defaultView?.navigator.clipboard.writeText(text);
+      activeDocument.body.removeChild(ta);
+      onCopied();
+    } catch {
+      // Nothing more we can do silently
+    }
   }
 }
