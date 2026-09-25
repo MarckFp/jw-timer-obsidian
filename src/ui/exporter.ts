@@ -23,6 +23,8 @@ export interface ExportData {
   weekLabel: string;
   meetingStartTime: string;
   sections: ExportSection[];
+  /** Minute unit for the current language; defaults to "min". */
+  minUnit?: string;
 }
 
 // ─── Plain-text builder ───────────────────────────────────────────────────────
@@ -55,7 +57,7 @@ export function buildExportText(data: ExportData): string {
     lines.push(`${emoji} ${section.label.toUpperCase()}`);
 
     for (const row of section.rows) {
-      const allotted = `${Math.round(row.durationSec / 60)} min`;
+      const allotted = `${Math.round(row.durationSec / 60)} ${data.minUnit ?? "min"}`;
       if (row.status === "idle") {
         lines.push(`  • ${row.label} (${allotted})`);
       } else {

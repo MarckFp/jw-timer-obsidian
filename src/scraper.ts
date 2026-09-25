@@ -39,11 +39,12 @@ export function cacheKey(year: number, week: number): string {
  * - Korean:        (N분)      — ASCII parens + Hangul
  * - Japanese:      （N分）    — full-width parens + kanji
  * - Chinese:       （N分钟）  — full-width parens + 分钟
+ * - Vietnamese:    (N phút)   — ASCII parens + phút (also accepts "phut" and a decomposed ú)
  *
  * Uses a character class for the opening/closing paren to handle full-width variants,
  * and an alternation for the unit suffix.
  */
-const DURATION_RE = /[(\uff08](\d+)\s*(?:mins?\.?|мин\.?|분|分钟?)[)\uff09]/i;
+const DURATION_RE = /[(\uff08](\d+)\s*(?:mins?\.?|мин\.?|분|分钟?|ph[u\u00FA]\u0301?t)[)\uff09]/i;
 
 function parseDuration(text: string): number | null {
   const m = DURATION_RE.exec(text);

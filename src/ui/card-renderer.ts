@@ -52,7 +52,7 @@ export function renderCard(
   header.createDiv({ cls: "jw-timer-card-title", text: part.label });
   header.createDiv({
     cls: "jw-timer-card-allotted",
-    text: `${Math.round(part.durationSec / 60)} min`,
+    text: `${Math.round(part.durationSec / 60)} ${labels.minUnit ?? "min"}`,
   });
   const gearBtn = header.createEl("button", { cls: "jw-timer-gear-btn" });
   setIcon(gearBtn, "ellipsis-vertical");
@@ -306,7 +306,7 @@ export function renderAdviceCard(
   badge.createSpan({ cls: "jw-timer-advice-icon", text: "↳" });
   badge.createSpan({
     cls: "jw-timer-advice-label",
-    text: `${labels.advice} · 1 min`,
+    text: `${labels.advice} · 1 ${labels.minUnit ?? "min"}`,
   });
 
   // Progress bar

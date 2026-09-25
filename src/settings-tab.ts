@@ -21,6 +21,7 @@ const WOL_LOCALES: [string, string][] = [
   ["日本語", "r7/lp-j"],
   ["한국어", "r8/lp-ko"],
   ["中文（简体）", "r23/lp-chs"],
+  ["Tiếng Việt", "r47/lp-vt"],
 ];
 
 /** Map browser language codes to WOL locale paths. Used on first install only. */
@@ -42,6 +43,7 @@ export function detectWolLocale(): string {
   if (lang.startsWith("ar")) return "r8/lp-a";
   if (lang.startsWith("sv")) return "r16/lp-z";
   if (lang.startsWith("tr")) return "r24/lp-tk";
+  if (lang.startsWith("vi")) return "r47/lp-vt";
   return "r1/lp-e";
 }
 
