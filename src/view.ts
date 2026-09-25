@@ -939,11 +939,13 @@ export class JwTimerView extends ItemView implements CardController {
       );
       refs.stoppedAtEl.className = "jw-timer-stopped-at";
       const absMins = Math.abs(deltaMin);
+      // English keeps the compact "5min"; other units get a space ("5 phút")
+      const minSuffix = labels.minUnit ? ` ${labels.minUnit}` : "min";
       const fmtDelta = (n: number): string => {
-        if (n < 60) return `${n}min`;
+        if (n < 60) return `${n}${minSuffix}`;
         const h = Math.floor(n / 60);
         const m = n % 60;
-        return m === 0 ? `${h}h` : `${h}h ${m}min`;
+        return m === 0 ? `${h}h` : `${h}h ${m}${minSuffix}`;
       };
       if (deltaMin === 0) {
         refs.deltaEl.setText("✔");
@@ -1056,6 +1058,7 @@ export class JwTimerView extends ItemView implements CardController {
       weekLabel: this.schedule?.weekLabel ?? this.weekKey,
       meetingStartTime: this.plugin.settings.meetingStartTime,
       sections,
+      minUnit: this.getLabels().minUnit,
     };
   }
 

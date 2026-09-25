@@ -40,6 +40,8 @@ export interface UiLabels {
   jumpToday: string;
   refresh: string;
   addStopwatch: string;
+  /** Unit shown after minute counts ("10 min"). Optional; defaults to "min". */
+  minUnit?: string;
 }
 
 // prettier-ignore
@@ -262,6 +264,7 @@ export const LOCALE_UI: Record<string, UiLabels> = {
     shareBtn: "Chia sẻ",  copyOk: "Đã sao chép!",  notePlaceholder: "Ghi chú…",
     menuBtnLabel: "Tùy chọn", moveUp: "Dời lên", moveDown: "Dời xuống", editNote: "Sửa ghi chú",
     prevWeek: "Tuần trước", nextWeek: "Tuần sau", jumpToday: "Đi đến ngày hôm nay", refresh: "Làm mới", addStopwatch: "Thêm đồng hồ bấm giờ",
+    minUnit: "phút",
   },
   "lp-tk": {
     play: "Başlat",       pause: "Duraklat",    reset: "Sıfırla",    resetAll: "Tümünü sıfırla",
@@ -339,7 +342,7 @@ export const LOCALE_STALE: Record<string, StaleLabels> = {
   "lp-z":  { justNow: "Hämtad precis nu",        todayAt: "Hämtad idag kl. {time}",     yesterday: "Hämtad igår",          daysAgo: "Hämtad för {n} dagar sedan"   },
   "lp-tk": { justNow: "Az önce alındı",           todayAt: "Bugün {time}'de alındı",     yesterday: "Dün alındı",           daysAgo: "{n} gün önce alındı"          },
   "lp-chs": { justNow: "刚刚获取", todayAt: "今天{time}获取", yesterday: "昨天获取", daysAgo: "{n}天前获取" },
-  "lp-e":   { justNow: "Vừa cập nhật", todayAt: "Cập nhật hôm nay lúc {time}", yesterday: "Cập nhật hôm qua", daysAgo: "Đã cập nhật {n} ngày trước" },
+  "lp-vt":  { justNow: "Vừa cập nhật", todayAt: "Cập nhật hôm nay lúc {time}", yesterday: "Cập nhật hôm qua", daysAgo: "Đã cập nhật {n} ngày trước" },
 };
 
 /** Returns a localised staleness label + severity for a fetch timestamp. */
